@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import networkx as nx
 from collections import Counter
 def basic_graph_statistics(graph, plot_dir='basic_statistics_figs'):
+	# TODO:  rewrite neatly or inspire from seaborn code of ayeletm02
 	os.makedirs(plot_dir, exist_ok=True)
 	nodes_total_capacities = []
 	edge_betwenness = []
@@ -19,14 +20,20 @@ def basic_graph_statistics(graph, plot_dir='basic_statistics_figs'):
 		edge_capacities += [edge['capacity']]
 
 	plt.hist(nodes_total_capacities, label='nodes total capacities', bins = 100)
+	plt.ylabel("total capacity")
+	plt.legend()
 	plt.savefig(os.path.join(plot_dir, "nodes_total_capacities.png"))
 	plt.clf()
 
 	plt.hist(edge_betwenness, label='edges betweeness', bins = 100)
+	plt.ylabel("weighted betweeness")
+	plt.legend()
 	plt.savefig(os.path.join(plot_dir, "edge_betwenness.png"))
 	plt.clf()
 
 	plt.hist(edge_capacities, label='edges capacities', bins = 100)
+	plt.ylabel("capacity")
+	plt.legend()
 	plt.savefig(os.path.join(plot_dir, "edge_capacities.png"))
 	plt.clf()
 
