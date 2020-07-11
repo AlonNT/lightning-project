@@ -1,8 +1,9 @@
 import json
-from lightning_implementation_inference import infer_node_implementation
+from LightningGraph.lightning_implementation_inference import infer_node_implementation
+# from lightning_implementation_inference import infer_node_implementation
 import networkx as nx
 from time import time
-
+import matplotlib.pyplot as plt
 
 def _compute_total_node_capacity(neighbours):
     return sum([neighbours[adj_node_id][channel_id]['capacity'] for adj_node_id in neighbours for channel_id in neighbours[adj_node_id]])
@@ -85,7 +86,7 @@ def get_lightning_graph(json_path, total_capacity=True, infer_imp=False, compute
     ## 3. Process the raw data:
 
     # Remove isolated nodes
-    graph.remove_nodes_from(list(nx.isolates(graph)))
+    # graph.remove_nodes_from(list(nx.isolates(graph)))
 
     # Set routing type and node total capacity
     set_additional_node_attributes(graph, total_capacity=total_capacity, infer_imp=infer_imp) # Todo: consider removing unknown impl nodes
@@ -98,3 +99,14 @@ def get_lightning_graph(json_path, total_capacity=True, infer_imp=False, compute
     print("Graph created: %d nodes, %d edges"%(len(graph.nodes), len(graph.edges)))
     return graph
 
+def draw_save_lightning_graph(json_path: str):
+    
+    graph = get_lightning_graph(json_path)
+    plt.figure()
+    nx.draw(graph)
+    plt.show(block=False)
+    plt.savefig("Graph.png", format="PNG")
+
+
+draw_save_lightning_graph("/Users/Afrimi/Desktop/University/cryptoProject/lightning-project/"
+                                "LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json")

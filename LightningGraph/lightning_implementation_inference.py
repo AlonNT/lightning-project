@@ -85,19 +85,6 @@ def infer_node_implementation(node, neighbours):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #############################################################################################
 # Simplistic heuristics to infer implementation. We used the above one, but this gave approximately the same
 # results.
