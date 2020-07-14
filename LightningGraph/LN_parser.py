@@ -1,9 +1,7 @@
 import json
 from LightningGraph.lightning_implementation_inference import infer_node_implementation
-# from lightning_implementation_inference import infer_node_implementation
 import networkx as nx
 from time import time
-import matplotlib.pyplot as plt
 
 def _compute_total_node_capacity(neighbours):
     return sum([neighbours[adj_node_id][channel_id]['capacity'] for adj_node_id in neighbours for channel_id in neighbours[adj_node_id]])
@@ -48,11 +46,10 @@ def read_data_to_xgraph(json_path):
     # Read json file created by LND describegraph command on the mainnet.
     json_data = json.load(open(json_path, 'r', encoding="utf8"))
     json_data = _filter_nonvalid_data(json_data)
-
     graph = nx.MultiGraph()
     graph.graph = {'network_capacity':0}
-    for node_data in json_data['nodes']:
-        pub_key = node_data.pop('pub_key', None) # TODO copy needed?
+    for i, node_data in enumerate(json_data['nodes']):
+        pub_key = node_data.pop('pub_key', None)
         graph.add_node(pub_key, node_data)
     for edge_data in json_data['edges']:
         # TODO: Can there be list pub_keys here?
