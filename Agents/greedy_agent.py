@@ -8,10 +8,10 @@ class greedy_node_investor(object):
         self.pub_key = agent_pub_key
 
     def act(self, graph):
-        pub_key = self._find_best_node_to_connect(graph)
+        other_pub_key = self._find_best_node_to_connect(graph)
         self.balance -= DEFAULT_CHANNEL_COST
         p = 0.5
-        command_arguments = {'pub_key_1': self.pub_key, 'pub_key_2': random_node_pub_key,
+        command_arguments = {'pub_key_1': self.pub_key, 'pub_key_2': other_pub_key,
                              'balance_1':p*self.default_channel_capacity, 'balance_2':(1-p)*self.default_channel_capacity}
         return 'add_edge', list(command_arguments.values())
 

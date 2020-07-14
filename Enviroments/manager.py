@@ -95,7 +95,7 @@ class Manager:
 
     def get_node_balance(self, node1_pub_key):
         connected_edges = self.graph.edges(nbunch=node1_pub_key, data=True)
-        # TODO
+        return 1
 
     def get_channel_by_id(self, channels_id_list):
         """
