@@ -1,7 +1,7 @@
 from LightningGraph.LN_parser import read_data_to_xgraph, process_lightning_graph
 
 
-def create_sub_graph_by_highest_node_capacity(dump_path='./old_dumps/LN_2020.05.13-08.00.01.json', k=64):
+def create_sub_graph_by_highest_node_capacity(dump_path='LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json', k=64):
     graph = read_data_to_xgraph(dump_path)
     process_lightning_graph(graph, remove_isolated=True, total_capacity=True)
 
