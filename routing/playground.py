@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import argparse
+from routing.route_selection import get_route
 
 dispatcher = {
     'complete_graph': nx.complete_graph,
@@ -12,14 +13,18 @@ dispatcher = {
 }
 
 
-def draw_graph(graph_type: str, n: int):
+def get_graph(graph_type: str, n: int) -> nx.Graph:
     if graph_type not in dispatcher:
         raise ValueError('graph_type {} is not in the dispatcher.'.format(graph_type))
 
-    g: nx.Graph = dispatcher[graph_type](n)
+    graph: nx.Graph = dispatcher[graph_type](n)
 
+    return graph
+
+
+def draw_graph(graph: nx.Graph):
     plt.figure()
-    nx.draw(g, with_labels=True, font_weight='bold')
+    nx.draw(graph, with_labels=True, font_weight='bold')
     plt.show()
 
 
@@ -37,8 +42,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    draw_graph(args.graph_type, args.n)
+    graph = get_graph(args.graph_type, args.n)
+    draw_graph(graph)
+    stop = 'here'
+    # get_route()
 
 
 if __name__ == '__main__':
