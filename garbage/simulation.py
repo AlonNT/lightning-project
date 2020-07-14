@@ -3,9 +3,7 @@ import matplotlib.pyplot as plt
 from typing import List, Tuple
 import random
 import numpy as np
-import node
-import channel
-
+from garbage import channel, node
 
 dispatcher = {
     'complete_graph': nx.complete_graph,

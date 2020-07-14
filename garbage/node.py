@@ -1,5 +1,5 @@
 from typing import List
-from channel import Channel
+from garbage.channel import Channel
 import networkx as nx
 
 
