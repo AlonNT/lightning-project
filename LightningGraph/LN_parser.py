@@ -1,25 +1,10 @@
 import json
 from LightningGraph.lightning_implementation_inference import infer_node_implementation
-# from lightning_implementation_inference import infer_node_implementation
 import networkx as nx
 from time import time
-import matplotlib.pyplot as plt
 
 def _compute_total_node_capacity(neighbours):
     return sum([neighbours[adj_node_id][channel_id]['capacity'] for adj_node_id in neighbours for channel_id in neighbours[adj_node_id]])
-
-
-def set_additional_node_attributes(G, total_capacity=True, infer_imp=False):
-    """
-    Sets node's total capacity (sum of the capacities on its adjacent edges)
-    Set's node routing implementation names
-    """
-    for node in G.nodes:
-        neighbours = G.adj[node]._atlas
-        if total_capacity:
-            G.nodes[node]['total_capacity'] = _compute_total_node_capacity(neighbours)
-        if infer_imp:
-            G.nodes[node]['routing_implemenation'] = infer_node_implementation(node, neighbours)
 
 
 def set_edges_betweenness(G):
@@ -31,7 +16,7 @@ def set_edges_betweenness(G):
     nx.set_edge_attributes(G, edge_betweenness, 'betweenness')
 
 
-def filter_nonvalid_data(json_data):
+def _filter_nonvalid_data(json_data):
     """Remove channels that are disabled or that do not declare their policies."""
     # Filter to channels having both peers exposing their policies
     json_data['edges'] = list(filter(lambda x: x['node1_policy'] and x['node2_policy'], json_data['edges']))
@@ -56,15 +41,17 @@ def cast_channel_data(channel):
         channel['node2_policy']['fee_rate_milli_msat'] = int(channel['node2_policy']['fee_rate_milli_msat'])
 
 
-def construct_xgraph(data):
+def read_data_to_xgraph(json_path):
     """Create an undirected multigraph using networkx and load the data to it"""
+    # Read json file created by LND describegraph command on the mainnet.
+    json_data = json.load(open(json_path, 'r', encoding="utf8"))
+    json_data = _filter_nonvalid_data(json_data)
     graph = nx.MultiGraph()
     graph.graph = {'network_capacity':0}
-    for node_data in data['nodes']:
-        # nodedata = dict((make_str(k), v) for k, v in d.items() if k != name)
-        # nodedata = deepcopy(node_data) # TODO is copy relevant
-        pub_key = node_data.pop('pub_key', None) # TODO copy needed?
-    for edge_data in data['edges']:
+    for i, node_data in enumerate(json_data['nodes']):
+        pub_key = node_data.pop('pub_key', None)
+        graph.add_node(pub_key, node_data)
+    for edge_data in json_data['edges']:
         # TODO: Can there be list pub_keys here?
         cast_channel_data(edge_data)
         graph.graph['network_capacity'] += edge_data['capacity']
@@ -73,40 +60,27 @@ def construct_xgraph(data):
     return graph
 
 
-def get_lightning_graph(json_path, total_capacity=True, infer_imp=False, compute_betweeness=False):
-    """Parse LN data and analysis on it inro a networkx graph"""
-    ## 1.  Preprocess data
-    # Read json file created by LND describegraph command on the mainnet.
-    json_data = json.load(open(json_path, 'r', encoding="utf8"))
-    json_data = filter_nonvalid_data(json_data)
+def process_lightning_graph(graph, remove_isolated=True, total_capacity=True, infer_imp=False, compute_betweeness=False):
+    """Analalyse graph and add additional attributes"""
 
-    ## 2.  Load data into a networkx graph
-    graph = construct_xgraph(json_data)
+    # Remove_isolated nodes
+    if remove_isolated:
+        graph.remove_nodes_from(list(nx.isolates(graph)))
 
-    ## 3. Process the raw data:
+    # Sets node's total capacity (sum of the capacities on its adjacent edges)
+    if total_capacity:
+        for node in graph.nodes:
+            graph.nodes[node]['total_capacity'] = _compute_total_node_capacity(graph.adj[node]._atlas)
 
-    # Remove isolated nodes
-    # graph.remove_nodes_from(list(nx.isolates(graph)))
-
-    # Set routing type and node total capacity
-    set_additional_node_attributes(graph, total_capacity=total_capacity, infer_imp=infer_imp) # Todo: consider removing unknown impl nodes
+    # Set's node routing implementation names
+    if infer_imp:
+        for node in graph.nodes:
+            if infer_imp:
+                graph.nodes[node]['routing_implemenation'] = infer_node_implementation(node, graph.adj[node]._atlas)
 
     if compute_betweeness:
         timing_start = time()
         set_edges_betweenness(graph)
         print("Computing edges betweenes took %.5f sec"%(time()-timing_start))
 
-    print("Graph created: %d nodes, %d edges"%(len(graph.nodes), len(graph.edges)))
-    return graph
 
-def draw_save_lightning_graph(json_path: str):
-    
-    graph = get_lightning_graph(json_path)
-    plt.figure()
-    nx.draw(graph)
-    plt.show(block=False)
-    plt.savefig("Graph.png", format="PNG")
-
-
-draw_save_lightning_graph("/Users/Afrimi/Desktop/University/cryptoProject/lightning-project/"
-                                "LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json")
