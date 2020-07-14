@@ -1,4 +1,6 @@
 import json
+import random
+
 from LightningGraph.lightning_implementation_inference import infer_node_implementation
 import networkx as nx
 from time import time
@@ -60,7 +62,12 @@ def read_data_to_xgraph(json_path):
     return graph
 
 
-def process_lightning_graph(graph, remove_isolated=True, total_capacity=True, infer_imp=False, compute_betweeness=False):
+def process_lightning_graph(graph,
+                            remove_isolated=True,
+                            total_capacity=True,
+                            infer_imp=False,
+                            compute_betweeness=False,
+                            add_dummy_balances=True):
     """Analalyse graph and add additional attributes"""
 
     # Remove_isolated nodes
@@ -76,11 +83,17 @@ def process_lightning_graph(graph, remove_isolated=True, total_capacity=True, in
     if infer_imp:
         for node in graph.nodes:
             if infer_imp:
-                graph.nodes[node]['routing_implemenation'] = infer_node_implementation(node, graph.adj[node]._atlas)
+                graph.nodes[node]['routing_implementation'] = infer_node_implementation(node, graph.adj[node]._atlas)
 
     if compute_betweeness:
         timing_start = time()
         set_edges_betweenness(graph)
-        print("Computing edges betweenes took %.5f sec"%(time()-timing_start))
+        print("Computing edges betweenness took %.5f sec" % (time() - timing_start))
 
-
+    if add_dummy_balances:
+        for edge in graph.edges:
+            capacity = graph.edges[edge]['capacity']
+            node1_balance_ratio = random.random()
+            node2_balance_ratio = 1 - node1_balance_ratio
+            graph.edges[edge]['node1_balance'] = node1_balance_ratio * capacity
+            graph.edges[edge]['node2_balance'] = node2_balance_ratio * capacity
