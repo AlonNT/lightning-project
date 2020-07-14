@@ -1,19 +1,18 @@
 from typing import List
-import channel
+from channel import Channel
 import networkx as nx
 
 
 class Node:
+    def __init__(self, address: str, graph: nx.Graph = None, channels: Channel = None):
 
-    def __init__(self, address: str, graph: nx.Graph = None, channels: channel.Channel = None):
-
-        #todo change the type of address to bytes when working with lightning network
+        # Todo change the type of address to bytes when working with lightning network
         self.address: str = address
         self.graph: nx.Graph = graph
         self.reward = 0
 
         # TODO Do we need it?
-        self.channels: channel.Channel = channels if not channels else []
+        self.channels: Channel = channels if not channels else []
 
     def get_address(self):
         """
@@ -21,10 +20,9 @@ class Node:
         """
         return self.address
 
-
     def send(self, address: bytes, amount: int) -> bool:
         # TODO - assume that we get a list of edges from the routing algorithm (for the miniml path to address)
-        channel_path : List[channel.Channel] = self.route(address)
+        channel_path: List[Channel] = self.route(address)
 
         # Traverse the channels and check if the amount can pass through them.
         # In case the amount is Okay to transfer, update the balances of the channels
@@ -33,7 +31,8 @@ class Node:
                 return False
 
         # Update Balances
-        for channel in channel_path: channel.transfer(amount)
+        for channel in channel_path:
+            channel.transfer(amount)
 
         return True
 
@@ -44,14 +43,9 @@ class Node:
         # TODO do we need it?
         pass
 
-    def route(self, address: bytes) -> List[channel.Channel]:
+    def route(self, address: bytes) -> List[Channel]:
         # TODO alon
         pass
 
     def __repr__(self):
         return f'Node{self.address}'
-
-
-
-
-

@@ -7,6 +7,32 @@ import node
 import channel
 
 
+dispatcher = {
+    'complete_graph': nx.complete_graph,
+    'cycle_graph': nx.cycle_graph,
+    'ladder_graph': nx.ladder_graph,
+    'star_graph': nx.star_graph,
+    'wheel_graph': nx.wheel_graph
+}
+
+
+def create_graph(graph_type: str, n: int):
+    """
+
+    :param graph_type:
+    :param n:
+    :return:
+    """
+
+    # TODO daniel - get the graph type and return a graph with our objects
+    if graph_type not in dispatcher:
+        raise ValueError('graph_type {} is not in the dispatcher.'.format(graph_type))
+
+    graph: nx.Graph = dispatcher[graph_type](n)
+
+    pass
+
+
 def create_random_nodes_objects(number_of_nodes: int) -> List[node.Node]:
     nodes_list: List[node.Node] = list()
     for i in range(number_of_nodes):
@@ -20,7 +46,7 @@ def create_random_channels(nodes_list: List[node.Node], number_of_channels: int)
         nodes_indices: List[int] = random.sample(range(0, len(nodes_list) - 1), 2)
         balances_list: List[int] = random.sample(range(0, 5), 2)
 
-        nodes: Tuple(int, int) = (nodes_list[nodes_indices[0]], nodes_list[nodes_indices[1]])
+        nodes: Tuple[int, int] = (nodes_list[nodes_indices[0]], nodes_list[nodes_indices[1]])
         balances: Tuple(int, int) = (balances_list[0], balances_list[1])
 
         channels_list.append(channel.Channel(nodes, balances))
@@ -31,12 +57,13 @@ def create_random_channels(nodes_list: List[node.Node], number_of_channels: int)
 def create_graph_from_objects(nodes: List[node.Node], edges: List[channel.Channel], draw_graph: bool) -> nx.Graph:
     graph = nx.Graph()
     graph.add_nodes_from(nodes)
-    #TODO check how to add edges from node1 to node2 according the channel
+
+    # TODO check how to get to edges object from the graph (we can get the nodes attr via nodes_list)
     for edge in edges:
         graph.add_edge(edge.nodes[0], edge.nodes[1], object=edge)
 
     if draw_graph:
-        # Draw the graph
+        plt.figure()
         nx.draw_networkx(graph, with_labels=True)
         plt.show()
 
@@ -61,7 +88,7 @@ def transfer_money_between_two_nodes(amount: int, graph: nx.Graph):
     if v1.send(v2.address, amount):
         print(f"Sent {amount} successfully")
 
-    print(f"Failed in Sending {amount}")
+    print(f"Failed Sending {amount}")
 
 
 def sanity_main():
@@ -85,7 +112,7 @@ def sanity_main():
     node2 = node.Node("node2")
     dst_node = node.Node("dst")
     channels = [
-        channel.Channel(nodes=(src_node, node1),balances=(2,3), base_fee=10),
+        channel.Channel(nodes=(src_node, node1), balances=(2, 3), base_fee=10),
         channel.Channel(nodes=(src_node, node2), balances=(2, 3), base_fee=1000),
         channel.Channel(nodes=(node1, dst_node), balances=(2, 3), base_fee=1000),
         channel.Channel(nodes=(node2, dst_node), balances=(2, 3), base_fee=1000)]
@@ -96,14 +123,14 @@ def sanity_main():
     # assert path == [addrs[node1].pubkey, addrs[dst_node].pubkey]
     # print("Success")
 
-def main():
-   pass
 
-if __name__ == '__main__':
+def main():
+    pass
+
+if __name__ == "__main__":
     nodes_list: List[node.Node] = create_random_nodes_objects(6)
     channels_list: List[channel.Channel] = create_random_channels(nodes_list, 3)
     graph = create_graph_from_objects(nodes_list, channels_list, False)
     transfer_money_between_two_nodes(1, graph)
     stop = "stop here"
     # sanity_main()
-
