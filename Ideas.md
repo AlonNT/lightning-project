@@ -8,9 +8,15 @@
    - [paper](https://arxiv.org/pdf/2002.06564.pdf)
    - [medium post](https://medium.com/blockchains-huji/congestion-attacks-in-payment-channel-networks-b7ac37208389)
    - [code](https://github.com/ayeletmz/Lightning-Network-Congestion-Attacks)
+- Flood & Loot: A Systemic Attack On The Lightning Network
+   - [paper](https://arxiv.org/pdf/2006.08513.pdf)
+   - [medium post](https://medium.com/blockchains-huji/flood-loot-a-systemic-attack-on-the-lightning-network-5c3dac7bba24)
+   - [code](https://github.com/jonahar/lightning-systemic-attack)
 - [Coindesk: You can now get paid (a little) for using bitcoin’s lightning network.](https://www.coindesk.com/you-can-now-get-paid-a-little-for-using-bitcoins-lightning-network)
 - [Lightning network: how to explore the topology](https://medium.com/coinmonks/lightning-network-how-to-explore-the-topology-32f234f4287f)
 - [Basis of Lightning Technology (BOLT)](https://github.com/lightningnetwork/lightning-rfc/blob/master/00-introduction.md)
+- [1ML - Lightning Network Search and Analysis Engine](https://1ml.com/)
+- [Bitcoin Explorer - Blockstream.info](https://blockstream.info/)
 
 #### Python Packages
 - [NetworkX](https://networkx.github.io/documentation/latest/tutorial.html)
