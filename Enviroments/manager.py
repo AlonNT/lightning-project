@@ -16,10 +16,10 @@ class Manager:
         :return:
         """
         # TODO - Daniel needs to check the direction for each node (for fees update).
-        # TODO Gets (src,dst,channel_id) and needs to check which one is src for updating the fee
+        # TODO Gets (src,dst,channel_id) and needs to check which one is src for updating the fee - FIX
 
-        # Gets the path from src to dst according the routing algorithm
-        channels_path = self.get_channel_by_id(get_route(self.graph, src, dst))
+        # Gets the path and nodes order in the channel (src, dst) according the routing algorithm
+        channels_path, nodes_order_by_channel = self.get_channel_by_id(get_route(self.graph, src, dst), src)
 
         # Gets the total fee for this path
         total_fee: int = 0
@@ -28,28 +28,50 @@ class Manager:
         # Track the fees in each channel
         for i, channel in enumerate(channels_path):
             # TODO - check if the calculation is valid
-            channel_fee = (channel["node1_base_fee"] + (channel["node1_proptional_fee"] * amount))
+            channel_fee = self.get_channel_fee_according_to_src(nodes_order_by_channel[i], channel, amount)
             total_fee += channel_fee
             fees_list[i] = channel_fee
 
-        # Transformation on the first channel is the total fees of the fees
+        # Transformation of the first channel is the total fees
         fees_list.insert(0, 0)
 
         # Traverse the channels and check if the amount can pass through them.
         # In case the amount is valid to transfer, update the balances of the channels
         for i, channel in enumerate(channels_path):
-            if channel["node1_balance"] < amount + total_fee - fees_list[i]:
+            src_node_balance, dst_node_balance = self.get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
+            if channel[src_node_balance] < amount + total_fee - fees_list[i]:
                 return False
 
         for i, channel in enumerate(channels_path):
 
             total_amount = amount + total_fee - fees_list[i]
+            # Gets the nodes order in this channel for updating the amount on their channel sides
+            src_node_balance, dst_node_balance = self.get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
 
             # Channel Updates
-            channel["node1_balance"] -= total_amount
-            channel["node2_balance"] += total_amount
+            channel[src_node_balance] -= total_amount
+            channel[dst_node_balance] += total_amount
 
         return True
+
+    def get_src_dst_nodes_on_channel(self, src):
+        src_node_balance = "node2_balance"
+        dst_node_balance = "node1_balance"
+        if src == "node1_pub":
+            src_node_balance = "node1_balance"
+            dst_node_balance = "node2_balance"
+        return src_node_balance, dst_node_balance
+
+    def get_channel_fee_according_to_src(self, src, channel, amount: int):
+        """
+        :param node:
+        :return: return the channel fee that corresponds to src node
+        """
+        if src == "node1_pub":
+            # TODO check if attr is valid
+            # Gets the policy of surce node and calculate the fee according to the channel
+            return (channel["node1_policy"]["fee_base_msat"] + (amount * channel["node1_policy"]["fee_rate_milli_msat"]))
+        return (channel["node2_policy"]["fee_base_msat"] + (amount * channel["node2_policy"]["fee_rate_milli_msat"]))
 
     def get_state(self):
         return self.graph
@@ -97,16 +119,58 @@ class Manager:
         connected_edges = self.graph.edges(nbunch=node1_pub_key, data=True)
         return 1
 
-    def get_channel_by_id(self, channels_id_list):
+    def get_channel_by_id(self, channels_id_list, src_node):
         """
         Gets list of channel id's and return the actual channels objects
-        :param channels_id_list:
+        :param channels_id_list: n'th of tuples that composed of 3 variables - (node1, node2, channel_id)
         :return:
         """
         channels_list = list()
-        for channel_id in channels_id_list:
+        nodes_order_by_channel = list()
+        temp_src = src_node
+        for i, channel_id in enumerate(channels_id_list):
+
+            # Channels_list[i] is a tuple of 3 variables - (node1, node2, channel_id)
+            # TODO Check this - check attr names + nodes_address
+            if channels_list[i][0] == temp_src:
+                nodes_order_by_channel.append("node1_pub")
+            else:
+                nodes_order_by_channel.append("node2_pub")
+
+            # src is the second node
+            temp_src = channels_list[i][1]
             channels_list.append(self.graph.edges(channel_id))
-        return channels_list
+        return channels_list, nodes_order_by_channel
+
+    def get_channel_source(self, channel, src):
+        # Get the source of the channel and check if that node is node1 or node2
+        pass
+
+    # TODO Structure of the json lightning node
+
+    # {'channel_id': '666796627747143680',
+    #  'chan_point': '73f0db04f86ffb58a13f6dcd5304c1a07b09a12d94e68b7ea2f7d735b010faf1:0',
+    #  'last_update': 1589321706,
+    #  'node1_pub': '033d8656219478701227199cbd6f670335c8d408a92ae88b962c49d4dc0e83e025',
+    #  'node2_pub': '03abf6f44c355dec0d5aa155bdbdd6e0c8fefe318eff402de65c6eb2e1be55dc3e',
+    #  'capacity': 16777215,
+    #  'node1_policy': {'time_lock_delta': 40,
+    #                   'min_htlc': 1000,
+    #                   'fee_base_msat': 1000,
+    #                   'fee_rate_milli_msat': 1,
+    #                   'disabled': False,
+    #                   'max_htlc_msat': '16609443000',
+    #                   'last_update': 1589321706},
+    #  'node2_policy': {'time_lock_delta': 30,
+    #                   'min_htlc': 1000,
+    #                   'fee_base_msat': 1000,
+    #                   'fee_rate_milli_msat': 2500,
+    #                   'disabled': False,
+    #                   'max_htlc_msat': '16609443000',
+    #                   'last_update': 1589289367},
+    #  'node1_balance': 9991901.48150539,
+    #  'node2_balance': 6785313.518494611,
+    #  'betweenness': 0.05357142857142857}
 
 #
 # def initialize_graph(type: str) -> nx.Graph:
