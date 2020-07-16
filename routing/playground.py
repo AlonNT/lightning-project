@@ -28,12 +28,8 @@ def main():
 
     nx.draw(graph, with_labels=False, font_weight='bold')
 
-    plt.text(src_x, src_y,
-             s='source',
-             bbox=dict(facecolor='green', alpha=0.5))
-    plt.text(dest_x, dest_y,
-             s='target',
-             bbox=dict(facecolor='red', alpha=0.5))
+    plt.text(src_x, src_y, s='source', bbox=dict(facecolor='green', alpha=0.5))
+    plt.text(dest_x, dest_y, s='target', bbox=dict(facecolor='red', alpha=0.5))
     plt.show()
 
 

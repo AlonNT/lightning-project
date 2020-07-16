@@ -4,45 +4,47 @@ import networkx as nx
 
 def get_channel_with_minimal_fee_base(subgraph: nx.MultiGraph, source, target):
     """
-    Get a sub-graph (which is MultiGraph) containing exactly two nodes,
-    one is the source and the other is the destination.
+    Get a sub-graph containing exactly two nodes - one is the source and the other is the destination.
     The function calculate the channel with the minimal base-fee and returns it.
 
-    :param subgraph: The MutliGraph containing the nodes src and dest.
+    :param subgraph: The MultiGraph containing the nodes src and dest.
     :param source: The source node.
     :param target: The target node.
     :return: The channel with the minimal base-fee.
     """
-    assert set(subgraph.nodes) == set([source, target]), \
+    assert set(subgraph.nodes) == {source, target}, \
         "BAD USAGE - you should give a graph containing only the two given nodes"
 
-    min_fee = float('inf')
-    min_fee_channel = None
+    min_fee: float = float('inf')
+    min_fee_channel_id = None
 
     for node1, node2, channel_data in subgraph.edges(data=True):
         if source == channel_data['node1_pub']:
-            i = 1
+            source_i, target_i = 1, 2
         elif source == channel_data['node2_pub']:
-            i = 2
+            source_i, target_i = 2, 1
         else:
             assert False, "WTF? Neither 'source' nor 'target' are in the channel."
 
-        channel_fee = channel_data[f'node{i}_policy']['fee_base_msat']
+        # When money is transferred from the source node to the target node, the fee is paid for the target node
+        # (i.e. that target node keeps some of the money to himself, and passes the rest forwards).
+        channel_fee: float = channel_data[f'node{target_i}_policy']['fee_base_msat']
 
         if channel_fee < min_fee:
             min_fee = channel_fee
-            min_fee_channel = (source, target, channel_data['channel_id'])
+            min_fee_channel_id = (channel_data[f'node{source_i}_pub'], channel_data[f'node{target_i}_pub'],
+                                  channel_data['channel_id'])
 
-    assert (min_fee_channel is not None) and (min_fee != float('inf')), "ERROR: no channel was chosen."
+    assert (min_fee_channel_id is not None) and (min_fee != float('inf')), "ERROR: no channel was chosen."
 
-    return min_fee_channel
+    return min_fee_channel_id
 
 
 def get_route(graph: nx.Graph, source, target):
     """
     A naive approach for getting the route between the source node and the destination node.
-    It first gets the path of minimal length, and then for each possibilities of channels between
-    two nodes, get the channel of minimal base fee.
+    It first gets the path of minimal length, and then for each one of the possibilities for channels between the
+    two nodes, get the channel with the minimal base-fee.
 
     :param graph: The Graph.
     :param source: The source node.

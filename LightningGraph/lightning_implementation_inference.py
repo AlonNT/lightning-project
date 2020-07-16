@@ -69,8 +69,8 @@ def infer_node_implementation(node, neighbours):
     """
     # A list of tuples (cltv_delta, min_htlc, fee_proportional) values of the node for each of its channels.
     channels_parameteres = [calc_node_attr(node, neighbours[adj_node_id][channel_id]) for adj_node_id in
-                          neighbours for channel_id in
-                          neighbours[adj_node_id]]
+                            neighbours for channel_id in
+                            neighbours[adj_node_id]]
 
     # A list of implementation distribution for each of the nodes' channel.
     channels_impl_dist = [calc_implementation_distribution(channel_params) for channel_params in channels_parameteres]
@@ -83,8 +83,6 @@ def infer_node_implementation(node, neighbours):
         return "unknown"
 
 
-
-
 #############################################################################################
 # Simplistic heuristics to infer implementation. We used the above one, but this gave approximately the same
 # results.
@@ -92,8 +90,8 @@ def infer_node_implementation_simple_heuristics(G, node):
     neighbours = G.adj[node]._atlas
     # A list of tuples (cltv_delta, min_htlc, fee_proportional) values of the node for each of its channels.
     channels_parameteres = [calc_node_attr(node, neighbours[adj_node_id][channel_id]) for adj_node_id in
-                          neighbours for channel_id in
-                          neighbours[adj_node_id]]
+                            neighbours for channel_id in
+                            neighbours[adj_node_id]]
     # For each parameter, we sort the different values configured by the node in descending order (by their appearance).
     # These are represented as tuples (value, fraction) - which present each value with the fraction in which it is
     # configured by the node.
@@ -102,7 +100,8 @@ def infer_node_implementation_simple_heuristics(G, node):
     cltv_delta_values = [i[0] for i in cltv_delta]
     htlc_min = sorted(Counter([i[1] for i in channels_parameteres]).items(), key=lambda item: item[1], reverse=True)
     htlc_min = list(map(lambda x: (x[0], x[1] / sum(j for i, j in htlc_min)), htlc_min))
-    fee_proportional = sorted(Counter([i[2] for i in channels_parameteres]).items(), key=lambda item: item[1], reverse=True)
+    fee_proportional = sorted(Counter([i[2] for i in channels_parameteres]).items(), key=lambda item: item[1],
+                              reverse=True)
     fee_proportional = list(map(lambda x: (x[0], x[1] / sum(j for i, j in fee_proportional)), fee_proportional))
 
     # cltv_delta[0][0] is the most common value of cltv_expiry_delta used by the node.

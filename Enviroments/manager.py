@@ -3,6 +3,23 @@ from typing import List
 from routing.route_selection import get_route
 
 
+def get_src_dst_nodes_on_channel(src):
+    source_i = 1 if src == "node1_pub" else 2
+    target_i = 1 + (2 - source_i)  # if source_i is 1 it's 1+(2-1)=2, if source_i is 2 it's 1+(2-2)=1.
+
+    return f'node{source_i}_balance', f'node{target_i}_balance'
+
+
+def get_channel_fee_according_to_src(src, channel, amount: int):
+    """
+    :param node:
+    :return: return the channel fee that corresponds to src node
+    """
+    # Gets the policy of source node and calculate the fee according to the channel
+    policy_key = "node1_policy" if src == "node1_pub" else "node2_policy"
+    return channel[policy_key]["fee_base_msat"] + (amount * channel[policy_key]["fee_rate_milli_msat"])
+
+
 class Manager:
     def __init__(self, graph: nx.Graph):
         self.graph: nx.Graph = graph
@@ -28,7 +45,7 @@ class Manager:
         # Track the fees in each channel
         for i, channel in enumerate(channels_path):
             # TODO - check if the calculation is valid
-            channel_fee = self.get_channel_fee_according_to_src(nodes_order_by_channel[i], channel, amount)
+            channel_fee = get_channel_fee_according_to_src(nodes_order_by_channel[i], channel, amount)
             total_fee += channel_fee
             fees_list[i] = channel_fee
 
@@ -38,40 +55,26 @@ class Manager:
         # Traverse the channels and check if the amount can pass through them.
         # In case the amount is valid to transfer, update the balances of the channels
         for i, channel in enumerate(channels_path):
-            src_node_balance, dst_node_balance = self.get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
+            src_node_balance, dst_node_balance = get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
+            # TODO [to Daniel] I think this calculation is wrong - you need to take into account the fact that
+            # TODO [to Daniel] there are already paid fee. So you don't need to subtract always 'total_fee'
+            # TODO [to Daniel]from the amount, but you need to subtract a fee that is decreasing
+            # TODO [to Daniel] (more fees need to be 'carried' in the beginning of the path).
             if channel[src_node_balance] < amount + total_fee - fees_list[i]:
                 return False
 
         for i, channel in enumerate(channels_path):
 
             total_amount = amount + total_fee - fees_list[i]
+
             # Gets the nodes order in this channel for updating the amount on their channel sides
-            src_node_balance, dst_node_balance = self.get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
+            src_node_balance, dst_node_balance = get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
 
             # Channel Updates
             channel[src_node_balance] -= total_amount
             channel[dst_node_balance] += total_amount
 
         return True
-
-    def get_src_dst_nodes_on_channel(self, src):
-        src_node_balance = "node2_balance"
-        dst_node_balance = "node1_balance"
-        if src == "node1_pub":
-            src_node_balance = "node1_balance"
-            dst_node_balance = "node2_balance"
-        return src_node_balance, dst_node_balance
-
-    def get_channel_fee_according_to_src(self, src, channel, amount: int):
-        """
-        :param node:
-        :return: return the channel fee that corresponds to src node
-        """
-        if src == "node1_pub":
-            # TODO check if attr is valid
-            # Gets the policy of surce node and calculate the fee according to the channel
-            return (channel["node1_policy"]["fee_base_msat"] + (amount * channel["node1_policy"]["fee_rate_milli_msat"]))
-        return (channel["node2_policy"]["fee_base_msat"] + (amount * channel["node2_policy"]["fee_rate_milli_msat"]))
 
     def get_state(self):
         return self.graph
@@ -82,13 +85,14 @@ class Manager:
         :param action: action from the agent
         :return: The current Graph
         """
-        if action[0] == "add_edge":
-            self.add_edge(*action[1])
+        function_name, args = action
 
-        elif action[0] == "NOOP":
+        if function_name == "add_edge":
+            self.add_edge(*args)
+        elif function_name == "NOOP":
             pass
         else:
-            raise ValueError(f"{action} not supported ")
+            raise ValueError(f"{function_name} not supported ")
 
         return self.graph
 
@@ -97,6 +101,7 @@ class Manager:
         Add new node to the graph
         :return: The public key of the new node
         """
+        # TODO [to Daniel] generate a random string (or hash of something) of the same size as the public keys.
         pub_key = len(self.graph.nodes) + 1
         self.graph.add_node(pub_key)
         return pub_key
@@ -112,12 +117,12 @@ class Manager:
         """
         capacity = node1_balance + node2_balance
 
-        self.graph.add_edge(public_key_node1, public_key_node2, capcity=capacity,
+        self.graph.add_edge(public_key_node1, public_key_node2, capacity=capacity,
                             node1_balance=node1_balance, node2_balance=node2_balance)
 
     def get_node_balance(self, node1_pub_key):
         connected_edges = self.graph.edges(nbunch=node1_pub_key, data=True)
-        return 1
+        return 1  # TODO return the actual balance
 
     def get_channel_by_id(self, channels_id_list, src_node):
         """
@@ -129,7 +134,6 @@ class Manager:
         nodes_order_by_channel = list()
         temp_src = src_node
         for i, channel_id in enumerate(channels_id_list):
-
             # Channels_list[i] is a tuple of 3 variables - (node1, node2, channel_id)
             # TODO Check this - check attr names + nodes_address
             if channels_list[i][0] == temp_src:
