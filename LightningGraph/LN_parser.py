@@ -85,8 +85,7 @@ def process_lightning_graph(graph,
                             and can not participate in other nodes transfers' routes.
     :param total_capacity: If True, add the total capacity for each node in the graph.
                            The total capacity is the sum of the capacities of all channels this node is involved in.
-                           TODO [Ariel] Why is this value interesting? the 'capacity' might be
-                           TODO [Ariel] with balance to the other side of the channel...
+                           Currently used only to sort the nodes by importance for subgraphing the entire network
     :param infer_implementation: If True, infer the implementation of the nodes according to a simple heuristic
                                  involving the default values of their policies.
     :param compute_betweenness: If True, add the betweenness of each edge (EXPENSIVE in run-time).

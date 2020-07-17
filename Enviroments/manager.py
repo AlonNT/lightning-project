@@ -58,7 +58,7 @@ class Manager:
             src_node_balance, dst_node_balance = get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
             # TODO [to Daniel] I think this calculation is wrong - you need to take into account the fact that
             # TODO [to Daniel] there are already paid fee. So you don't need to subtract always 'total_fee'
-            # TODO [to Daniel]from the amount, but you need to subtract a fee that is decreasing
+            # TODO [to Daniel] from the amount, but you need to subtract a fee that is decreasing
             # TODO [to Daniel] (more fees need to be 'carried' in the beginning of the path).
             if channel[src_node_balance] < amount + total_fee - fees_list[i]:
                 return False
@@ -94,7 +94,7 @@ class Manager:
         else:
             raise ValueError(f"{function_name} not supported ")
 
-        return self.graph
+        return self.get_state()
 
     def create_agent_node(self):
         """

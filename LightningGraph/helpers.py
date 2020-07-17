@@ -1,9 +1,9 @@
 from LightningGraph.LN_parser import read_data_to_xgraph, process_lightning_graph
 
-LIGHTNING_GRAPH_DUMP_PATH = 'LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
+# LIGHTNING_GRAPH_DUMP_PATH = './old_dumps/LN_2020.05.13-08.00.01.json' # TODO: this just does not work
 
 
-def create_sub_graph_by_highest_node_capacity(dump_path=LIGHTNING_GRAPH_DUMP_PATH, k=64):
+def create_sub_graph_by_highest_node_capacity(dump_path, k=64):
     graph = read_data_to_xgraph(dump_path)
     process_lightning_graph(graph, remove_isolated=True, total_capacity=True)
 
