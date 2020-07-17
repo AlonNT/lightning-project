@@ -16,7 +16,7 @@ def calculate_all_best_routes(nodes_dict):
     nodes_list = list(nodes_dict.values())
     all_best_paths_in_graph = []
     for node in tqdm(nodes_list):
-        lnd_accessible_nodes = find_route(nodes_list, dst=node, get_weight=lnd_weight, msat=TRANSACTION_SIZE, max_hops=MAX_HOPS)
+        lnd_accessible_nodes = find_route(nodes_list, target=node, get_weight=lnd_weight, msat=TRANSACTION_SIZE, max_hops=MAX_HOPS)
         for src in lnd_accessible_nodes:
             if len(lnd_accessible_nodes[src]) > 0:
                 path, total, weight = lnd_accessible_nodes[src][0]  # get only first path if there is multiple

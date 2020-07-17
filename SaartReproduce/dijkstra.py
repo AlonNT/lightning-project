@@ -1,13 +1,14 @@
 from SaartReproduce.classes import Node, Channel
 from typing import List, Dict, Tuple, Callable, TypeVar, Generic
 import heapq
-BIG = 999_999_999_999_999
+INFINITY_INT = 999_999_999_999_999
 T = TypeVar('T')
 
-class Dijkstra_info:
+
+class DijkstraInfo:
     __slots__ = ('node', 'total', 'weight', 'path', 'final_path', 'depth')
 
-    def __init__(self, node: 'Node', total=BIG, weight=BIG, path=None, depth=None):
+    def __init__(self, node: 'Node', total=INFINITY_INT, weight=INFINITY_INT, path=None, depth=None):
         self.node = node
         self.total: int = total
         self.weight: float = weight
@@ -15,8 +16,6 @@ class Dijkstra_info:
         self.final_path: List[Node] = []
         self.depth: int = depth
 
-    def get(self):
-        return self
 
 class UpdatablePrioritySet(Generic[T]):
     """
@@ -48,46 +47,98 @@ class UpdatablePrioritySet(Generic[T]):
         self.set.remove(r)  # avg: O(1), worst: O(log n)
         return r
 
+    def is_empty(self):
+        return len(self.set) == 0
+
     def __bool__(self):
         return bool(self.set)
 
+    def __len__(self):
+        return len(self.set)
 
-def update_single(dijkstra: Dijkstra_info, channel: Channel, to_visit: UpdatablePrioritySet[Dijkstra_info], get_weight, max_hops):
-    amount_plus_fee, time_lock_penalty = get_weight(channel, amount=dijkstra.total, prev_weight=dijkstra.weight)
-    other_dijkstra: Dijkstra_info = channel.other_node(dijkstra.node).dijkstra_info.get()
+
+def update_single(dijkstra_info: DijkstraInfo, channel: Channel, nodes_to_visit: UpdatablePrioritySet[DijkstraInfo],
+                  get_weight, max_hops):
+    """
+    Update the nodes_to_visit data-structure and the other-node's DijkstraInfo
+    according to the given DijkstraInfo of the first node in the path and its channel.
+    TODO [to Ariel] Did I understand it correctly? Anything else is being updated?
+
+    :param dijkstra_info:
+    :param channel:
+    :param nodes_to_visit:
+    :param get_weight:
+    :param max_hops:
+    """
+    amount_plus_fee, time_lock_penalty = get_weight(channel,
+                                                    amount=dijkstra_info.total,
+                                                    prev_weight=dijkstra_info.weight)
+    other_dijkstra: DijkstraInfo = channel.other_node(dijkstra_info.node).dijkstra_info
     if time_lock_penalty < other_dijkstra.weight:
-        if dijkstra.node in dijkstra.path:
+        if dijkstra_info.node in dijkstra_info.path:
             return  # we found a loop.
-        if dijkstra.depth != max_hops:
-            to_visit.update(other_dijkstra, other_dijkstra.weight, time_lock_penalty)
+        if dijkstra_info.depth != max_hops:
+            nodes_to_visit.update(other_dijkstra, other_dijkstra.weight, time_lock_penalty)
         other_dijkstra.total = amount_plus_fee
-        other_dijkstra.path = dijkstra.path + [dijkstra.node]
+        other_dijkstra.path = dijkstra_info.path + [dijkstra_info.node]
         other_dijkstra.weight = time_lock_penalty
-        other_dijkstra.depth = dijkstra.depth + 1
+        other_dijkstra.depth = dijkstra_info.depth + 1
 
 
-def find_route(nodes: List[Node], dst: Node, get_weight, msat, max_hops, src=None) -> Dict[Node, List[Tuple[List[Node], float, float]]]:
+def find_route(nodes: List[Node], target: Node,
+               get_weight, msat, max_hops) -> Dict[Node, List[Tuple[List[Node], float, float]]]:
+    """
+    Given a target node and a list of nodes, compute the route from any node in the list to the target node.
+    The route is calculated 'backwards-Dijkstra' - from the target node until each one of the nodes.
+
+    :param nodes: A list of nodes which are potentially source nodes.
+    :param target: The target node.
+    :param get_weight: The weight function (can be the one used in LND, C_Lightning or Eclair).
+    :param msat: Amount (in milli-satoshis) to transfer.
+                 Note that this is the amount of money that should reach the target node eventually,
+                 and more money will be added in order rto pay the fees on the route.
+    :param max_hops: Maximal number of intermediate nodes in the route.
+
+    :return: A dictionary mapping each node to a triplet representing the selected route.
+             The triplet contains:
+                 (1) The path starting from this node to the target node (a list of Nodes).
+                 (2) The amount of money that this node receive (and transfer forwards). TODO [to Ariel] verify me.
+                 (3) The weight of the path.
+    """
+    # Initialize the DijkstraInfo class of each node with the initial values (infinity weight & amount, etc).
     for node in nodes:
-        node.dijkstra_info = Dijkstra_info(node)
+        node.dijkstra_info = DijkstraInfo(node)
 
-    dst_worst_dijkstra = dst.dijkstra_info.get()
-    dst_worst_dijkstra.total = msat
-    dst_worst_dijkstra.weight = 0
-    dst_worst_dijkstra.depth = 0
+    # Initialize the target DijkstraInfo with its desired values.
+    target.dijkstra_info.total = msat  # The total amount of money that 'target' has to get is the given 'msat'.
+    target.dijkstra_info.weight = 0    # The weight of the (empty) path starting and ending in 'target' is 0.
+    target.dijkstra_info.depth = 0     # The depth of the path is 0 (since it's and empty path).
 
-    to_visit: UpdatablePrioritySet[Dijkstra_info] = UpdatablePrioritySet(lambda d: d.weight)
-    to_visit.update(dst_worst_dijkstra, 0, 0) # add dest node to the unvisited list
-    while to_visit:
-        dijkstra: Dijkstra_info = to_visit.pop()
+    # Initialize the UpdatablePrioritySet, where the the priority of each element is the weight of the path.
+    nodes_to_visit: UpdatablePrioritySet[DijkstraInfo] = UpdatablePrioritySet(lambda d: d.weight)
 
-        for channel in dijkstra.node.channels: # search for incoming channels
-            if dijkstra.node == channel.node2:
-                update_single(dijkstra, channel, to_visit, get_weight, max_hops)
+    # Add the target node to the nodes to visit, with priority (i.e. weight) of 0.
+    nodes_to_visit.update(target.dijkstra_info, 0, 0)
 
-    res = {}
-    for n in nodes :
-        if n.name != dst.name:
-            if n.dijkstra_info.path:
-                path = (n.dijkstra_info.path + [n])[::-1]
-                res[n] = [(path, n.dijkstra_info.total, n.dijkstra_info.weight)]
-    return res
+    # Iterate as long as there is some nodes we need to visit.
+    while not nodes_to_visit.is_empty():
+        dijkstra_info: DijkstraInfo = nodes_to_visit.pop()
+
+        # Search for incoming channels, and update the 'nodes_to_visit' data structure accordingly.
+        for channel in dijkstra_info.node.channels:
+            if dijkstra_info.node == channel.node2:
+                update_single(dijkstra_info, channel, nodes_to_visit, get_weight, max_hops)
+
+    result = dict()
+    for node in nodes:
+        # TODO [to Ariel] if node != target then node.dijkstra_info.path is necessarily not empty, right?
+        if (node.name == target.name) or len(node.dijkstra_info.path) == 0:
+            continue
+
+        # TODO why build the path in a reverse order and then reverse it? :-O
+        path = (node.dijkstra_info.path + [node])[::-1]
+
+        # TODO why hold a list containing a single tuple? why not just a tuple? :-O
+        result[node] = [(path, node.dijkstra_info.total, node.dijkstra_info.weight)]
+
+    return result
