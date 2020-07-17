@@ -51,7 +51,11 @@ def get_route(graph: nx.Graph, source, target):
     :param target: The target node.
     :return: The route chosen from the source to the target.
     """
-    nodes_list = nx.shortest_path(graph, source, target)
+    try:
+        nodes_list = nx.shortest_path(graph, source, target)
+    except nx.exception.NetworkXNoPath:
+        print("Warning: | get_route | no path found between nodes")
+        return None
 
     edges_list = list()
     for i in range(len(nodes_list) - 1):

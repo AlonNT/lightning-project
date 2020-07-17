@@ -71,11 +71,11 @@ def read_data_to_xgraph(json_path):
 
 
 def process_lightning_graph(graph,
-                            remove_isolated=True,
-                            total_capacity=True,
+                            remove_isolated=False,
+                            total_capacity=False,
                             infer_implementation=False,
                             compute_betweenness=False,
-                            add_dummy_balances=True):
+                            add_dummy_balances=False):
     """
     Analyze graph and add additional attributes.
 

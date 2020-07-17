@@ -3,31 +3,37 @@ import random
 import networkx as nx
 import matplotlib.pyplot as plt
 from routing.route_selection import get_route
-from LightningGraph.helpers import create_sub_graph_by_highest_node_capacity
+from LightningGraph.helpers import create_sub_graph_by_node_capacity
 from time import time
+from tqdm  import tqdm
 
-def main():
+MAX_TRIALS=1000
+
+def show_shortest_path_in_sparse_graph(min_route_length=2):
     start_time = time()
-    graph = create_sub_graph_by_highest_node_capacity(dump_path='../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json', k=30)
+    graph = create_sub_graph_by_node_capacity(dump_path='../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json', k=50, highest_capacity_offset=100)
     print(f'Creating graph took {time()-start_time} secs')
 
     # Select random src and dest, but do not allow them to be the same node.
     # Select them as not neighbours
-    trials = 0
     start_time = time()
-    src = None
-    dest = None
-    while src == dest or dest in graph.neighbors(src):
-        src = random.choice(list(graph.nodes))
-        dest = random.choice(list(graph.nodes))
-        trials += 1
-    route = get_route(graph, src, dest)
-    print(f'Nodes and route found after {trials} trials and took {time()-start_time} secs')
+    unisolated_nodes = list(set(graph) - set(nx.isolates(graph)))
+    print("num un-isolated nodes in graph: ", len(unisolated_nodes))
+    for trial in tqdm(range(MAX_TRIALS)):
+        src = random.choice(unisolated_nodes)
+        dest = random.choice(unisolated_nodes)
+        route = get_route(graph, src, dest)
+        if src != dest and route is not None and len(route) >= min_route_length:
+            break
+    if trial == MAX_TRIALS - 1:
+        print("Error: Too hard to find route in graph. Consider changing restrictions or graph")
+        exit(1)
+    print(f'Nodes and route found after {trial} trials and took {time()-start_time} secs')
     # Now we know that 'src' and 'dest' are two different nodes in the graph.
 
     start_time = time()
     positions = nx.spring_layout(graph)
-    print(f'positioning graoh took {time()-start_time} secs')
+    print(f'positioning graph took {time()-start_time} secs')
 
     src_x, src_y = positions[src]
     dest_x, dest_y = positions[dest]
@@ -46,4 +52,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    show_shortest_path_in_sparse_graph(min_route_length=5)
