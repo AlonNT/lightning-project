@@ -2,8 +2,7 @@ import networkx as nx
 from routing.utils import nodes_list_to_edges
 
 
-
-def get_route(graph: nx.Graph, source, target, amount):
+def get_route(graph: nx.MultiGraph, source, target, amount):
     """
     A naive approach for getting the route between the source node and the destination node.
     It first gets the path of minimal length, and then for each one of the possibilities for channels between the

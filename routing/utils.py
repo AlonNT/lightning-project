@@ -1,4 +1,6 @@
 import networkx as nx
+from typing import List
+
 
 def get_channel_with_minimal_fee_base(subgraph: nx.MultiGraph, source, target):
     """
@@ -37,12 +39,24 @@ def get_channel_with_minimal_fee_base(subgraph: nx.MultiGraph, source, target):
 
     return min_fee_channel_id
 
-def nodes_list_to_edges(graph, nodes_list):
+
+def nodes_list_to_edges(graph: nx.MultiGraph, nodes_list: List) -> List:
+    """
+    Get a graph and a list of nodes - the first node in the list is the source node, and the last is the target node.
+    The function calculates for every two adjacent nodes the edge with the minimal base-fee
+    (since there might be multiple edges between two nodes - it's a MultiGraph).
+
+    :param graph: The MultiGraph to process.
+    :param nodes_list: The list of nodes describing a path.
+    :return: A list of edges in the graph, each one is the edge in the path.
+    """
     edges_list = list()
+
     for i in range(len(nodes_list) - 1):
         node1 = nodes_list[i]
         node2 = nodes_list[i+1]
         subgraph = graph.subgraph(nodes=(node1, node2))
         min_fee_channel = get_channel_with_minimal_fee_base(subgraph, source=node1, target=node2)
         edges_list.append(min_fee_channel)
+
     return edges_list
