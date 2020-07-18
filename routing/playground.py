@@ -26,9 +26,9 @@ def show_shortest_path_in_sparse_graph(min_route_length=2):
         src = random.choice(unisolated_nodes)
         dest = random.choice(unisolated_nodes)
 
-        # route = get_naive_route(graph, src, dest, AMOUNT_TO_TRANSFER)
-        route = get_lnd_route(graph, src, dest, AMOUNT_TO_TRANSFER)
-        if src != dest and route is not None and len(route) >= min_route_length:
+        route = get_naive_route(graph, src, dest, AMOUNT_TO_TRANSFER)
+        route_lnd = get_lnd_route(graph, src, dest, AMOUNT_TO_TRANSFER)
+        if src != dest and route is not None and (len(route) >= min_route_length or len(route_lnd) >= min_route_length):
             break
     if trial == MAX_TRIALS - 1:
         print("Error: Too hard to find route in graph. Consider changing restrictions or graph")
@@ -45,16 +45,20 @@ def show_shortest_path_in_sparse_graph(min_route_length=2):
 
 
     route_nodes = [r[0] for r in route] + [route[-1][1]]
+    route_nodes_lnd = [r[0] for r in route_lnd] + [route_lnd[-1][1]]
     nx.draw(graph, positions, with_labels=False, font_weight='bold',node_color='k')
 
-    nx.draw_networkx_nodes(graph, positions, nodelist=route_nodes, node_color='r', edgecolors='k')
-    nx.draw_networkx_edges(graph, positions, edgelist=route, edge_color='r', width=10, edgecolors='k')
+    nx.draw_networkx_nodes(graph, positions, nodelist=route_nodes, node_color='r', edgecolors='k',alpha=0.5)
+    nx.draw_networkx_edges(graph, positions, edgelist=route, edge_color='r', width=10, edgecolors='k', label='naive',alpha=0.5)
 
+    nx.draw_networkx_nodes(graph, positions, nodelist=route_nodes_lnd, node_color='g', edgecolors='g',alpha=0.5)
+    nx.draw_networkx_edges(graph, positions, edgelist=route_lnd, edge_color='g', width=10, edgecolors='k', label='lnd',alpha=0.5)
 
     plt.text(src_x, src_y, s='source', bbox=dict(facecolor='green', alpha=0.5))
     plt.text(dest_x, dest_y, s='target', bbox=dict(facecolor='red', alpha=0.5))
+    plt.legend()
     plt.show()
 
 
 if __name__ == '__main__':
-    show_shortest_path_in_sparse_graph(min_route_length=3)
+    show_shortest_path_in_sparse_graph(min_route_length=4)

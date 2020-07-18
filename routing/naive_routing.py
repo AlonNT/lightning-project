@@ -20,6 +20,6 @@ def get_route(graph: nx.Graph, source, target, amount):
         print("Warning: | get_route | no path found between nodes")
         return None
 
-    edges_list = nodes_list_to_edges(nodes_list)
+    edges_list = nodes_list_to_edges(graph, nodes_list)
 
     return edges_list
