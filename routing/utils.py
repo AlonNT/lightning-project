@@ -1,6 +1,4 @@
 import networkx as nx
-# from routing.weight_functions import get_weight_function
-
 
 def get_channel_with_minimal_fee_base(subgraph: nx.MultiGraph, source, target):
     """
@@ -39,24 +37,7 @@ def get_channel_with_minimal_fee_base(subgraph: nx.MultiGraph, source, target):
 
     return min_fee_channel_id
 
-
-def get_route(graph: nx.Graph, source, target):
-    """
-    A naive approach for getting the route between the source node and the destination node.
-    It first gets the path of minimal length, and then for each one of the possibilities for channels between the
-    two nodes, get the channel with the minimal base-fee.
-
-    :param graph: The Graph.
-    :param source: The source node.
-    :param target: The target node.
-    :return: The route chosen from the source to the target.
-    """
-    try:
-        nodes_list = nx.shortest_path(graph, source, target)
-    except nx.exception.NetworkXNoPath:
-        print("Warning: | get_route | no path found between nodes")
-        return None
-
+def nodes_list_to_edges(graph, nodes_list):
     edges_list = list()
     for i in range(len(nodes_list) - 1):
         node1 = nodes_list[i]
@@ -64,5 +45,4 @@ def get_route(graph: nx.Graph, source, target):
         subgraph = graph.subgraph(nodes=(node1, node2))
         min_fee_channel = get_channel_with_minimal_fee_base(subgraph, source=node1, target=node2)
         edges_list.append(min_fee_channel)
-
     return edges_list

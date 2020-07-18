@@ -1,6 +1,6 @@
 import networkx as nx
 from typing import List
-from routing.route_selection import get_route
+from routing.naive_routing import get_route
 
 
 def get_src_dst_nodes_on_channel(src):

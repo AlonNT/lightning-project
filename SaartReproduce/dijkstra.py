@@ -86,7 +86,7 @@ def update_single(dijkstra_info: DijkstraInfo, channel: Channel, nodes_to_visit:
 
 
 def find_route(nodes: List[Node], target: Node,
-               get_weight, msat, max_hops) -> Dict[Node, List[Tuple[List[Node], float, float]]]:
+               get_weight, msat, max_hops) -> Dict[Node, Tuple[List[Node], float, float]]:
     """
     Given a target node and a list of nodes, compute the route from any node in the list to the target node.
     The route is calculated 'backwards-Dijkstra' - from the target node until each one of the nodes.
@@ -139,6 +139,6 @@ def find_route(nodes: List[Node], target: Node,
         path = (node.dijkstra_info.path + [node])[::-1]
 
         # TODO why hold a list containing a single tuple? why not just a tuple? :-O
-        result[node] = [(path, node.dijkstra_info.total, node.dijkstra_info.weight)]
+        result[node] = (path, node.dijkstra_info.total, node.dijkstra_info.weight)
 
     return result

@@ -2,16 +2,19 @@ import random
 
 import networkx as nx
 import matplotlib.pyplot as plt
-from routing.route_selection import get_route
+from routing.naive_routing import get_route as get_naive_route
+from routing.LND_routing import get_route as get_lnd_route
 from LightningGraph.helpers import create_sub_graph_by_node_capacity
 from time import time
 from tqdm  import tqdm
 
 MAX_TRIALS=1000
+AMOUNT_TO_TRANSFER=1000
+
 
 def show_shortest_path_in_sparse_graph(min_route_length=2):
     start_time = time()
-    graph = create_sub_graph_by_node_capacity(dump_path='../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json', k=50, highest_capacity_offset=100)
+    graph = create_sub_graph_by_node_capacity(dump_path='../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json', k=20, highest_capacity_offset=100)
     print(f'Creating graph took {time()-start_time} secs')
 
     # Select random src and dest, but do not allow them to be the same node.
@@ -22,7 +25,9 @@ def show_shortest_path_in_sparse_graph(min_route_length=2):
     for trial in tqdm(range(MAX_TRIALS)):
         src = random.choice(unisolated_nodes)
         dest = random.choice(unisolated_nodes)
-        route = get_route(graph, src, dest)
+
+        # route = get_naive_route(graph, src, dest, AMOUNT_TO_TRANSFER)
+        route = get_lnd_route(graph, src, dest, AMOUNT_TO_TRANSFER)
         if src != dest and route is not None and len(route) >= min_route_length:
             break
     if trial == MAX_TRIALS - 1:
@@ -52,4 +57,4 @@ def show_shortest_path_in_sparse_graph(min_route_length=2):
 
 
 if __name__ == '__main__':
-    show_shortest_path_in_sparse_graph(min_route_length=5)
+    show_shortest_path_in_sparse_graph(min_route_length=3)
