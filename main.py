@@ -1,6 +1,6 @@
 import networkx as nx
 from matplotlib import pyplot as plt
-from LightningGraph.helpers import create_sub_graph_by_highest_node_capacity
+from LightningGraph.utils import create_sub_graph_by_highest_node_capacity
 from Agents.random_agent import RandomInvestor
 from Enviroments.manager import Manager
 

@@ -48,8 +48,9 @@ def cast_channel_data(channel):
         policy_key = f'node{i}_policy'
         if channel[policy_key]:
             for value_key in ['min_htlc', 'fee_base_msat', 'fee_rate_milli_msat']:
-                channel[policy_key][value_key] = int(channel[policy_key][value_key])
-
+                channel[policy_key][value_key] = float(channel[policy_key][value_key])
+            # TODO why was it rounded? It ended up being zeros too many times
+            channel[policy_key]['fee_rate_milli_msat'] = float(channel[policy_key]['fee_rate_milli_msat'] / 1000) # TODO:  Why did saar did this?
 
 def read_data_to_xgraph(json_path):
     """Create an undirected multigraph using networkx and load the data to it"""

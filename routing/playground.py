@@ -1,20 +1,21 @@
 import random
 
 import networkx as nx
-import matplotlib.pyplot as plt
 from routing.naive_routing import get_route as get_naive_route
 from routing.LND_routing import get_route as get_lnd_route
-from LightningGraph.helpers import create_sub_graph_by_node_capacity
+from LightningGraph.utils import create_sub_graph_by_node_capacity, visualize_routes
 from time import time
 from tqdm import tqdm
+import numpy as np
 
 MAX_TRIALS = 1000
 AMOUNT_TO_TRANSFER = 1000
+SEED=0
 
 
 def show_shortest_path_in_sparse_graph(min_route_length=2):
     start_time = time()
-    graph = create_sub_graph_by_node_capacity(k=20, highest_capacity_offset=100)
+    graph = create_sub_graph_by_node_capacity(k=40, highest_capacity_offset=50)
     print(f'Creating graph took {time()-start_time} secs')
 
     # Select random two nodes as src and dest, with the route between them being of length at least 'min_route_length'.
@@ -37,33 +38,10 @@ def show_shortest_path_in_sparse_graph(min_route_length=2):
 
     print(f'Nodes and route found after {trial} trials and took {time() - start_time} secs')
 
-    start_time = time()
-    positions = nx.spring_layout(graph)
-    print(f'positioning graph took {time()-start_time} secs')
-
-    src_x, src_y = positions[src]
-    dest_x, dest_y = positions[dest]
-
-    naive_route_nodes = [r[0] for r in naive_route] + [naive_route[-1][1]]
-    lnd_route_nodes = [r[0] for r in lnd_route] + [lnd_route[-1][1]]
-
-    nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k')
-
-    nx.draw_networkx_nodes(graph, positions, nodelist=naive_route_nodes,
-                           node_color='r', edgecolors='k', alpha=0.5)
-    nx.draw_networkx_edges(graph, positions, edgelist=naive_route,
-                           edge_color='r', width=10, edgecolors='k', label='naive', alpha=0.5)
-
-    nx.draw_networkx_nodes(graph, positions, nodelist=lnd_route_nodes,
-                           node_color='g', edgecolors='g', alpha=0.5)
-    nx.draw_networkx_edges(graph, positions, edgelist=lnd_route,
-                           edge_color='g', width=10, edgecolors='k', label='lnd', alpha=0.5)
-
-    plt.text(src_x, src_y, s='source', bbox=dict(facecolor='green', alpha=0.5))
-    plt.text(dest_x, dest_y, s='target', bbox=dict(facecolor='red', alpha=0.5))
-    plt.legend()
-    plt.show()
+    visualize_routes(graph, src, dest, [naive_route, lnd_route])
 
 
 if __name__ == '__main__':
+    random.seed(SEED)
+    np.random.seed(SEED)
     show_shortest_path_in_sparse_graph(min_route_length=4)

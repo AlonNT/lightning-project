@@ -2,7 +2,7 @@ import numpy as np
 import heapq
 import networkx as nx
 from typing import Dict, Tuple
-
+from LightningGraph.utils import get_sender_policy_and_id
 RISK_FACTOR_BILLIONTHS = 15. / 1000000000
 
 
@@ -89,32 +89,11 @@ def lnd_weight(policy: Dict[str, int], amount: int, prev_weight: int) -> Tuple[i
                  (2) The weight of the route starting at node1 and reaching 'target' eventually.
     """
     fee_base = policy['fee_base_msat']
-    fee_proportional = policy['fee_rate_milli_msat'] / 1000
+    fee_proportional = policy['fee_rate_milli_msat']
     delay = policy['time_lock_delta']
     fee = round(fee_base + (amount * fee_proportional))                          # TODO Is it ok to round to int?
     weight = round(prev_weight + amount * delay * RISK_FACTOR_BILLIONTHS + fee)  # TODO Is it ok to round to int?
     return amount + fee, weight
-
-
-def get_sender_policy_and_id(receiver_node_id, edge_data: Dict) -> Tuple:
-    """
-    :param receiver_node_id: The receiver node id (i.e. public-key).
-    :param edge_data: A dictionary containing the edge's attributes.
-    :return: A tuple containing two elements:
-                 (1) The policy of the sender (A dictionary containing the fee policy)
-                 (2) The id (i.e. public-key) of the sender.
-    """
-    if receiver_node_id == edge_data['node1_pub']:
-        sender_node_i = 2
-    elif receiver_node_id == edge_data['node2_pub']:
-        sender_node_i = 1
-    else:
-        raise ValueError(f'The given receiver_node_id {receiver_node_id} is not in the given edge_data {edge_data}.')
-
-    sender_node_policy = edge_data[f'node{sender_node_i}_policy']
-    sender_node_id = edge_data[f'node{sender_node_i}_pub']
-
-    return sender_node_policy, sender_node_id
 
 
 def get_route(graph: nx.MultiGraph, source_id, target_id, amount: int, max_hops: int = 20):
@@ -176,7 +155,7 @@ def get_route(graph: nx.MultiGraph, source_id, target_id, amount: int, max_hops:
         receiver_node_edges = graph.edges(receiver_node_id, data=True)
         for _, _, edge_data in receiver_node_edges:
             sender_node_policy, sender_node_id = get_sender_policy_and_id(receiver_node_id, edge_data)
-            edge_key = (sender_node_id, receiver_node_id, edge_data['channel_id'])
+            edge_key = (sender_node_id, receiver_node_id, edge_data['channel_id']) # TODO: order does matter here doesn't it?
 
             # Calculate the weight of the path starting at 'sender' and ending at 'target',
             # passing first through the current 'receiver' (and continuing to target from there).
