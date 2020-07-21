@@ -1,30 +1,19 @@
 import networkx as nx
 from typing import List
-from routing.naive_routing import get_route
-
-
-def get_src_dst_nodes_on_channel(src):
-    source_i = 1 if src == "node1_pub" else 2
-    target_i = 1 + (2 - source_i)  # if source_i is 1 it's 1+(2-1)=2, if source_i is 2 it's 1+(2-2)=1.
-
-    return f'node{source_i}_balance', f'node{target_i}_balance'
-
-
-def get_channel_fee_according_to_src(src, channel, amount: int):
-    """
-    :param node:
-    :return: return the channel fee that corresponds to src node
-    """
-    # Gets the policy of source node and calculate the fee according to the channel
-    policy_key = "node1_policy" if src == "node1_pub" else "node2_policy"
-    return channel[policy_key]["fee_base_msat"] + (amount * channel[policy_key]["fee_rate_milli_msat"])
+from LightningGraph.utils import calculate_route_fees, sample_long_route
+import numpy as np
+import random
+from routing.LND_routing import get_route
 
 
 class Manager:
-    def __init__(self, graph: nx.Graph):
+    def __init__(self, graph: nx.Graph, tranfers_per_step=1, transfer_max_amount=10000):
         self.graph: nx.Graph = graph
+        self.tranfers_per_step = tranfers_per_step
+        self.transfer_max_amount = transfer_max_amount
+        self.num_steps = 0
 
-    def transfer(self, amount: int, src, dst) -> bool:
+    def transfer(self, amount: int, route) -> bool:
         """
         Preform transformation of money between two nodes
         :param amount: amount to transfer
@@ -32,47 +21,32 @@ class Manager:
         :param dst:
         :return:
         """
-        # TODO - Daniel needs to check the direction for each node (for fees update).
-        # TODO Gets (src,dst,channel_id) and needs to check which one is src for updating the fee - FIX
 
-        # Gets the path and nodes order in the channel (src, dst) according the routing algorithm
-        channels_path, nodes_order_by_channel = self.get_channel_by_id(get_route(self.graph, src, dst), src)
-
-        # Gets the total fee for this path
-        total_fee: int = 0
-        fees_list: List[int] = list()
-
-        # Track the fees in each channel
-        for i, channel in enumerate(channels_path):
-            # TODO - check if the calculation is valid
-            channel_fee = get_channel_fee_according_to_src(nodes_order_by_channel[i], channel, amount)
-            total_fee += channel_fee
-            fees_list[i] = channel_fee
-
+        fees_list = calculate_route_fees(self.graph, route, amount)
+        cumulaive_fees = np.cumsum(fees_list)[::-1]
         # Transformation of the first channel is the total fees
-        fees_list.insert(0, 0)
 
         # Traverse the channels and check if the amount can pass through them.
         # In case the amount is valid to transfer, update the balances of the channels
-        for i, channel in enumerate(channels_path):
-            src_node_balance, dst_node_balance = get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
-            # TODO [to Daniel] I think this calculation is wrong - you need to take into account the fact that
-            # TODO [to Daniel] there are already paid fee. So you don't need to subtract always 'total_fee'
-            # TODO [to Daniel] from the amount, but you need to subtract a fee that is decreasing
-            # TODO [to Daniel] (more fees need to be 'carried' in the beginning of the path).
-            if channel[src_node_balance] < amount + total_fee - fees_list[i]:
+        for i, (src, dest, channel_id) in enumerate(route):
+            edge_data = self.graph.edges[(src, dest, channel_id)]
+            if edge_data['node1_pub'] == src:
+                src_node_balance, dst_node_balance = edge_data['node1_balance'], edge_data['node2_balance']
+            else:
+                src_node_balance, dst_node_balance = edge_data['node2_balance'], edge_data['node1_balance']
+
+            if src_node_balance < amount + cumulaive_fees[i]:
                 return False
 
-        for i, channel in enumerate(channels_path):
-
-            total_amount = amount + total_fee - fees_list[i]
-
-            # Gets the nodes order in this channel for updating the amount on their channel sides
-            src_node_balance, dst_node_balance = get_src_dst_nodes_on_channel(nodes_order_by_channel[i])
-
+        for i, (src, dest, channel_id) in enumerate(route):
+            edge_data = self.graph.edges[(src, dest, channel_id)]
+            if edge_data['node1_pub'] == src:
+                src_node_balance_name, dst_node_balance_name = 'node1_balance', 'node2_balance'
+            else:
+                src_node_balance_name, dst_node_balance_name = 'node2_balance', 'node1_balance'
             # Channel Updates
-            channel[src_node_balance] -= total_amount
-            channel[dst_node_balance] += total_amount
+            edge_data[src_node_balance_name] -= amount + cumulaive_fees[i]
+            edge_data[dst_node_balance_name] += amount + cumulaive_fees[i]
 
         return True
 
@@ -87,13 +61,26 @@ class Manager:
         """
         function_name, args = action
 
-        if function_name == "add_edge":
-            self.add_edge(*args)
-        elif function_name == "NOOP":
-            pass
-        else:
-            raise ValueError(f"{function_name} not supported ")
+        # if function_name == "add_edge":
+        #     self.add_edge(*args)
+        # elif function_name == "NOOP":
+        #     pass
+        # else:
+        #     raise ValueError(f"{function_name} not supported ")
 
+        for step in range(self.tranfers_per_step):
+            amount = random.randint(100, self.transfer_max_amount)
+
+            # Sample long route for debugging
+            route = sample_long_route(self.graph, amount, get_route, min_route_length=4)
+
+            ## sample random nodes
+            # nodes = random.sample(graph.nodes, 2)
+            # route = get_route(self.graph, nodes[0], nodes[1], amount)
+
+            self.transfer(amount, route)
+
+        self.num_steps += 1
         return self.get_state()
 
     def create_agent_node(self):
@@ -124,31 +111,6 @@ class Manager:
         connected_edges = self.graph.edges(nbunch=node1_pub_key, data=True)
         return 1  # TODO return the actual balance
 
-    def get_channel_by_id(self, channels_id_list, src_node):
-        """
-        Gets list of channel id's and return the actual channels objects
-        :param channels_id_list: n'th of tuples that composed of 3 variables - (node1, node2, channel_id)
-        :return:
-        """
-        channels_list = list()
-        nodes_order_by_channel = list()
-        temp_src = src_node
-        for i, channel_id in enumerate(channels_id_list):
-            # Channels_list[i] is a tuple of 3 variables - (node1, node2, channel_id)
-            # TODO Check this - check attr names + nodes_address
-            if channels_list[i][0] == temp_src:
-                nodes_order_by_channel.append("node1_pub")
-            else:
-                nodes_order_by_channel.append("node2_pub")
-
-            # src is the second node
-            temp_src = channels_list[i][1]
-            channels_list.append(self.graph.edges(channel_id))
-        return channels_list, nodes_order_by_channel
-
-    def get_channel_source(self, channel, src):
-        # Get the source of the channel and check if that node is node1 or node2
-        pass
 
     # TODO Structure of the json lightning node
 

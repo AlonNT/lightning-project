@@ -52,6 +52,7 @@ def cast_channel_data(channel):
             # TODO why was it rounded? It ended up being zeros too many times
             channel[policy_key]['fee_rate_milli_msat'] = float(channel[policy_key]['fee_rate_milli_msat'] / 1000) # TODO:  Why did saar did this?
 
+
 def read_data_to_xgraph(json_path):
     """Create an undirected multigraph using networkx and load the data to it"""
     # Read json file created by LND describegraph command on the mainnet.
@@ -76,7 +77,7 @@ def process_lightning_graph(graph,
                             total_capacity=False,
                             infer_implementation=False,
                             compute_betweenness=False,
-                            add_dummy_balances=False):
+                            add_dummy_balances=True):
     """
     Analyze graph and add additional attributes.
 

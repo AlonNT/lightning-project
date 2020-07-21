@@ -2,9 +2,41 @@ from LightningGraph.LN_parser import read_data_to_xgraph, process_lightning_grap
 from typing import List, Tuple, Dict
 import matplotlib.pyplot as plt
 import networkx as nx
+from tqdm import tqdm
+import random
+import warnings
 
-LIGHTNING_GRAPH_DUMP_PATH = '../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
+MAX_TRIALS = 10000
+LIGHTNING_GRAPH_DUMP_PATH = 'LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
 
+def human_format(num):
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num /= 1000.0
+    # add more suffixes if you need them
+    return '%.2f%s' % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])
+
+def sample_long_route(graph, amount, get_route_func, min_route_length=4):
+    # Select random two nodes as src and dest, with the route between them being of length at least 'min_route_length'.
+    unisolated_nodes = list(set(graph) - set(nx.isolates(graph)))
+
+    for trial in tqdm(range(MAX_TRIALS)):
+        src = random.choice(unisolated_nodes)
+        dest = random.choice(unisolated_nodes)
+
+        # naive_route = get_naive_route(graph, src, dest, amount)
+        route, _, _ = get_route_func(graph, src, dest, amount)
+
+        if len(route) >= min_route_length:
+            break
+
+    if trial == MAX_TRIALS - 1:
+        warnings.warn("Warning: Too hard to find route in graph. Consider changing restrictions or graph")
+        return None
+
+    print(f'Nodes and route found after {trial} trials and took {time() - start_time} secs')
+    return route
 
 def get_sender_policy_and_id(receiver_node_id, edge_data: Dict) -> Tuple:
     """
@@ -52,6 +84,7 @@ def create_sub_graph_by_node_capacity(dump_path=LIGHTNING_GRAPH_DUMP_PATH, k=64,
 
     process_lightning_graph(graph, remove_isolated=True)  # This may return a graph with less than k nodes
 
+
     return graph
 
 def calculate_route_fees(graph, route, amount):
@@ -59,11 +92,30 @@ def calculate_route_fees(graph, route, amount):
     fees = []
     for edge_key in route[::-1]:
         sender_policy, _ = get_sender_policy_and_id(edge_key[1], graph.edges[edge_key])
-        fee = sender_policy['fee_base_msat'] + (total_amount * sender_policy['fee_rate_milli_msat'])
+        fee = int(sender_policy['fee_base_msat'] + (total_amount * sender_policy['fee_rate_milli_msat']))
         fees += [fee]
         total_amount += fee
 
     return fees[::-1]
+
+def visualize_balances(graph):
+    positions = nx.spring_layout(graph, seed=None)
+    nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k')
+    edge_labels = {}
+    for node1_pub, node2_pub, edge_data in graph.edges(data=True):
+        node1_x, node1_y = positions[node1_pub]
+        node2_x, node2_y = positions[node2_pub]
+        if node1_x < node2_x:
+            balance_left = human_format(edge_data['node1_balance'])
+            balance_right = human_format(edge_data['node2_balance'])
+        else:
+            balance_left = human_format(edge_data['node2_balance'])
+            balance_right = human_format(edge_data['node1_balance'])
+
+        edge_labels[(node1_pub, node2_pub)] = f"{balance_left}<->{balance_right}"
+    nx.draw_networkx_edge_labels(graph, positions, edge_labels=edge_labels, font_color='red', font_size=8)
+    plt.show()
+
 
 def visualize_routes(graph, src, dest, routes: List[Tuple[str, str]]):
     # set nodes positions on the graph on a 2d space for visualization
