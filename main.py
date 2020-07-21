@@ -1,12 +1,12 @@
 import networkx as nx
 from matplotlib import pyplot as plt
-from LightningGraph.utils import create_sub_graph_by_highest_node_capacity
+from LightningGraph.utils import create_sub_graph_by_node_capacity
 from Agents.random_agent import RandomInvestor
 from Enviroments.manager import Manager
 
 
 def get_environment_and_agent():
-    graph = create_sub_graph_by_highest_node_capacity(k=50)
+    graph = create_sub_graph_by_node_capacity(k=40, highest_capacity_offset=50)
     env = Manager(graph)
     agent_pub_key = env.create_agent_node()
     agent = RandomInvestor(agent_pub_key)

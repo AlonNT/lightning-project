@@ -91,8 +91,8 @@ def lnd_weight(policy: Dict[str, int], amount: int, prev_weight: int) -> Tuple[i
     fee_base = policy['fee_base_msat']
     fee_proportional = policy['fee_rate_milli_msat']
     delay = policy['time_lock_delta']
-    fee = round(fee_base + (amount * fee_proportional))                          # TODO Is it ok to round to int?
-    weight = round(prev_weight + amount * delay * RISK_FACTOR_BILLIONTHS + fee)  # TODO Is it ok to round to int?
+    fee = round(fee_base + (amount * fee_proportional))                          # TODO why round ?
+    weight = round(prev_weight + amount * delay * RISK_FACTOR_BILLIONTHS + fee)  # TODO why round ?
     return amount + fee, weight
 
 
@@ -156,6 +156,8 @@ def get_route(graph: nx.MultiGraph, source_id, target_id, amount: int, max_hops:
         for _, _, edge_data in receiver_node_edges:
             sender_node_policy, sender_node_id = get_sender_policy_and_id(receiver_node_id, edge_data)
             edge_key = (sender_node_id, receiver_node_id, edge_data['channel_id']) # TODO: order does matter here doesn't it?
+            # TODO: Answer apparently graph.edges[(edge_key[1],edge_key[0],edge_key[2])] ==  graph.edges[edge_key] returns True
+            # TODO: Check how NetworkX does that
 
             # Calculate the weight of the path starting at 'sender' and ending at 'target',
             # passing first through the current 'receiver' (and continuing to target from there).

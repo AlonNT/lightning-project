@@ -2,14 +2,14 @@ import random
 
 import networkx as nx
 from routing.naive_routing import get_route as get_naive_route
-from routing.LND_routing import get_route as get_lnd_route
-from LightningGraph.utils import create_sub_graph_by_node_capacity, visualize_routes
+from routing.LND_routing import get_route as get_lnd_route, lnd_weight
+from LightningGraph.utils import create_sub_graph_by_node_capacity, visualize_routes, calculate_route_fees
 from time import time
 from tqdm import tqdm
 import numpy as np
 
 MAX_TRIALS = 1000
-AMOUNT_TO_TRANSFER = 1000
+AMOUNT_TO_TRANSFER = 1000000
 SEED=0
 
 
@@ -37,6 +37,16 @@ def show_shortest_path_in_sparse_graph(min_route_length=2):
         raise RuntimeError("Error: Too hard to find route in graph. Consider changing restrictions or graph")
 
     print(f'Nodes and route found after {trial} trials and took {time() - start_time} secs')
+
+    ## Analyze resuts
+    naive_fees = calculate_route_fees(graph, naive_route, AMOUNT_TO_TRANSFER)
+    lnd_fees = calculate_route_fees(graph, lnd_route, AMOUNT_TO_TRANSFER)
+    print(f"Fees paid for transaction of {AMOUNT_TO_TRANSFER}: msat")
+    print(f"\tNaive: {np.sum(naive_fees)} msat")
+    print(f"\tLnd: {np.sum(lnd_fees)} msat")
+    diff = abs(np.sum(lnd_fees) - np.sum(naive_fees))
+    print(f"Lnd saves {diff} (~{int(diff/np.sum(naive_fees)*100)}%) msat")
+
 
     visualize_routes(graph, src, dest, [naive_route, lnd_route])
 

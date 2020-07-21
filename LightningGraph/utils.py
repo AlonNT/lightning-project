@@ -3,7 +3,6 @@ from typing import List, Tuple, Dict
 import matplotlib.pyplot as plt
 import networkx as nx
 
-
 LIGHTNING_GRAPH_DUMP_PATH = '../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
 
 
@@ -55,6 +54,16 @@ def create_sub_graph_by_node_capacity(dump_path=LIGHTNING_GRAPH_DUMP_PATH, k=64,
 
     return graph
 
+def calculate_route_fees(graph, route, amount):
+    total_amount = amount
+    fees = []
+    for edge_key in route[::-1]:
+        sender_policy, _ = get_sender_policy_and_id(edge_key[1], graph.edges[edge_key])
+        fee = sender_policy['fee_base_msat'] + (total_amount * sender_policy['fee_rate_milli_msat'])
+        fees += [fee]
+        total_amount += fee
+
+    return fees[::-1]
 
 def visualize_routes(graph, src, dest, routes: List[Tuple[str, str]]):
     # set nodes positions on the graph on a 2d space for visualization
@@ -66,14 +75,10 @@ def visualize_routes(graph, src, dest, routes: List[Tuple[str, str]]):
     # colors = plt.cm.rainbow(np.linspace(0, 1, len(routes)))
     colors =['r','g','b','p','y']
     ## Add fee visualization on routes edges
-    edge_labels = {}
     for i, route in enumerate(routes):
+        edge_labels = {}
         for edge_key in route[1:]:
-            if edge_key in graph.edges:
-                edge_data = graph.edges[edge_key]
-            else:
-                real_key = (edge_key[1],edge_key[0], edge_key[2])
-                edge_data = graph.edges[real_key]
+            edge_data = graph.edges[edge_key]
             sender_node_policy, sender_node_id = get_sender_policy_and_id(edge_key[1], edge_data)
             edge_labels[(edge_key[0], edge_key[1])] = f'b:{sender_node_policy["fee_base_msat"]}\nr:{sender_node_policy["fee_rate_milli_msat"]}'
 
