@@ -1,9 +1,8 @@
 import networkx as nx
-from matplotlib import pyplot as plt
-from LightningGraph.utils import create_sub_graph_by_node_capacity
+from utils.graph_helpers import create_sub_graph_by_node_capacity
 from Agents.random_agent import RandomInvestor
 from Enviroments.manager import Manager
-from LightningGraph.utils import visualize_balances
+from utils.visualizers import visualize_balances
 MAX_TRIALS = 10000
 
 def get_environment_and_agent():
@@ -36,12 +35,6 @@ def simulate(env, agent, num_steps=100):
 def main():
     env, agent = get_environment_and_agent()
     simulate(env, agent)
-
-    plt.figure()
-    nx.draw(env.get_state(), with_labels=True, font_weight='bold')
-    plt.show(block=False)
-    plt.savefig("Graph.png")
-
 
 if __name__ == '__main__':
     main()

@@ -1,6 +1,6 @@
 import networkx as nx
-from typing import List
-from LightningGraph.utils import calculate_route_fees, sample_long_route
+from utils.common import calculate_route_fees
+from utils.graph_helpers import sample_long_route
 import numpy as np
 import random
 from routing.LND_routing import get_route

@@ -1,4 +1,4 @@
-from SaartReproduce.classes import Node, Channel
+from garbage.SaartReproduce.classes import Node, Channel
 from typing import List, Dict, Tuple, Callable, TypeVar, Generic
 import heapq
 INFINITY_INT = 999_999_999_999_999

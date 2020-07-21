@@ -2,7 +2,7 @@ import numpy as np
 import heapq
 import networkx as nx
 from typing import Dict, Tuple
-from LightningGraph.utils import get_sender_policy_and_id
+from utils.common import get_sender_policy_and_id
 RISK_FACTOR_BILLIONTHS = 15. / 1000000000
 
 

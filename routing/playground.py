@@ -1,11 +1,9 @@
 import random
-
-import networkx as nx
-from routing.naive_routing import get_route as get_naive_route
-from routing.LND_routing import get_route as get_lnd_route, lnd_weight
-from LightningGraph.utils import create_sub_graph_by_node_capacity, visualize_routes, calculate_route_fees, sample_long_route
+from routing.LND_routing import get_route as get_lnd_route
+from utils.common import calculate_route_fees
+from utils.visualizers import visualize_routes
+from utils.graph_helpers import sample_long_route, create_sub_graph_by_node_capacity
 from time import time
-from tqdm import tqdm
 import numpy as np
 
 MAX_TRIALS = 1000
