@@ -3,10 +3,12 @@ import networkx as nx
 from tqdm import tqdm
 import random
 import warnings
+from time import time
 
 LIGHTNING_GRAPH_DUMP_PATH = 'LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
 
 def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_trials=10000):
+    start_time = time()
     # Select random two nodes as src and dest, with the route between them being of length at least 'min_route_length'.
     unisolated_nodes = list(set(graph) - set(nx.isolates(graph)))
 

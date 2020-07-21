@@ -32,7 +32,7 @@ def _filter_nonvalid_data(json_data):
                                      json_data['edges']))
 
     # Require nodes to have valid pubkey
-    json_data['nodes'] = list(filter(lambda x: not (x['pub_key']), json_data['nodes']))  # TODO this necesessary?
+    # json_data['nodes'] = list(filter(lambda x: not (x['pub_key']), json_data['nodes']))  # TODO this necesessary?
 
     return json_data
 
@@ -60,9 +60,9 @@ def read_data_to_xgraph(json_path):
     json_data = _filter_nonvalid_data(json_data)
     graph = nx.MultiGraph()
     graph.graph = {'network_capacity': 0}
-    for node_data in json_data['nodes']:
+    for i, node_data in enumerate(json_data['nodes']):
         pub_key = node_data.pop('pub_key', None)
-        graph.add_node(pub_key, node_data)
+        graph.add_node(pub_key, pub_key=pub_key, serial_number=i)
     for edge_data in json_data['edges']:
         # TODO: Can there be list pub_keys here?
         cast_channel_data(edge_data)

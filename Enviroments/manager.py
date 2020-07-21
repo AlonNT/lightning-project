@@ -90,7 +90,7 @@ class Manager:
         """
         # TODO [to Daniel] generate a random string (or hash of something) of the same size as the public keys.
         pub_key = len(self.graph.nodes) + 1
-        self.graph.add_node(pub_key)
+        self.graph.add_node(pub_key, serial_number=pub_key)
         return pub_key
 
     def add_edge(self, public_key_node1, public_key_node2, node1_balance, node2_balance):

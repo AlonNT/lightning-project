@@ -3,22 +3,31 @@ from utils.common import human_format
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 
-def visualize_balances(graph):
+def visualize_balances(graph, show_node_serial_number=False):
     positions = nx.spring_layout(graph, seed=None)
-    nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k')
+    nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k', node_size=400)
     edge_labels = {}
     for node1_pub, node2_pub, edge_data in graph.edges(data=True):
         node1_x, node1_y = positions[node1_pub]
         node2_x, node2_y = positions[node2_pub]
         if node1_x < node2_x:
+            debug_serial_left = graph.nodes[edge_data['node1_pub']]['serial_number']
+            debug_serial_right = graph.nodes[edge_data['node2_pub']]['serial_number']
             balance_left = human_format(edge_data['node1_balance'])
             balance_right = human_format(edge_data['node2_balance'])
         else:
+            debug_serial_left = graph.nodes[edge_data['node1_pub']]['serial_number']
+            debug_serial_right = graph.nodes[edge_data['node2_pub']]['serial_number']
             balance_left = human_format(edge_data['node2_balance'])
             balance_right = human_format(edge_data['node1_balance'])
 
-        edge_labels[(node1_pub, node2_pub)] = f"{balance_left}<->{balance_right}"
+        if show_node_serial_number:
+            edge_labels[(node1_pub, node2_pub)] = f"({debug_serial_left}){balance_left} : {balance_right}({debug_serial_right})"
+        else:
+            edge_labels[(node1_pub, node2_pub)] = f"{balance_left} : {balance_right})"
     nx.draw_networkx_edge_labels(graph, positions, edge_labels=edge_labels, font_color='red', font_size=8)
+    if show_node_serial_number:
+        nx.draw_networkx_labels(graph, positions, labels={n:graph.nodes[n]['serial_number'] for n in graph.nodes}, font_color='y', font_size=6)
     plt.show()
 
 
