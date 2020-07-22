@@ -1,5 +1,5 @@
 import networkx as nx
-from utils.common import calculate_route_fees
+from utils.common import calculate_route_fees, get_new_position_for_node
 from utils.graph_helpers import sample_long_route
 import numpy as np
 import random
@@ -9,6 +9,7 @@ from routing.LND_routing import get_route
 class Manager:
     def __init__(self, graph: nx.Graph, tranfers_per_step=1, transfer_max_amount=10000):
         self.graph: nx.Graph = graph
+        self.positions = nx.spring_layout(self.graph, seed=None)
         self.tranfers_per_step = tranfers_per_step
         self.transfer_max_amount = transfer_max_amount
         self.num_steps = 0
@@ -51,7 +52,7 @@ class Manager:
         return True
 
     def get_state(self):
-        return self.graph
+        return self.graph, self.positions
 
     def step(self, action) -> nx.Graph:
         """
@@ -61,12 +62,12 @@ class Manager:
         """
         function_name, args = action
 
-        # if function_name == "add_edge":
-        #     self.add_edge(*args)
-        # elif function_name == "NOOP":
-        #     pass
-        # else:
-        #     raise ValueError(f"{function_name} not supported ")
+        if function_name == "add_edge":
+            self.add_edge(*args)
+        elif function_name == "NOOP":
+            pass
+        else:
+            raise ValueError(f"{function_name} not supported ")
 
         for step in range(self.tranfers_per_step):
             amount = random.randint(100, self.transfer_max_amount)
@@ -90,7 +91,8 @@ class Manager:
         """
         # TODO [to Daniel] generate a random string (or hash of something) of the same size as the public keys.
         pub_key = len(self.graph.nodes) + 1
-        self.graph.add_node(pub_key, serial_number=pub_key)
+        self.graph.add_node(str(pub_key), serial_number=pub_key)
+        self.positions[str(pub_key)] = get_new_position_for_node(self.positions)
         return pub_key
 
     def add_edge(self, public_key_node1, public_key_node2, node1_balance, node2_balance):
@@ -108,7 +110,7 @@ class Manager:
                             node1_balance=node1_balance, node2_balance=node2_balance)
 
     def get_node_balance(self, node1_pub_key):
-        connected_edges = self.graph.edges(nbunch=node1_pub_key, data=True)
+        # connected_edges = self.graph.edges(nbunch=node1_pub_key, data=True)
         return 1  # TODO return the actual balance
 
 

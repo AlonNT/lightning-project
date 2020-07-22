@@ -1,8 +1,9 @@
-import networkx as nx
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from Agents.random_agent import RandomInvestor
 from Enviroments.manager import Manager
 from utils.visualizers import visualize_balances
+import os
+import networkx as nx
 MAX_TRIALS = 10000
 
 def get_environment_and_agent():
@@ -19,12 +20,16 @@ def get_agent_balance(env, agent):
 
 
 def simulate(env, agent, num_steps=100):
+    train_dir = "./Test_Training"
+    os.makedirs(train_dir, exist_ok=True)
     print("Simulating investment")
-    state = env.get_state()
+    state, positions = env.get_state()
     for step in range(num_steps):
-        visualize_balances(state)
+
+        visualize_balances(state, positions, save_path=os.path.join(train_dir, f"step-%d"%step))
+
         action = agent.act(state)
-        new_state = env.step(action)
+        new_state, positions = env.step(action)
         agent_balance = get_agent_balance(env, agent)
         print("Step %d:" % step)
         print("# Agent balance: %d" % agent_balance)

@@ -3,8 +3,8 @@ from utils.common import human_format
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 
-def visualize_balances(graph, show_node_serial_number=False):
-    positions = nx.spring_layout(graph, seed=None)
+
+def visualize_balances(graph, positions,show_node_serial_number=False, save_path=None):
     nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k', node_size=400)
     edge_labels = {}
     for node1_pub, node2_pub, edge_data in graph.edges(data=True):
@@ -28,7 +28,13 @@ def visualize_balances(graph, show_node_serial_number=False):
     nx.draw_networkx_edge_labels(graph, positions, edge_labels=edge_labels, font_color='red', font_size=8)
     if show_node_serial_number:
         nx.draw_networkx_labels(graph, positions, labels={n:graph.nodes[n]['serial_number'] for n in graph.nodes}, font_color='y', font_size=6)
-    plt.show()
+
+    if save_path is not None:
+        plt.savefig(save_path)
+    else:
+        plt.show()
+
+    plt.clf()
 
 
 def visualize_routes(graph, src, dest, routes: List[Tuple[str, str]]):

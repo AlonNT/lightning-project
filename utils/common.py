@@ -1,5 +1,5 @@
 from typing import Tuple, Dict
-
+import numpy as np
 
 def human_format(num):
     magnitude = 0
@@ -9,6 +9,10 @@ def human_format(num):
     # add more suffixes if you need them
     return '%.2f%s' % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])
 
+
+def get_new_position_for_node(positions):
+    arr = np.array([x for x in positions.values()])
+    return np.clip(arr.max(0) + 0.1, -np.inf, 1)
 
 def get_sender_policy_and_id(receiver_node_id, edge_data: Dict) -> Tuple:
     """

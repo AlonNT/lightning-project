@@ -1,6 +1,5 @@
 from LightningGraph.LN_parser import read_data_to_xgraph, process_lightning_graph
 import networkx as nx
-from tqdm import tqdm
 import random
 import warnings
 from time import time
@@ -12,7 +11,7 @@ def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_tri
     # Select random two nodes as src and dest, with the route between them being of length at least 'min_route_length'.
     unisolated_nodes = list(set(graph) - set(nx.isolates(graph)))
 
-    for trial in tqdm(range(max_trials)):
+    for trial in range(max_trials):
         src = random.choice(unisolated_nodes)
         dest = random.choice(unisolated_nodes)
 
