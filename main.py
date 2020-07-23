@@ -1,17 +1,20 @@
+import os
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from Agents.random_agent import RandomInvestor
-from Enviroments.manager import Manager
-from utils.visualizers import visualize_balances
-import os
-import networkx as nx
-MAX_TRIALS = 10000
+from Agents.greedy_agent import GreedyNodeInvestor
+from Enviroments.lightning_enviroment import LightningEniroment
+import opt
 
 def get_environment_and_agent():
-    graph = create_sub_graph_by_node_capacity(k=10, highest_capacity_offset=50)
-    env = Manager(graph)
+    graph = create_sub_graph_by_node_capacity(k=opt.ENVIROMENT_NUM_NODES, highest_capacity_offset=opt.ENIROMENT_DENSITY)
+    env = LightningEniroment(graph)
     agent_pub_key = env.create_agent_node()
-    agent = RandomInvestor(agent_pub_key)
-
+    if opt.AGENT_NAME == "Naive":
+        agent = RandomInvestor(agent_pub_key, max_edges=opt.AGENT_MAX_EDGES)
+    elif opt.AGENT_NAME == "Greedy":
+        agent = GreedyNodeInvestor(agent_pub_key, max_edges=opt.AGENT_MAX_EDGES)
+    else:
+        raise Exception("No such agent")
     return env, agent
 
 
@@ -19,21 +22,18 @@ def get_agent_balance(env, agent):
     return agent.balance + env.get_node_balance(agent.pub_key)
 
 
-def simulate(env, agent, num_steps=100):
-    train_dir = "./Test_Training"
-    os.makedirs(train_dir, exist_ok=True)
+def simulate(env, agent, num_steps=opt.SIMULATION_STEPS):
+    os.makedirs(opt.SIMULATION_OUT_DIR, exist_ok=True)
     print("Simulating investment")
-    state, positions = env.get_state()
+    state = env.get_state()
     for step in range(num_steps):
-
-        visualize_balances(state, positions, save_path=os.path.join(train_dir, f"step-%d"%step))
+        env.render(save_path=os.path.join(opt.SIMULATION_OUT_DIR, f"step-%d"%step))
+        print("Step %d:" % step)
+        agent_balance = get_agent_balance(env, agent)
+        print("\tAgent | balance: %d" % agent_balance)
 
         action = agent.act(state)
-        new_state, positions = env.step(action)
-        agent_balance = get_agent_balance(env, agent)
-        print("Step %d:" % step)
-        print("# Agent balance: %d" % agent_balance)
-
+        new_state = env.step(action)
         state = new_state
 
 

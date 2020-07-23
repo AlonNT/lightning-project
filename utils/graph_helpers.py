@@ -7,6 +7,9 @@ from time import time
 LIGHTNING_GRAPH_DUMP_PATH = 'LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
 
 def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_trials=10000):
+    """Sample src, dst nodes from graph and use the given function to find a long enough route between them
+        Try until success or max_trials.
+    """
     start_time = time()
     # Select random two nodes as src and dest, with the route between them being of length at least 'min_route_length'.
     unisolated_nodes = list(set(graph) - set(nx.isolates(graph)))
@@ -15,8 +18,7 @@ def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_tri
         src = random.choice(unisolated_nodes)
         dest = random.choice(unisolated_nodes)
 
-        # naive_route = get_naive_route(graph, src, dest, amount)
-        route, _, _ = get_route_func(graph, src, dest, amount)
+        route = get_route_func(graph, src, dest, amount)
 
         if len(route) >= min_route_length:
             break
@@ -25,8 +27,8 @@ def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_tri
         warnings.warn("Warning: Too hard to find route in graph. Consider changing restrictions or graph")
         return None
 
-    print(f'Nodes and route found after {trial} trials and took {time() - start_time} secs')
-    return route
+    # print(f'Nodes and route found after {trial} trials and took {time() - start_time} secs')
+    return route, src, dest
 
 def create_sub_graph_by_node_capacity(dump_path=LIGHTNING_GRAPH_DUMP_PATH, k=64, highest_capacity_offset=0):
     """

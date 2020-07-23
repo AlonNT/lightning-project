@@ -59,14 +59,14 @@ def read_data_to_xgraph(json_path):
     json_data = json.load(open(json_path, 'r', encoding="utf8"))
     json_data = _filter_nonvalid_data(json_data)
     graph = nx.MultiGraph()
-    graph.graph = {'network_capacity': 0}
+    # graph.graph = {'network_capacity': 0}
     for i, node_data in enumerate(json_data['nodes']):
         pub_key = node_data.pop('pub_key', None)
         graph.add_node(pub_key, pub_key=pub_key, serial_number=i)
     for edge_data in json_data['edges']:
         # TODO: Can there be list pub_keys here?
         cast_channel_data(edge_data)
-        graph.graph['network_capacity'] += edge_data['capacity']
+        # graph.graph['network_capacity'] += edge_data['capacity']
         graph.add_edge(edge_data['node1_pub'], edge_data['node2_pub'], edge_data['channel_id'], **edge_data)
     
     return graph
