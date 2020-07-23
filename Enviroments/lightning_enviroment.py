@@ -79,11 +79,13 @@ class LightningEniroment:
                 total_balance += edge_data['node2_balance']
         return total_balance
 
-    def render(self, save_path=None):
+    def render(self, save_path=None, agent_balance=None):
         """Creates an image describing the current state togetehr with the trasfers made between last state and the current"""
         visualize_graph_state(self.graph, self.positions, transfer_routes=self.debug_last_transfer_trials,
                               save_path=save_path,
-                              verify_node_serial_number=False)
+                              verify_node_serial_number=False,
+                              plot_title=f"step-{self.num_steps}",
+                              additional_node_info={self.agent_pub_key: f"Agent balance: {agent_balance}"})
         self.debug_last_transfer_trials = []
 
     def _add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance, node2_balance):

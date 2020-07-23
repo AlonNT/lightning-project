@@ -5,6 +5,7 @@ import numpy as np
 
 
 def human_format(num):
+    """Human readable float to string"""
     magnitude = 0
     while abs(num) >= 1000:
         magnitude += 1

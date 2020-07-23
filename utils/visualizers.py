@@ -2,14 +2,18 @@ import networkx as nx
 from utils.common import human_format, get_sender_policy_and_id
 from typing import List, Tuple, Dict
 from matplotlib import pyplot as plt
+import imageio
+import os
 
 
-def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False, save_path=None):
+def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False, save_path=None,
+                                            additional_node_info=None, plot_title="graph state"):
+    # TODO:  make this function modular by making it work on an input figure and adding info on it
     """Creates an image of the current state of a graph wtih channel balances on edges
     The trasfer routes are portraied too.
     """
     plt.figure(3, figsize=(9, 9))
-    nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k', node_size=400)
+    nx.draw_networkx(graph, positions, with_labels=False, font_weight='bold', node_color='k', node_size=400)
 
     # Draw Channel balances
     edge_labels = {}
@@ -32,7 +36,7 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
         else:
             edge_labels[(edge_data['node1_pub'], edge_data['node2_pub'])] = f"{balance_left} : {balance_right}"
 
-    nx.draw_networkx_edge_labels(graph, positions, edge_labels=edge_labels, font_color='red', font_size=8)
+    nx.draw_networkx_edge_labels(graph, positions, edge_labels=edge_labels, font_color='red', font_size=9)
     nx.draw_networkx_labels(graph, positions, labels={n:graph.nodes[n]['serial_number'] for n in graph.nodes}, font_color='y', font_size=6)
 
     # Highlight specified routes
@@ -51,7 +55,14 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
             plt.text(src_x, src_y, s='source', bbox=dict(facecolor=c, alpha=0.5))
             plt.text(dest_x, dest_y, s='target', bbox=dict(facecolor=c, alpha=0.5))
 
+    if additional_node_info is not None:
+        for info in additional_node_info:
+            x, y = positions[info]
+            plt.text(x - 0.3, y+0.1, s=additional_node_info[info], bbox=dict(facecolor='k', alpha=0.5))
+    plt.title(plot_title)
+    plt.tight_layout()
     if save_path is not None:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
     else:
         plt.show()
@@ -98,3 +109,13 @@ def visualize_routes(graph, src, dest, routes: Dict[str, List[Tuple[str, str]]])
 
     plt.legend()
     plt.show()
+
+
+def create_simulation_gif(folder):
+    file_names = sorted([os.path.join(folder, filename) for filename in os.listdir(folder)])
+    images = [imageio.imread(fn) for fn in file_names]
+    # with imageio.get_writer(os.path.join(os.path.dirname(folder), "simulation.gif"), mode='I') as  writer:
+    #     for filename in os.listdir(folder):
+    #         image = imageio.imread(os.path.join(folder, filename))
+    #         writer.append_data(image)
+    imageio.mimsave(os.path.join(os.path.dirname(folder), "simulation.gif"), images, duration=0.5)  # modify the frame duration as needed
