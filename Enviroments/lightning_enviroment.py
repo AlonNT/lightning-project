@@ -1,10 +1,11 @@
-import networkx as nx
-from utils.common import calculate_route_fees, get_new_position_for_node
-from opt import LND_DEFAULT_POLICY
-from utils.graph_helpers import sample_long_route
-import numpy as np
 import random
+
+import networkx as nx
+import numpy as np
+
+from consts import LND_DEFAULT_POLICY
 from routing.LND_routing import get_route
+from utils.common import calculate_route_fees, get_new_position_for_node
 from utils.visualizers import visualize_graph_state
 
 
@@ -12,6 +13,7 @@ class LightningEniroment:
     """This object is an openAI-like enviroment: its internal state is the Lightning graph and it sumulates flow in
     it at each step.
     """
+
     def __init__(self, graph: nx.Graph, tranfers_per_step=1, transfer_max_amount=10000):
         self.graph: nx.Graph = graph
         self.positions = nx.spring_layout(self.graph, seed=None)
@@ -40,7 +42,7 @@ class LightningEniroment:
             raise ValueError(f"{function_name} not supported ")
 
         for step in range(self.tranfers_per_step):
-            amount = random.randint(self.transfer_max_amount-1, self.transfer_max_amount)
+            amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
 
             # # Sample long route for debugging
             # route, src, dest = sample_long_route(self.graph, amount, get_route, min_route_length=4)
@@ -80,7 +82,10 @@ class LightningEniroment:
         return total_balance
 
     def render(self, save_path=None, agent_balance=None):
-        """Creates an image describing the current state togetehr with the trasfers made between last state and the current"""
+        """
+        Creates an image describing the current state togetehr with the trasfers made between last state and the
+        current
+        """
         visualize_graph_state(self.graph, self.positions, transfer_routes=self.debug_last_transfer_trials,
                               save_path=save_path,
                               verify_node_serial_number=False,
@@ -98,13 +103,14 @@ class LightningEniroment:
         :param node2_balance:
         :return:
         """
-        print(f"\tManager | Adding edge between node({self.graph.nodes[node1_pub]['serial_number']}) and node({self.graph.nodes[node2_pub]['serial_number']})")
+        print(
+            f"\tManager | Adding edge between node({self.graph.nodes[node1_pub]['serial_number']}) and node({self.graph.nodes[node2_pub]['serial_number']})")
         capacity = node1_balance + node2_balance
         channel_id = str(len(self.graph.edges) + 1)
-        self.graph.add_edge(node1_pub, node2_pub, channel_id, # This is ok for multigraphs
+        self.graph.add_edge(node1_pub, node2_pub, channel_id,  # This is ok for multigraphs
                             channel_id=channel_id, node1_pub=node1_pub, node2_pub=node2_pub,
                             node1_policy=node1_policy, node2_policy=LND_DEFAULT_POLICY,
-                            capacity=capacity,node1_balance=node1_balance, node2_balance=node2_balance)
+                            capacity=capacity, node1_balance=node1_balance, node2_balance=node2_balance)
 
     def _transfer(self, amount: int, route):
         """
@@ -146,4 +152,4 @@ class LightningEniroment:
             edge_data[dst_node_balance_name] += amount + cumulaive_fees[i]
 
         print("\tManager | Transferred!!")
-        self.debug_last_transfer_trials += [( route[0][0], route[-1][1], route, len(route))]
+        self.debug_last_transfer_trials += [(route[0][0], route[-1][1], route, len(route))]

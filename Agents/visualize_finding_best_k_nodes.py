@@ -5,29 +5,24 @@ import networkx as nx
 import numpy as np
 
 from LightningGraph.LN_parser import process_lightning_graph
-from LightningGraph.utils import create_sub_graph_by_node_capacity
-
-
-def draw_graph(graph: nx.Graph):
-    plt.figure()
-    nx.draw(graph, with_labels=False, font_weight='bold')
-    plt.show()
-
-
-def parse_args():
-    parser: argparse.ArgumentParser = argparse.ArgumentParser()
-
-    parser.add_argument('-n', '--num_nodes', type=int, default=12,
-                        help='Parameter for the graph generator '
-                             '(usually it\'s the number of vertices or something related to that).')
-    parser.add_argument('-hco', '--highest_capacity_offset', type=int, default=48,
-                        help='Parameter for the graph generator - will take the largest \'num_nodes\' nodes after the '
-                             'first \'highest_capacity_offset\' in the descending order.')
-
-    return parser.parse_args()
+from utils.graph_helpers import create_sub_graph_by_node_capacity
 
 
 def get_distances_probability_vector(nodes, possible_nodes_mask, distance_matrix):
+    """
+    Get the distances probability vector for the nodes in the graph.
+    Sampling a node according to this probability vector will (probably) result
+    in a node that is far away from the already chosen nodes.
+
+    :param nodes: A list of the nodes in the graph.
+                  This is important because we want the order of the nodes to be the same,
+                  and calling graph.nodes does not necessarily maintain the order. TODO or is it?
+    :param possible_nodes_mask: A boolean NumPy array indicating whether the relevant node is possible for selection
+                                or was it selected already.
+    :param distance_matrix: A 2D NumPy array which is the distance between every two vertices in the graph.
+                            Speeds up the run-time of this function.
+    :return: A NumPy array that is a probability vector for the nodes in the graph.
+    """
     # TODO consider taking a different distance function, such as the number of paths between two vertices
     #     lengths = np.array([len(list(nx.all_simple_paths(graph, source=u, target=v)))
     #                         for u in graph.nodes for v in graph.nodes if u != v])
@@ -44,6 +39,21 @@ def get_distances_probability_vector(nodes, possible_nodes_mask, distance_matrix
 
 
 def get_capacities_probability_vector(graph, nodes, possible_nodes_mask, alpha=2):
+    """
+    Get the capacities probability vector for the nodes in the graph.
+    Sampling a node according to this probability vector will (probably) result in a node with high capacity.
+
+    :param graph: The graph.
+    :param nodes: A list of the nodes in the graph.
+                  This is important because we want the order of the nodes to be the same,
+                  and calling graph.nodes does not necessarily maintain the order. TODO or is it?
+    :param possible_nodes_mask: A boolean NumPy array indicating whether the relevant node is possible for selection
+                                or was it selected already.
+    :param alpha: The power to raise the capacities before dividing by the sum.
+                  Higher values enlarge the differences between the resulting probabilities
+                  for node with different capacities.
+    :return: A NumPy array that is a probability vector for the nodes in the graph.
+    """
     if possible_nodes_mask is None:
         possible_nodes_mask = np.ones(shape=len(nodes), dtype=np.bool)
 
@@ -57,6 +67,15 @@ def get_capacities_probability_vector(graph, nodes, possible_nodes_mask, alpha=2
 
 
 def get_distance_matrix(graph, nodes):
+    """
+    Get a distance matrix for the nodes in the graph.
+
+    :param graph: The graph.
+    :param nodes: A list of the nodes in the graph.
+                  This is important because we want the order of the nodes to be the same,
+                  and calling graph.nodes does not necessarily maintain the order. TODO or is it?
+    :return: A 2D NumPy array which is the distance between every two vertices in the graph.
+    """
     n = len(graph.nodes)
     distance_matrix = np.empty(shape=(n, n), dtype=np.float32)
 
@@ -70,6 +89,15 @@ def get_distance_matrix(graph, nodes):
 
 
 def find_best_k_nodes(graph, k, visualize=False):
+    """
+    Find the best k nodes in the given graph, where 'best' means that they have high total capacities
+    and they are distant from each other.
+
+    :param graph: The graph.
+    :param k: The number of nodes to select.
+    :param visualize: If it's true, visualize each step in the algorithm.
+    :return: A list containing the k selected nodes.
+    """
     nodes = list(graph.nodes)
     distance_matrix = get_distance_matrix(graph, nodes)
 
@@ -99,6 +127,19 @@ def find_best_k_nodes(graph, k, visualize=False):
             plt.show()
 
     return selected_nodes
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-n', '--num_nodes', type=int, default=12,
+                        help='Parameter for the graph generator '
+                             '(usually it\'s the number of vertices or something related to that).')
+    parser.add_argument('-hco', '--highest_capacity_offset', type=int, default=48,
+                        help='Parameter for the graph generator - will take the largest \'num_nodes\' nodes after the '
+                             'first \'highest_capacity_offset\' in the descending order.')
+
+    return parser.parse_args()
 
 
 def main():

@@ -1,6 +1,7 @@
 import networkx as nx
 from typing import List
 
+
 def get_channel_with_minimal_fee_base(subgraph: nx.MultiGraph, source, target):
     """
     Get a sub-graph containing exactly two nodes - one is the source and the other is the destination.
@@ -53,7 +54,7 @@ def nodes_list_to_edges(graph: nx.MultiGraph, nodes_list: List) -> List:
 
     for i in range(len(nodes_list) - 1):
         node1 = nodes_list[i]
-        node2 = nodes_list[i+1]
+        node2 = nodes_list[i + 1]
         subgraph = graph.subgraph(nodes=(node1, node2))
         min_fee_channel = get_channel_with_minimal_fee_base(subgraph, source=node1, target=node2)
         edges_list.append(min_fee_channel)

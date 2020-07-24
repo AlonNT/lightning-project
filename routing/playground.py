@@ -9,7 +9,8 @@ import numpy as np
 
 MAX_TRIALS = 1000
 AMOUNT_TO_TRANSFER = 1000000
-SEED=0
+SEED = 0
+
 
 def show_shortest_path_in_sparse_graph():
     """
@@ -19,9 +20,10 @@ def show_shortest_path_in_sparse_graph():
     """
     start_time = time()
     graph = create_sub_graph_by_node_capacity(k=10, highest_capacity_offset=50)
-    print(f'Creating graph took {time()-start_time} secs')
+    print(f'Creating graph took {time() - start_time} secs')
 
-    lnd_route, src, dst = sample_long_route(graph, AMOUNT_TO_TRANSFER, routing.LND_routing.get_route, min_route_length=4)
+    lnd_route, src, dst = sample_long_route(graph, AMOUNT_TO_TRANSFER, routing.LND_routing.get_route,
+                                            min_route_length=4)
     naive_route = routing.naive_routing.get_route(graph, src, dst, AMOUNT_TO_TRANSFER)
 
     ## Analyze resuts
@@ -31,10 +33,9 @@ def show_shortest_path_in_sparse_graph():
     print(f"\tNaive: {np.sum(naive_fees)} msat: ", naive_debug_str)
     print(f"\tLnd: {np.sum(lnd_fees)} msat", lnd_debug_str)
     diff = abs(np.sum(lnd_fees) - np.sum(naive_fees))
-    print(f"Lnd saves {diff} (~{diff/np.sum(naive_fees)*100}%) msat")
+    print(f"Lnd saves {diff} (~{diff / np.sum(naive_fees) * 100}%) msat")
 
-
-    visualize_routes(graph, src, dst, {"naive":naive_route, "LND":lnd_route})
+    visualize_routes(graph, src, dst, {"naive": naive_route, "LND": lnd_route})
 
 
 if __name__ == '__main__':
