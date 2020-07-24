@@ -32,7 +32,7 @@ def _filter_nonvalid_data(json_data):
                                      json_data['edges']))
 
     # Require nodes to have valid pubkey
-    json_data['nodes'] = list(filter(lambda x: not (x['pub_key']), json_data['nodes']))  # TODO this necesessary?
+    # json_data['nodes'] = list(filter(lambda x: not (x['pub_key']), json_data['nodes']))  # TODO this necesessary?
 
     return json_data
 
@@ -52,20 +52,21 @@ def cast_channel_data(channel):
             # TODO why was it rounded? It ended up being zeros too many times
             channel[policy_key]['fee_rate_milli_msat'] = float(channel[policy_key]['fee_rate_milli_msat'] / 1000) # TODO:  Why did saar did this?
 
+
 def read_data_to_xgraph(json_path):
     """Create an undirected multigraph using networkx and load the data to it"""
     # Read json file created by LND describegraph command on the mainnet.
     json_data = json.load(open(json_path, 'r', encoding="utf8"))
     json_data = _filter_nonvalid_data(json_data)
     graph = nx.MultiGraph()
-    graph.graph = {'network_capacity': 0}
-    for node_data in json_data['nodes']:
+    # graph.graph = {'network_capacity': 0}
+    for i, node_data in enumerate(json_data['nodes']):
         pub_key = node_data.pop('pub_key', None)
-        graph.add_node(pub_key, node_data)
+        graph.add_node(pub_key, pub_key=pub_key, serial_number=i)
     for edge_data in json_data['edges']:
         # TODO: Can there be list pub_keys here?
         cast_channel_data(edge_data)
-        graph.graph['network_capacity'] += edge_data['capacity']
+        # graph.graph['network_capacity'] += edge_data['capacity']
         graph.add_edge(edge_data['node1_pub'], edge_data['node2_pub'], edge_data['channel_id'], **edge_data)
     
     return graph
@@ -76,7 +77,7 @@ def process_lightning_graph(graph,
                             total_capacity=False,
                             infer_implementation=False,
                             compute_betweenness=False,
-                            add_dummy_balances=False):
+                            add_dummy_balances=True):
     """
     Analyze graph and add additional attributes.
 

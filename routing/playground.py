@@ -1,57 +1,43 @@
 import random
-
-import networkx as nx
-from routing.naive_routing import get_route as get_naive_route
-from routing.LND_routing import get_route as get_lnd_route, lnd_weight
-from LightningGraph.utils import create_sub_graph_by_node_capacity, visualize_routes, calculate_route_fees
+import routing.LND_routing
+import routing.naive_routing
+from utils.common import calculate_route_fees
+from utils.visualizers import visualize_routes
+from utils.graph_helpers import sample_long_route, create_sub_graph_by_node_capacity
 from time import time
-from tqdm import tqdm
 import numpy as np
 
 MAX_TRIALS = 1000
 AMOUNT_TO_TRANSFER = 1000000
 SEED=0
 
-
-def show_shortest_path_in_sparse_graph(min_route_length=2):
+def show_shortest_path_in_sparse_graph():
+    """
+    This is a debug function;
+    it creates a sparse, connected sub-tree of the LN and samples 2 nodes and compares the naive and LND route between
+    them.
+    """
     start_time = time()
-    graph = create_sub_graph_by_node_capacity(k=40, highest_capacity_offset=50)
+    graph = create_sub_graph_by_node_capacity(k=10, highest_capacity_offset=50)
     print(f'Creating graph took {time()-start_time} secs')
 
-    # Select random two nodes as src and dest, with the route between them being of length at least 'min_route_length'.
-    start_time = time()
-    unisolated_nodes = list(set(graph) - set(nx.isolates(graph)))
-    print("num un-isolated nodes in graph: ", len(unisolated_nodes))
-
-    for trial in tqdm(range(MAX_TRIALS)):
-        src = random.choice(unisolated_nodes)
-        dest = random.choice(unisolated_nodes)
-
-        naive_route = get_naive_route(graph, src, dest, AMOUNT_TO_TRANSFER)
-        lnd_route, amount_source_needs, lnd_route_weight = get_lnd_route(graph, src, dest, AMOUNT_TO_TRANSFER)
-
-        if (naive_route is not None) and (len(naive_route) >= min_route_length or len(lnd_route) >= min_route_length):
-            break
-
-    if trial == MAX_TRIALS - 1:
-        raise RuntimeError("Error: Too hard to find route in graph. Consider changing restrictions or graph")
-
-    print(f'Nodes and route found after {trial} trials and took {time() - start_time} secs')
+    lnd_route, src, dst = sample_long_route(graph, AMOUNT_TO_TRANSFER, routing.LND_routing.get_route, min_route_length=4)
+    naive_route = routing.naive_routing.get_route(graph, src, dst, AMOUNT_TO_TRANSFER)
 
     ## Analyze resuts
-    naive_fees = calculate_route_fees(graph, naive_route, AMOUNT_TO_TRANSFER)
-    lnd_fees = calculate_route_fees(graph, lnd_route, AMOUNT_TO_TRANSFER)
+    naive_fees, naive_debug_str = calculate_route_fees(graph, naive_route, AMOUNT_TO_TRANSFER, get_debug_str=True)
+    lnd_fees, lnd_debug_str = calculate_route_fees(graph, lnd_route, AMOUNT_TO_TRANSFER, get_debug_str=True)
     print(f"Fees paid for transaction of {AMOUNT_TO_TRANSFER}: msat")
-    print(f"\tNaive: {np.sum(naive_fees)} msat")
-    print(f"\tLnd: {np.sum(lnd_fees)} msat")
+    print(f"\tNaive: {np.sum(naive_fees)} msat: ", naive_debug_str)
+    print(f"\tLnd: {np.sum(lnd_fees)} msat", lnd_debug_str)
     diff = abs(np.sum(lnd_fees) - np.sum(naive_fees))
-    print(f"Lnd saves {diff} (~{int(diff/np.sum(naive_fees)*100)}%) msat")
+    print(f"Lnd saves {diff} (~{diff/np.sum(naive_fees)*100}%) msat")
 
 
-    visualize_routes(graph, src, dest, [naive_route, lnd_route])
+    visualize_routes(graph, src, dst, {"naive":naive_route, "LND":lnd_route})
 
 
 if __name__ == '__main__':
     random.seed(SEED)
     np.random.seed(SEED)
-    show_shortest_path_in_sparse_graph(min_route_length=4)
+    show_shortest_path_in_sparse_graph()

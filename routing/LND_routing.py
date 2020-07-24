@@ -2,7 +2,7 @@ import numpy as np
 import heapq
 import networkx as nx
 from typing import Dict, Tuple
-from LightningGraph.utils import get_sender_policy_and_id
+import utils.common
 RISK_FACTOR_BILLIONTHS = 15. / 1000000000
 
 
@@ -111,8 +111,6 @@ def get_route(graph: nx.MultiGraph, source_id, target_id, amount: int, max_hops:
 
     :return: A triplet representing the selected route:
                  (1) The path starting from this node to the target node (a list of Nodes).
-                 (2) The amount of money that this node receive (and transfer forwards).
-                 (3) The weight of the path.
     """
     # Initialize the 'amount_node_needs' and 'weight' attributes of each node as INFINITY.
     # These values will be changed during the run of the routing algorithm.
@@ -147,14 +145,12 @@ def get_route(graph: nx.MultiGraph, source_id, target_id, amount: int, max_hops:
         # because we know this path is the path with minimal weight among all paths
         # that start in 'source' and end in 'target'.
         if receiver_node_id == source_id:
-            return (graph.nodes[source_id]['path_to_target'],
-                    graph.nodes[source_id]['weight'],
-                    graph.nodes[source_id]['amount_node_needs'])
+            return graph.nodes[source_id]['path_to_target']
 
         # Go over all the neighbors of this receiver node, and for each one the weight in the heap might need updating.
         receiver_node_edges = graph.edges(receiver_node_id, data=True)
         for _, _, edge_data in receiver_node_edges:
-            sender_node_policy, sender_node_id = get_sender_policy_and_id(receiver_node_id, edge_data)
+            sender_node_policy, sender_node_id = utils.common.get_sender_policy_and_id(receiver_node_id, edge_data)
             edge_key = (sender_node_id, receiver_node_id, edge_data['channel_id']) # TODO: order does matter here doesn't it?
             # TODO: Answer apparently graph.edges[(edge_key[1],edge_key[0],edge_key[2])] ==  graph.edges[edge_key] returns True
             # TODO: Check how NetworkX does that

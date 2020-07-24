@@ -1,5 +1,5 @@
-from SaartReproduce.routing_implementations import lnd_weight
-from SaartReproduce.create_graph import load_from_disk
+from garbage.SaartReproduce.routing_implementations import lnd_weight
+from garbage.SaartReproduce.create_graph import load_from_disk
 from tqdm import tqdm
 CHUNK_SIZE=100
 TRANSACTION_SIZE = 10000
@@ -9,7 +9,7 @@ C_REPETITIONS = 4
 ECLAIR_ROUTES = 3
 MAX_HOPS = 15
 
-from SaartReproduce.dijkstra import find_route
+from garbage.SaartReproduce.dijkstra import find_route
 
 def calculate_all_best_routes(nodes_dict):
     # Multiprocessing disabled for simplicity
