@@ -1,11 +1,7 @@
-import argparse
-
-import matplotlib.pyplot as plt
+from consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 import networkx as nx
 import numpy as np
-
-from LightningGraph.LN_parser import process_lightning_graph
-from utils.graph_helpers import create_sub_graph_by_node_capacity
+import matplotlib.pyplot as plt
 
 
 def get_distances_probability_vector(nodes, possible_nodes_mask, distance_matrix):
@@ -76,19 +72,20 @@ def get_distance_matrix(graph, nodes):
                   and calling graph.nodes does not necessarily maintain the order. TODO or is it?
     :return: A 2D NumPy array which is the distance between every two vertices in the graph.
     """
-    n = len(graph.nodes)
+    # n = len(graph.nodes)
+    n  = len(nodes) # TODO: is it ok? i want to call graph.nodes only once in order to allow excluding nodes
     distance_matrix = np.empty(shape=(n, n), dtype=np.float32)
 
     for source_node, distances_to_targets in nx.shortest_path_length(graph):
-        i = nodes.index(source_node)
-        for target_node, distance in distances_to_targets.items():
-            j = nodes.index(target_node)
-            distance_matrix[i, j] = distance
+        if source_node in nodes: # TODO: is this too slow?
+            i = nodes.index(source_node)
+            for target_node, distance in distances_to_targets.items():
+                j = nodes.index(target_node)
+                distance_matrix[i, j] = distance
 
     return distance_matrix
 
-
-def find_best_k_nodes(graph, k, visualize=False):
+def find_best_k_nodes(graph, k, exclude_nodes=[], visualize=False):
     """
     Find the best k nodes in the given graph, where 'best' means that they have high total capacities
     and they are distant from each other.
@@ -98,7 +95,7 @@ def find_best_k_nodes(graph, k, visualize=False):
     :param visualize: If it's true, visualize each step in the algorithm.
     :return: A list containing the k selected nodes.
     """
-    nodes = list(graph.nodes)
+    nodes = [node for node in graph.nodes if node not in exclude_nodes]
     distance_matrix = get_distance_matrix(graph, nodes)
 
     positions = nx.spring_layout(graph, seed=None)
@@ -129,33 +126,26 @@ def find_best_k_nodes(graph, k, visualize=False):
     return selected_nodes
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
+class KmeansInvestor(object):
+    def __init__(self, agent_pub_key, max_edges=10):
+        self.balance = 0
+        self.default_channel_capacity = 10 ** 6
+        self.pub_key = agent_pub_key
+        self.added_edges = 0
+        self.max_edges = max_edges
+        self.nodes_to_connect = None
 
-    parser.add_argument('-n', '--num_nodes', type=int, default=12,
-                        help='Parameter for the graph generator '
-                             '(usually it\'s the number of vertices or something related to that).')
-    parser.add_argument('-hco', '--highest_capacity_offset', type=int, default=48,
-                        help='Parameter for the graph generator - will take the largest \'num_nodes\' nodes after the '
-                             'first \'highest_capacity_offset\' in the descending order.')
-
-    return parser.parse_args()
-
-
-def main():
-    args = parse_args()
-
-    graph = create_sub_graph_by_node_capacity(k=args.num_nodes,
-                                              highest_capacity_offset=args.highest_capacity_offset)
-    process_lightning_graph(graph,
-                            remove_isolated=False,
-                            total_capacity=True,
-                            infer_implementation=False,
-                            compute_betweenness=False,
-                            add_dummy_balances=True)
-
-    find_best_k_nodes(graph, 3, visualize=True)
-
-
-if __name__ == '__main__':
-    main()
+    def act(self, graph):
+        if self.nodes_to_connect is None:
+            self.nodes_to_connect = find_best_k_nodes(graph, self.max_edges, exclude_nodes=[self.pub_key])
+        if self.added_edges < self.max_edges:
+            other_node = self.nodes_to_connect[self.added_edges]
+            self.added_edges += 1
+            p = 0.5
+            self.balance -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
+            command_arguments = {'node1_pub': self.pub_key, 'node2_pub': other_node,
+                                 'node1_policy': LND_DEFAULT_POLICY,
+                                 'balance_1': p * self.default_channel_capacity,
+                                 'balance_2': (1 - p) * self.default_channel_capacity}
+            return 'add_edge', list(command_arguments.values())
+        return 'NOOP', {}

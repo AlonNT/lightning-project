@@ -55,6 +55,6 @@ def create_sub_graph_by_node_capacity(dump_path=LIGHTNING_GRAPH_DUMP_PATH, k=64,
     print("Creating sub graph with %d/%d nodes" % (k, len(sorted_nodes)))
     graph = graph.subgraph(best_nodes).copy()  # without copy a view is returned and the graph can not be changed.
 
-    process_lightning_graph(graph, remove_isolated=True)  # This may return a graph with less than k nodes
+    process_lightning_graph(graph, remove_isolated=True, total_capacity=True)  # This may return a graph with less than k nodes
 
     return graph

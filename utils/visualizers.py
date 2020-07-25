@@ -4,7 +4,7 @@ from typing import List, Tuple, Dict
 from matplotlib import pyplot as plt
 import imageio
 import os
-
+import pickle
 
 def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False, save_path=None,
                           additional_node_info=None, plot_title="graph state"):
@@ -42,7 +42,7 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
                             font_color='y', font_size=6)
 
     # Highlight specified routes
-    colors = ['g', 'b', 'p', 'y']
+    colors = ['g', 'b', 'k', 'y']
     if transfer_routes is not None:
         for i, (src, dst, full_route, last_node_index) in enumerate(transfer_routes):
             c = colors[i % len(colors)]
@@ -122,3 +122,18 @@ def create_simulation_gif(folder):
     #         writer.append_data(image)
     imageio.mimsave(os.path.join(os.path.dirname(folder), "simulation.gif"), images,
                     duration=0.5)  # modify the frame duration as needed
+
+
+def compare_simulation_logs(logg_dir):
+    for dir_path in os.listdir(logg_dir):
+        agent_name = dir_path.split('-')[0]
+        dir_path = os.path.join(logg_dir, dir_path)
+        if os.path.isdir(dir_path):
+            scores_file = open(os.path.join(dir_path, "step_scores.pkl"), 'rb')
+            episode_scores = pickle.load(scores_file)
+            plt.plot(episode_scores, label=agent_name)
+
+    plt.xlabel('# Step')
+    plt.ylabel("Balance")
+    plt.legend()
+    plt.savefig(os.path.join(logg_dir, "Balance_plot.png"))

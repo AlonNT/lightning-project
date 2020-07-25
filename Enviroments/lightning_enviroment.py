@@ -14,7 +14,7 @@ class LightningEniroment:
     it at each step.
     """
 
-    def __init__(self, graph: nx.Graph, tranfers_per_step=1, transfer_max_amount=10000):
+    def __init__(self, graph: nx.Graph, tranfers_per_step, transfer_max_amount, verbose=False):
         self.graph: nx.Graph = graph
         self.positions = nx.spring_layout(self.graph, seed=None)
         self.tranfers_per_step = tranfers_per_step
@@ -22,6 +22,7 @@ class LightningEniroment:
         self.num_steps = 0
         self.agent_pub_key = None
         self.debug_last_transfer_trials = []
+        self.verbose = verbose
 
     def get_state(self):
         """Returns the internal state of this enviroment"""
@@ -103,8 +104,9 @@ class LightningEniroment:
         :param node2_balance:
         :return:
         """
-        print(
-            f"\tManager | Adding edge between node({self.graph.nodes[node1_pub]['serial_number']}) and node({self.graph.nodes[node2_pub]['serial_number']})")
+        if self.verbose:
+            print( f"\tManager | Adding edge between node({self.graph.nodes[node1_pub]['serial_number']})"
+                   f" and node({self.graph.nodes[node2_pub]['serial_number']})")
         capacity = node1_balance + node2_balance
         channel_id = str(len(self.graph.edges) + 1)
         self.graph.add_edge(node1_pub, node2_pub, channel_id,  # This is ok for multigraphs
@@ -121,7 +123,9 @@ class LightningEniroment:
         """
         debug_src_serial_num = self.graph.nodes[route[0][0]]['serial_number']
         debug_dst_serial_num = self.graph.nodes[route[-1][1]]['serial_number']
-        print(f"\tManager | Trying to transfer {amount} mast from node({debug_src_serial_num}) to node({debug_dst_serial_num})")
+        if self.verbose:
+            print(f"\tManager | Trying to transfer {amount} "
+                  f"mast from node({debug_src_serial_num}) to node({debug_dst_serial_num})")
 
         fees_list = calculate_route_fees(self.graph, route, amount)
         cumulaive_fees = np.cumsum(fees_list)[::-1]
@@ -137,7 +141,9 @@ class LightningEniroment:
                 src_node_balance, dst_node_balance = edge_data['node2_balance'], edge_data['node1_balance']
 
             if src_node_balance < amount + cumulaive_fees[i]:
-                print(f"\tManager | Failed! not enough funds in node({self.graph.nodes[src]['serial_number']}) ({src_node_balance} < {amount + cumulaive_fees[i]})")
+                if self.verbose:
+                    print(f"\tManager | Failed! not enough funds in node({self.graph.nodes[src]['serial_number']})"
+                          f" ({src_node_balance} < {amount + cumulaive_fees[i]})")
                 self.debug_last_transfer_trials += [(route[0][0], route[-1][1], route, i)]
                 return
 
@@ -151,5 +157,6 @@ class LightningEniroment:
             edge_data[src_node_balance_name] -= amount + cumulaive_fees[i]
             edge_data[dst_node_balance_name] += amount + cumulaive_fees[i]
 
-        print("\tManager | Transferred!!")
+        if self.verbose:
+            print("\tManager | Transferred!!")
         self.debug_last_transfer_trials += [(route[0][0], route[-1][1], route, len(route))]
