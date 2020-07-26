@@ -6,8 +6,8 @@ from Agents.Kmeans_agent import KmeansInvestor
 from Enviroments.lightning_enviroment import LightningEniroment
 from utils.visualizers import create_simulation_gif, compare_simulation_logs
 from utils.loggers import logger
+import numpy as np
 import consts
-
 
 def get_environment_and_agent(agent_name):
     graph = create_sub_graph_by_node_capacity(k=consts.ENVIROMENT_NUM_NODES,
@@ -57,14 +57,29 @@ def simulate_one_episode(env, agent, num_steps, simulation_logger=None, out_dir=
     if simulation_logger is not None:
         simulation_logger.pickle_episode_scores()
 
+    return agent_balance # return final balance: the episode score
 
-# def evaluate_agent(env, agent, num_episodes, steps_per_episode, simulation_logger=None, out_dir=None):
-#     for e in range(num_episodes):
-#         simulate_one_episode(env, agent, num_steps=consts.SIMULATION_STEPS,
-#                              simulation_logger=simulation_logger,
-#                              out_dir=consts.SIMULATION_OUT_DIR)
 
-def main():
+def evaluate_agents(num_simmulations, steps_per_simulation):
+    """Average simulations final balances for all each agents and compare them"""
+    agents_names = ["Naive", "Greedy", "Kmeans"]
+    all_scores = {name:[] for name in agents_names}
+    for agent_name in agents_names:
+        for e in range(num_simmulations):
+            env, agent = get_environment_and_agent(agent_name)
+            agent_balance = simulate_one_episode(env, agent, num_steps=steps_per_simulation,
+                                                             simulation_logger=None,
+                                                             out_dir=None)
+            all_scores[agent_name] += [agent_balance]
+
+    print(f"Avg final scores of {num_simmulations} simulations of {steps_per_simulation} steps")
+    for agent_name, final_balances in all_scores.items():
+        print(f"\t-{agent_name}: {np.mean(final_balances)}")
+
+def compare_single_episode():
+    """Creates a progress log a single simulaion for each agent and compare them
+    # TODO: when there is learning the logger is better to be moved to the episode level
+    """
     for agent_name in ["Naive", "Greedy", "Kmeans"]:
         env, agent = get_environment_and_agent(agent_name)
         simulation_logger = get_logger(os.path.join(consts.SIMULATION_LOG_DIR, agent_name + '-loggs'))
@@ -76,5 +91,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # compare_single_episode()
+    evaluate_agents(2, consts.SIMULATION_STEPS)
+
 

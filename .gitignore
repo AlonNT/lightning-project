@@ -1,4 +1,4 @@
 *__pycache__/
 *.idea
 /LightningGraph/basic_statistics_figs
-/TRAIN_DIR
+/TRAIN_DIR*
