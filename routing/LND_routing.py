@@ -51,9 +51,11 @@ class UpdatablePrioritySet:
         """
         :return: The item with the minimal key from data-structure (and this item is removed from the data-structure).
         """
-        r = heapq.heappop(self.heap)[1]  # O(1)
-        self.set.remove(r)  # avg: O(1), worst: O(log n)
-        return r
+        node_id = heapq.heappop(self.heap)[1]  # O(1)
+        if node_id not in self.set:
+            import pdb;pdb.set_trace()
+        self.set.remove(node_id)  # avg: O(1), worst: O(log n)
+        return node_id
 
     def is_empty(self):
         """

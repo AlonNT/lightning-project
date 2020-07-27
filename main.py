@@ -9,6 +9,7 @@ from utils.loggers import logger
 import numpy as np
 import consts
 
+
 def get_environment_and_agent(agent_name):
     graph = create_sub_graph_by_node_capacity(k=consts.ENVIROMENT_NUM_NODES,
                                               highest_capacity_offset=consts.ENIROMENT_DENSITY)
@@ -27,7 +28,9 @@ def get_environment_and_agent(agent_name):
 
 
 def get_agent_balance(env, agent):
+    # TODO change name from balance to reward
     return agent.balance + env.get_node_balance(agent.pub_key)
+
 
 def get_logger(logg_dir):
     if consts.SIMULATION_LOG_DIR is not None:
@@ -35,6 +38,7 @@ def get_logger(logg_dir):
     else:
         simulation_logger = None
     return simulation_logger
+
 
 def simulate_one_episode(env, agent, num_steps, simulation_logger=None, out_dir=None):
     print("Simulating investment")
@@ -57,7 +61,7 @@ def simulate_one_episode(env, agent, num_steps, simulation_logger=None, out_dir=
     if simulation_logger is not None:
         simulation_logger.pickle_episode_scores()
 
-    return agent_balance # return final balance: the episode score
+    return agent_balance  # return final balance: the episode score
 
 
 def evaluate_agents(num_simmulations, steps_per_simulation):
@@ -76,6 +80,7 @@ def evaluate_agents(num_simmulations, steps_per_simulation):
     for agent_name, final_balances in all_scores.items():
         print(f"\t-{agent_name}: {np.mean(final_balances)}")
 
+
 def compare_single_episode():
     """Creates a progress log a single simulaion for each agent and compare them
     # TODO: when there is learning the logger is better to be moved to the episode level
@@ -91,7 +96,7 @@ def compare_single_episode():
 
 
 if __name__ == '__main__':
-    # compare_single_episode()
-    evaluate_agents(2, consts.SIMULATION_STEPS)
+    compare_single_episode()
+    # evaluate_agents(3, consts.SIMULATION_STEPS)
 
 

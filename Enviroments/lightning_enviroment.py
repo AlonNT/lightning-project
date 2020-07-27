@@ -7,7 +7,7 @@ from consts import LND_DEFAULT_POLICY
 from routing.LND_routing import get_route
 from utils.common import calculate_route_fees, get_new_position_for_node
 from utils.visualizers import visualize_graph_state
-
+from utils.graph_helpers import sample_long_route
 
 class LightningEniroment:
     """This object is an openAI-like enviroment: its internal state is the Lightning graph and it sumulates flow in
@@ -52,8 +52,8 @@ class LightningEniroment:
             choice_nodes = [node_pub_key for node_pub_key in self.graph.nodes if node_pub_key != self.agent_pub_key]
             nodes = random.sample(choice_nodes, 2)
             route = get_route(self.graph, nodes[0], nodes[1], amount)
-
-            self._transfer(amount, route)
+            if route is not None:
+                self._transfer(amount, route)
 
         self.num_steps += 1
         return self.get_state()
@@ -113,6 +113,7 @@ class LightningEniroment:
                             channel_id=channel_id, node1_pub=node1_pub, node2_pub=node2_pub,
                             node1_policy=node1_policy, node2_policy=LND_DEFAULT_POLICY,
                             capacity=capacity, node1_balance=node1_balance, node2_balance=node2_balance)
+        # Todo : update node2 total capacity
 
     def _transfer(self, amount: int, route):
         """
