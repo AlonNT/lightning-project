@@ -2,7 +2,7 @@ import argparse
 
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from LightningGraph.LN_parser import process_lightning_graph
-from Agents.Kmeans_agent import find_best_k_nodes
+from Agents.LightningPlusPlusAgent import find_best_k_nodes
 
 
 def parse_args():
