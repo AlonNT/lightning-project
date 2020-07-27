@@ -1,5 +1,5 @@
 from consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
-from Agents import AbstractAgent
+from Agents.AbstractAgent import AbstractAgent
 
 # todo delete this after pulling hhe changes
 DEFAULT_INITIAL_FUNDS = 5
@@ -22,7 +22,7 @@ def find_minimal_capacity_channel_nodes(graph, funds: int, public_key):
 
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int = DEFAULT_INITIAL_FUNDS):
-        super(AbstractAgent).__init__(public_key, initial_funds)
+        super(GreedyNodeInvestor, self).__init__(public_key, initial_funds)
         self.default_channel_capacity = 10 ** 6
 
     def get_channels(self, graph):
@@ -42,8 +42,13 @@ class GreedyNodeInvestor(AbstractAgent):
 
             channels.append(channel_details)
 
-        assert (len(channels) == 0, "Channels list is empty")
+        assert len(channels) == 0, "Channels list is empty"
         return channels
+
+    @property
+    def name(self) -> str:
+        return self.__class__.__name__
+
 
     # TODO use this if we want to work with steps
     # def act(self, graph):

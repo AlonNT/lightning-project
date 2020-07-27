@@ -8,14 +8,16 @@ from routing.LND_routing import get_route
 from utils.common import calculate_route_fees, get_new_position_for_node
 from utils.visualizers import visualize_graph_state
 from utils.graph_helpers import sample_long_route
+from Enviroments.env_utils import transfer_money_in_graph
+
 
 class LightningEniroment:
     """This object is an openAI-like enviroment: its internal state is the Lightning graph and it sumulates flow in
     it at each step.
     """
 
-    def __init__(self, graph: nx.Graph, tranfers_per_step, transfer_max_amount, verbose=False):
-        self.graph: nx.Graph = graph
+    def __init__(self, graph: nx.MultiGraph, tranfers_per_step, transfer_max_amount, verbose=False):
+        self.graph: nx.MultiGraph = graph
         self.positions = nx.spring_layout(self.graph, seed=None)
         self.tranfers_per_step = tranfers_per_step
         self.transfer_max_amount = transfer_max_amount
@@ -28,19 +30,20 @@ class LightningEniroment:
         """Returns the internal state of this enviroment"""
         return self.graph
 
-    def step(self, action):
+    def step(self, action=None):
         """
         This function gets an action from the agent changes the internal state accordingly and returns the new state
         :param action: action from the agent a tuple containig (desired enviroment function, desired function arguments)
         :return: the new state
         """
-        function_name, args = action
-        if function_name == "add_edge":
-            self._add_edge(*args)
-        elif function_name == "NOOP":
-            pass
-        else:
-            raise ValueError(f"{function_name} not supported ")
+        if action is not None:
+            function_name, args = action
+            if function_name == "add_edge":
+                self._add_edge(*args)
+            elif function_name == "NOOP":
+                pass
+            else:
+                raise ValueError(f"{function_name} not supported ")
 
         for step in range(self.tranfers_per_step):
             amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
@@ -53,7 +56,8 @@ class LightningEniroment:
             nodes = random.sample(choice_nodes, 2)
             route = get_route(self.graph, nodes[0], nodes[1], amount)
             if route is not None:
-                self._transfer(amount, route)
+                route_details = transfer_money_in_graph(self.graph, amount, route)
+                self.debug_last_transfer_trials += [route_details]
 
         self.num_steps += 1
         return self.get_state()
@@ -114,50 +118,3 @@ class LightningEniroment:
                             node1_policy=node1_policy, node2_policy=LND_DEFAULT_POLICY,
                             capacity=capacity, node1_balance=node1_balance, node2_balance=node2_balance)
         # Todo : update node2 total capacity
-
-    def _transfer(self, amount: int, route):
-        """
-        Preform transformation of money between two nodes
-        :param amount: amount to transfer
-        :param route: list of edges
-        :return:
-        """
-        debug_src_serial_num = self.graph.nodes[route[0][0]]['serial_number']
-        debug_dst_serial_num = self.graph.nodes[route[-1][1]]['serial_number']
-        if self.verbose:
-            print(f"\tManager | Trying to transfer {amount} "
-                  f"mast from node({debug_src_serial_num}) to node({debug_dst_serial_num})")
-
-        fees_list = calculate_route_fees(self.graph, route, amount)
-        cumulaive_fees = np.cumsum(fees_list)[::-1]
-        # Transformation of the first channel is the total fees
-
-        # Traverse the channels and check if the amount can pass through them.
-        # In case the amount is valid to transfer, update the balances of the channels
-        for i, (src, dest, channel_id) in enumerate(route):
-            edge_data = self.graph.edges[(src, dest, channel_id)]
-            if edge_data['node1_pub'] == src:
-                src_node_balance, dst_node_balance = edge_data['node1_balance'], edge_data['node2_balance']
-            else:
-                src_node_balance, dst_node_balance = edge_data['node2_balance'], edge_data['node1_balance']
-
-            if src_node_balance < amount + cumulaive_fees[i]:
-                if self.verbose:
-                    print(f"\tManager | Failed! not enough funds in node({self.graph.nodes[src]['serial_number']})"
-                          f" ({src_node_balance} < {amount + cumulaive_fees[i]})")
-                self.debug_last_transfer_trials += [(route[0][0], route[-1][1], route, i)]
-                return
-
-        for i, (src, dest, channel_id) in enumerate(route):
-            edge_data = self.graph.edges[(src, dest, channel_id)]
-            if edge_data['node1_pub'] == src:
-                src_node_balance_name, dst_node_balance_name = 'node1_balance', 'node2_balance'
-            else:
-                src_node_balance_name, dst_node_balance_name = 'node2_balance', 'node1_balance'
-            # Channel Updates
-            edge_data[src_node_balance_name] -= amount + cumulaive_fees[i]
-            edge_data[dst_node_balance_name] += amount + cumulaive_fees[i]
-
-        if self.verbose:
-            print("\tManager | Transferred!!")
-        self.debug_last_transfer_trials += [(route[0][0], route[-1][1], route, len(route))]

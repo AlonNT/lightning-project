@@ -4,7 +4,7 @@ import random
 import warnings
 from time import time
 
-LIGHTNING_GRAPH_DUMP_PATH = 'LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
+LIGHTNING_GRAPH_DUMP_PATH = '../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
 
 
 def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_trials=10000):
