@@ -44,7 +44,9 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
     # Highlight specified routes
     colors = ['g', 'b', 'k', 'y']
     if transfer_routes is not None:
-        for i, (src, dst, full_route, last_node_index) in enumerate(transfer_routes):
+        for i, (full_route, last_node_index) in enumerate(transfer_routes):
+            src = full_route[0][0]
+            dst = full_route[-1][1]
             c = colors[i % len(colors)]
             nx.draw_networkx_edges(graph, positions, edgelist=full_route[:last_node_index],
                                    edge_color=c, width=15, edgecolors='k', alpha=0.5)

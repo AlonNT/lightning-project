@@ -10,7 +10,7 @@ DEFAULT_INITIAL_FUNDS = 5
 class RandomInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int = DEFAULT_INITIAL_FUNDS):
         super(RandomInvestor, self).__init__(public_key, initial_funds)
-        self.default_channel_capacity = 10 ** 6
+        self.default_channel_capacity = 10 ** 5
 
     def get_channels(self, graph: nx.MultiGraph):
         funds_to_spend = self.initial_funds
@@ -24,29 +24,12 @@ class RandomInvestor(AbstractAgent):
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': random_node_pub_key,
                                'node1_policy': LND_DEFAULT_POLICY,
                                'node1_balance': p * self.default_channel_capacity,
-                               'node2_balance_2': (1 - p) * self.default_channel_capacity}
+                               'node2_balance': (1 - p) * self.default_channel_capacity}
             channels.append(channel_details)
 
-        assert len(channels) == 0, "Channels list is empty"
+        # assert len(channels) == 0, "Channels list is empty" # Why TF do we need this empty?
         return channels
 
     @property
     def name(self) -> str:
         return self.__class__.__name__
-
-        # TODO use this if we want to work with steps
-        # def act(self, graph):
-        #     if self.added_edges < self.max_edges and random.random() < 0.3:
-        #         random_node_pub_key = random.choice(list(graph.nodes))
-        #         while random_node_pub_key == self.public_key:
-        #             random_node_pub_key = random.choice(list(graph.nodes))
-        #         p = random.random()
-        #         self.balance -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
-        #         command_arguments = {'node1_pub': self.public_key, 'node2_pub': random_node_pub_key,
-        #                              'node1_policy': LND_DEFAULT_POLICY,
-        #                              'node1_balance': p * self.default_channel_capacity,
-        #                              'node2_balance_2': (1 - p) * self.default_channel_capacity}
-        #         self.added_edges += 1
-        #         return 'add_edge', list(command_arguments.values())
-        #     else:
-        #         return 'NOOP', {}

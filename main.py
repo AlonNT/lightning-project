@@ -2,7 +2,7 @@ import os
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from Agents.random_agent import RandomInvestor
 from Agents.greedy_agent import GreedyNodeInvestor
-from Agents.Kmeans_agent import KmeansInvestor
+from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from Enviroments.lightning_enviroment import LightningEniroment
 from utils.visualizers import create_simulation_gif, compare_simulation_logs
 from utils.loggers import logger
@@ -17,11 +17,11 @@ def get_environment_and_agent(agent_name):
                              transfer_max_amount=consts.ENVIROMENT_TRANSFERS_MAX_AMOUNT)
     agent_pub_key = env.create_agent_node()
     if agent_name == "Naive":
-        agent = RandomInvestor(agent_pub_key, max_edges=consts.AGENT_MAX_EDGES)
+        agent = RandomInvestor(agent_pub_key, initial_funds=consts.AGENT_MAX_FUNDS)
     elif agent_name == "Greedy":
-        agent = GreedyNodeInvestor(agent_pub_key, max_edges=consts.AGENT_MAX_EDGES)
-    elif agent_name == "Kmeans":
-        agent = KmeansInvestor(agent_pub_key, max_edges=consts.AGENT_MAX_EDGES)
+        agent = GreedyNodeInvestor(agent_pub_key, initial_funds=consts.AGENT_MAX_FUNDS)
+    elif agent_name == "LPP":
+        agent = LightningPlusPlusAgent(agent_pub_key, initial_funds=consts.AGENT_MAX_FUNDS)
     else:
         raise Exception("No such agent")
     return env, agent
@@ -29,7 +29,7 @@ def get_environment_and_agent(agent_name):
 
 def get_agent_balance(env, agent):
     # TODO change name from balance to reward
-    return agent.balance + env.get_node_balance(agent.pub_key)
+    return env.get_node_balance(agent.pub_key) - consts.AGENT_MAX_FUNDS
 
 
 def get_logger(logg_dir):
@@ -66,7 +66,7 @@ def simulate_one_episode(env, agent, num_steps, simulation_logger=None, out_dir=
 
 def evaluate_agents(num_simmulations, steps_per_simulation):
     """Average simulations final balances for all each agents and compare them"""
-    agents_names = ["Naive", "Greedy", "Kmeans"]
+    agents_names = ["Naive", "Greedy"]
     all_scores = {name:[] for name in agents_names}
     for agent_name in agents_names:
         for e in range(num_simmulations):
@@ -85,7 +85,7 @@ def compare_single_episode():
     """Creates a progress log a single simulaion for each agent and compare them
     # TODO: when there is learning the logger is better to be moved to the episode level
     """
-    for agent_name in ["Naive", "Greedy", "Kmeans"]:
+    for agent_name in ["Naive", "Greedy"]:
         env, agent = get_environment_and_agent(agent_name)
         simulation_logger = get_logger(os.path.join(consts.SIMULATION_LOG_DIR, agent_name + '-loggs'))
         simulate_one_episode(env, agent, num_steps=consts.SIMULATION_STEPS,

@@ -8,7 +8,7 @@ SIMULATION_STEPS = 100
 SIMULATION_LOG_FREQ=1
 SIMULATION_OUT_DIR = "TRAIN_DIR" # None to avoid visualization dumping
 SIMULATION_LOG_DIR = "TRAIN_DIR" # None to avoid logging
-AGENT_MAX_EDGES = 10
+AGENT_MAX_FUNDS = 10**10
 LN_DEFAULT_CHANNEL_COST = 0 # TODO: Split agent score to locked money and channel opening cost
 
 # TODO: Find the default values

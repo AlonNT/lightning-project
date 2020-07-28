@@ -29,39 +29,23 @@ class GreedyNodeInvestor(AbstractAgent):
         channels = list()
         funds_to_spend = self.initial_funds
         other_node_index: int = 0
-        while funds_to_spend > 0:
-            nodes_to_connect = find_minimal_capacity_channel_nodes(graph, self.initial_funds, self.pub_key)
-            other_node = nodes_to_connect[other_node_index]
+        while funds_to_spend > 0 and other_node_index < len():
+            best_nodes = find_minimal_capacity_channel_nodes(graph, self.initial_funds, self.pub_key)
+            other_node = best_nodes[other_node_index]
             other_node_index += 1
             p = 0.5
             funds_to_spend -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': other_node,
                                'node1_policy': LND_DEFAULT_POLICY,
-                               'balance_1': p * self.default_channel_capacity,
-                               'balance_2': (1 - p) * self.default_channel_capacity}
+                               'node1_balance': p * self.default_channel_capacity,
+                               'node2_balance': (1 - p) * self.default_channel_capacity}
 
             channels.append(channel_details)
 
-        assert len(channels) == 0, "Channels list is empty"
+        # assert len(channels) == 0, "Channels list is empty" # Why TF do we need this empty?
         return channels
 
     @property
     def name(self) -> str:
         return self.__class__.__name__
 
-
-    # TODO use this if we want to work with steps
-    # def act(self, graph):
-    #     if self.nodes_to_connect is None:
-    #         self.nodes_to_connect = find_minimal_capacity_channel_nodes(graph, self.max_edges)
-    #     if self.added_edges < self.max_edges:
-    #         other_node = self.nodes_to_connect[self.added_edges]
-    #         self.added_edges += 1
-    #         p = 0.5
-    #         self.balance -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
-    #         command_arguments = {'node1_pub': self.pub_key, 'node2_pub': other_node,
-    #                              'node1_policy': LND_DEFAULT_POLICY,
-    #                              'balance_1': p * self.default_channel_capacity,
-    #                              'balance_2': (1 - p) * self.default_channel_capacity}
-    #         return 'add_edge', list(command_arguments.values())
-    #     return 'NOOP', {}
