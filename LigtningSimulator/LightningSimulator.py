@@ -44,7 +44,7 @@ def transfer_money_in_graph(graph: nx.MultiGraph, amount: int, route: List, verb
                       f" ({src_node_balance} < {amount + cumulative_fees[i]})")
             return i
 
-    # amount transformation is valid, and hence updating the channels with new amountsa
+    # amount transformation is valid, and hence updating the channels with new amounts
     for i, (src, dest, channel_id) in enumerate(route):
         edge_data = graph.edges[(src, dest, channel_id)]
         src_node, dest_node = get_nodes_order(src, edge_data)
@@ -154,7 +154,7 @@ class LightningSimulator:
                 total_balance += edge_data['node2_balance']
         return total_balance
 
-    def add_edge(self, node1_public_key, node2_public_key, node1_policy, node1_balance, node2_balance):
+    def add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance, node2_balance):
         """
         Adds an edge_to the graph from one node to another
         :param public_key_node1: public_key of node1
@@ -165,14 +165,14 @@ class LightningSimulator:
 
         if self.verbose:
             print(f"\tManager | Adding edge between node({self.graph.nodes[node1_public_key]['serial_number']})"
-                  f" and node({self.graph.nodes[node2_public_key]['serial_number']})")
+                  f" and node({self.graph.nodes[node2_pub]['serial_number']})")
         capacity = node1_balance + node2_balance
         channel_id = str(len(self.graph.edges) + 1)
-        self.graph.add_edge(node1_public_key, node2_public_key, channel_id,
-                            channel_id=channel_id, node1_pub=node1_public_key, node2_pub=node2_public_key,
+        self.graph.add_edge(node1_pub, node2_pub, channel_id,
+                            channel_id=channel_id, node1_pub=node1_pub, node2_pub=node2_pub,
                             node1_policy=node1_policy, node2_policy=LND_DEFAULT_POLICY,
                             capacity=capacity, node1_balance=node1_balance, node2_balance=node2_balance)
 
         # Updates the total capacity according to the new channel capacity
-        self.graph.nodes[node1_public_key]['total_capacity'] += node2_balance
-        self.graph.nodes[node2_public_key]['total_capacity'] += node2_balance
+        self.graph.nodes[node1_pub]['total_capacity'] += node2_balance
+        self.graph.nodes[node2_pub]['total_capacity'] += node2_balance
