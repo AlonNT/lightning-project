@@ -1,7 +1,9 @@
 import random
+from typing import List
+
 import networkx as nx
 import numpy as np
-from typing import List
+
 from garbage.consts import LND_DEFAULT_POLICY
 from routing.LND_routing import get_route
 from utils.common import calculate_route_fees, get_new_position_for_node
@@ -62,7 +64,7 @@ def get_nodes_order(src, edge_data):
     """
     This functions gets the source node in the route and return which node is it (node1 ot node2 in the channel)
     :param src: src node in the route
-    :param edge_data: edge data according the graph
+    :param edge_data: dictionary containing the edge's attributes.
     :return: the order of the nodes in the money transformation
     """
     if edge_data['node1_pub'] == src:

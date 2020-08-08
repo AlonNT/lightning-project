@@ -1,17 +1,19 @@
-import networkx as nx
-from utils.common import human_format, get_sender_policy_and_id
-from typing import List, Tuple, Dict
-from matplotlib import pyplot as plt
-import imageio
 import os
 import pickle
+from typing import List, Tuple, Dict
+
+import imageio
+import networkx as nx
+from matplotlib import pyplot as plt
+
+from utils.common import human_format, get_sender_policy_and_id
 
 
 def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False, out_dir=None,
                           additional_node_info=None, plot_title="graph state"):
     # TODO:  make this function modular by making it work on an input figure and adding info on it
     """Creates an image of the current state of a graph wtih channel balances on edges
-    The trasfer routes are portraied too.
+    The transfer routes are portrayed too.
     """
     plt.figure(3, figsize=(9, 9))
     nx.draw_networkx(graph, positions, with_labels=False, font_weight='bold', node_color='k', node_size=400)
