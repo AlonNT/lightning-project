@@ -1,43 +1,56 @@
+import numpy as np
+import networkx as nx
+import consts
+from typing import Optional
 from Enviroments.lightning_enviroment import LightningEnvironment
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.common import human_format
 from copy import deepcopy
-import numpy as np
 from collections import defaultdict
 from Agents.random_agent import RandomInvestor
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from Agents.greedy_agent import GreedyNodeInvestor
+from utils.loggers import Logger
 from time import time
 
 MAX_AGENT_FUNDS = 1000000
-NUM_TRANSACTIONS=100
+NUM_TRANSACTIONS = 100
 REPEAT_SIMULATION = 10
-ENVIROMENT_NUM_NODES=500
-ENIROMENT_DENSITY=100
-ENVIROMENT_TRANSFERS_MAX_AMOUNT=10**6
+ENVIRONMENT_NUM_NODES = 500
+ENVIRONMENT_DENSITY = 100
+ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 6
 
 
-def get_env():
-
-    graph = create_sub_graph_by_node_capacity(k=ENVIROMENT_NUM_NODES,
-                                              highest_capacity_offset=ENIROMENT_DENSITY)
+def get_env() -> nx.MultiGraph:
+    graph = create_sub_graph_by_node_capacity(k=ENVIRONMENT_NUM_NODES,
+                                              highest_capacity_offset=ENVIRONMENT_DENSITY)
 
     env = LightningEnvironment(graph, transfers_per_step=NUM_TRANSACTIONS,
-                               transfer_max_amount=ENVIROMENT_TRANSFERS_MAX_AMOUNT)
+                               transfer_max_amount=ENVIRONMENT_TRANSFERS_MAX_AMOUNT)
     return env
 
 
-def run_experiment(agent_constructors):
-
+def get_logger(log_dir) -> Optional[Logger]:
     """
-    1. Creates a common Lightning enviroment
+    :param log_dir: The path to output the logs.
+    :return: None if consts.SIMULATION_LOG_DIR is None, and a relevant Logger instance otherwise.
+    """
+    if consts.SIMULATION_LOG_DIR is None:
+        return None
+
+    return Logger(consts.SIMULATION_LOG_FREQ, log_dir)
+
+
+def run_experiment(agent_constructors):
+    """
+    1. Creates a common Lightning environment
     for each agent:
-    2.      Ask agent for edges he want to establish given a funds constraint
-    3.      add edges to a copy of the enviroment
-    4       repeat simulation of so many transaction and average final balance
+    2. Ask agent for edges he want to establish given a funds constraint
+    3. Add edges to a copy of the enviroment
+    4. Repeat simulation of so many transaction and average final balance
     param: agent_constructors: list of tuples of an agent constructor and additional Kwargs
     """
-    # Create the base enviroment whos copies will run all simulations
+    # Create the base environment who's copies will run all simulations
     env = get_env()
     new_node_pub_key = env.create_agent_node()
 
@@ -49,15 +62,15 @@ def run_experiment(agent_constructors):
         for repeat in range(REPEAT_SIMULATION):
             env = deepcopy(env)
 
-            # ask agent for edges to add
-            new_edges = agent.get_channels(env.get_state()) # state is just the graph
+            # Ask agent for edges to add
+            new_edges = agent.get_channels(env.get_state())  # state is just the graph
 
-            # add edges to a local copy of the enviroment
+            # Add edges to a local copy of the environment
             for edge in new_edges:
                 env._add_edge(**edge)
 
             start = time()
-            env.step() # peforms NUM_TRANSACTIONS transactions
+            env.step()  # preforms NUM_TRANSACTIONS transactions
             print(f"\t{repeat} {human_format(NUM_TRANSACTIONS/(time()-start))} tnx/sec")
 
             # report revenue
@@ -66,9 +79,10 @@ def run_experiment(agent_constructors):
 
     print(f"Score over {REPEAT_SIMULATION} simulations of {NUM_TRANSACTIONS} transactions")
     for agent_name in results:
-        print(f"{agent_name}: mean: {human_format(np.mean(results[agent_name]))}, std: {np.mean(np.std(results[agent_name]))}")
+        print(
+            f"{agent_name}: mean: {human_format(np.mean(results[agent_name]))}, std: {np.mean(np.std(results[agent_name]))}")
 
 
 if __name__ == '__main__':
-    args = [(RandomInvestor, {}), (GreedyNodeInvestor, {})]
+    args = [(RandomInvestor, {}), (GreedyNodeInvestor, {}), (LightningPlusPlusAgent, {'alpha': 2})]
     run_experiment(args)

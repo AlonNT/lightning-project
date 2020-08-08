@@ -2,9 +2,7 @@ import random
 import networkx as nx
 from Agents.AbstractAgent import AbstractAgent
 from consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
-
-# todo delete this after pulling the changes
-DEFAULT_INITIAL_FUNDS = 5
+from Agents.consts import DEFAULT_INITIAL_FUNDS
 
 
 class RandomInvestor(AbstractAgent):
