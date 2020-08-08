@@ -25,17 +25,12 @@ def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
     else:
         edge_keys_to_score = reversed(sorted(edge_keys_to_score))
 
-    for nodes in edge_keys_to_score:
-        first_node, second_node = nodes[0][1][0], nodes[0][1][1]
-
+    for capacity, edge_nodes in edge_keys_to_score:
         # Add the nodes to the list if they are not inside already
-        if first_node not in nodes_set:
-            nodes_to_connect.append(first_node)
-            nodes_set.add(first_node)
-
-        if second_node not in nodes_set:
-            nodes_to_connect.append(second_node)
-            nodes_set.add(second_node)
+        for node in edge_nodes:
+            if node not in nodes_set:
+                nodes_to_connect.append(node)
+                nodes_set.add(node)
 
     return nodes_to_connect
 
@@ -52,20 +47,22 @@ class GreedyNodeInvestor(AbstractAgent):
         channels = list()
         funds_to_spend = self.initial_funds
         other_node_index: int = 0
-        best_nodes_to_connect = find_minimal_capacity_channel_nodes(graph, self.minimal_capacity)
+        ordered_nodes = find_minimal_capacity_channel_nodes(graph, self.minimal_capacity)
 
         # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
-        while funds_to_spend > 0 and other_node_index < len(best_nodes_to_connect):
+        while other_node_index < len(ordered_nodes):
 
             # Select the next node that the agent will connect to
-            other_node = best_nodes_to_connect[other_node_index]
+            other_node = ordered_nodes[other_node_index]
 
             # Increase the index of the next node to connect to
             other_node_index += 1
             p = 0.5
             funds_to_spend -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
-
+            if funds_to_spend < 0:
+                break
             # Create the channel details for the simulator
+            # The other node's policy is determined by the simulator.
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': other_node,
                                'node1_policy': LND_DEFAULT_POLICY,
                                'node1_balance': p * self.default_channel_capacity,
