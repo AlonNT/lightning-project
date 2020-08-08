@@ -1,25 +1,32 @@
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
+
+import networkx as nx
 import numpy as np
 
 
-# from LightningGraph.lightning_implementation_inference import CLTV_DELTA_DEFAULTS, HTLC_MIN_DEFAULTS, FEE_DEFAULTS
-
-
 def human_format(num):
-    """Human readable float to string"""
+    """
+    :param num: A number to print in a nice readable way.
+    :return: A string representing this number in a readable way (e.g. 1000 --> 1K).
+    """
     magnitude = 0
+
     while abs(num) >= 1000:
         magnitude += 1
         num /= 1000.0
-    # add more suffixes if you need them
-    return '%.2f%s' % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])
+
+    return '%.2f%s' % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])  # add more suffices if you need them
 
 
-def get_new_position_for_node(positions):
-    arr = np.array([x for x in positions.values()])
-    new_pos = np.array([arr[:, 0].max() + 0.5, arr[:, 1].mean()])
-    # new_pos =  np.clip(arr.max(0) + 0.5, -np.inf, 1)
-    return new_pos
+def get_new_position_for_node(positions: Dict):
+    """
+    Get new positions for each one of the nodes.
+    :param positions: A dictionary of positions per node.
+    :return: A NumPy array containing the new positions.
+    """
+    positions_array = np.array([x for x in positions.values()])
+    new_positions = np.array([positions_array[:, 0].max() + 0.5, positions_array[:, 1].mean()])
+    return new_positions
 
 
 def get_sender_policy_and_id(receiver_node_id, edge_data: Dict) -> Tuple:
@@ -43,10 +50,20 @@ def get_sender_policy_and_id(receiver_node_id, edge_data: Dict) -> Tuple:
     return sender_node_policy, sender_node_id
 
 
-def calculate_route_fees(graph, route, amount, get_debug_str=False):
+def calculate_route_fees(graph: nx.MultiGraph, route: List, amount: int, get_debug_str: bool = False):
+    """
+    Calculate the route fees, based on the policies of the nodes on the route.
+
+    :param graph: The graph to work on.
+    :param route: The route which is a list of edges.
+    :param amount: The amount of money to transfer in the route.
+    :param get_debug_str: It true, return a string which is used for debugging purposes.
+    :return: The fees for each node in the route.
+    """
     total_amount = amount
-    fees = []
+    fees = list()
     debug_str = " "
+
     for edge_key in route[::-1]:
         sender_policy, _ = get_sender_policy_and_id(edge_key[1], graph.edges[edge_key])
         fee = int(sender_policy['fee_base_msat'] + (total_amount * sender_policy['fee_rate_milli_msat']))
@@ -54,8 +71,10 @@ def calculate_route_fees(graph, route, amount, get_debug_str=False):
             debug_str = f"({human_format(sender_policy['fee_base_msat'])} + " \
                             f"{human_format(total_amount)}*{sender_policy['fee_rate_milli_msat']})={fee} + " + \
                         debug_str
-        fees += [fee]
+        fees.append(fee)
         total_amount += fee
+
     if get_debug_str:
         return fees[::-1], debug_str
+
     return fees[::-1]

@@ -1,4 +1,4 @@
-from Enviroments.lightning_enviroment import LightningEniroment
+from Enviroments.lightning_enviroment import LightningEnvironment
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.common import human_format
 from copy import deepcopy
@@ -21,8 +21,8 @@ def get_env():
     graph = create_sub_graph_by_node_capacity(k=ENVIROMENT_NUM_NODES,
                                               highest_capacity_offset=ENIROMENT_DENSITY)
 
-    env = LightningEniroment(graph, tranfers_per_step=NUM_TRANSACTIONS,
-                             transfer_max_amount=ENVIROMENT_TRANSFERS_MAX_AMOUNT)
+    env = LightningEnvironment(graph, transfers_per_step=NUM_TRANSACTIONS,
+                               transfer_max_amount=ENVIROMENT_TRANSFERS_MAX_AMOUNT)
     return env
 
 def run_experiment(agent_constructors):

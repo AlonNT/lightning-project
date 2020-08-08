@@ -6,7 +6,8 @@ import imageio
 import os
 import pickle
 
-def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False, save_path=None,
+
+def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False, out_dir=None,
                           additional_node_info=None, plot_title="graph state"):
     # TODO:  make this function modular by making it work on an input figure and adding info on it
     """Creates an image of the current state of a graph wtih channel balances on edges
@@ -65,9 +66,9 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
             plt.text(x - 0.3, y + 0.1, s=additional_node_info[info], bbox=dict(facecolor='k', alpha=0.5))
     plt.title(plot_title)
     plt.tight_layout()
-    if save_path is not None:
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path)
+    if out_dir is not None:
+        os.makedirs(os.path.dirname(out_dir), exist_ok=True)
+        plt.savefig(out_dir)
     else:
         plt.show()
 

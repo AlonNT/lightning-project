@@ -30,7 +30,7 @@ def main():
                             compute_betweenness=False,
                             add_dummy_balances=True)
 
-    find_best_k_nodes(graph, 3, visualize=True)
+    find_best_k_nodes(graph, k=3, agent_public_key=list(graph.nodes)[0], visualize=True)
 
 
 if __name__ == '__main__':

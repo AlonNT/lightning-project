@@ -3,30 +3,36 @@ import random
 import networkx as nx
 import numpy as np
 
+from typing import List
+
 from consts import LND_DEFAULT_POLICY
 from routing.LND_routing import get_route
 from utils.common import calculate_route_fees, get_new_position_for_node
 from utils.visualizers import visualize_graph_state
-from utils.graph_helpers import sample_long_route
 
 
-def transfer_money_in_graph(graph, amount: int, route, verbose=False):
+def transfer_money_in_graph(graph: nx.MultiGraph, amount: int, route: List, verbose: bool = False) -> int:
     """
     Preform transformation of money along a route in a given graph, namely to make sure transaction is possible
-    and change channell balances along the route accordingly
-    :param amount: amount to transfer
-    :param route: list of edges (tuples of 2 nodes)
-    :return: int: len(route) if transaction succesedded some index  0 < i < len(route) to indicate
-                  the first encounered channel that wasn't able to transfer the funds
+    and change channel balances along the route accordingly.
+
+    :param graph: The graph to work on.
+    :param amount: Amount to transfer.
+    :param route: List of edges (tuples of 2 nodes)
+    :param verbose: If true, prints progress
+    :return: int: len(route) if transaction succeeded
+                  some index i such that 0 < i < len(route) to indicate the first encountered node
+                  that wasn't able to transfer the funds.
     """
     if verbose:
-        debug_src_serial_num = graph.nodes[route[0][0]]['serial_number']
-        debug_dst_serial_num = graph.nodes[route[-1][1]]['serial_number']
-        print(f"\tManager | Trying to transfer {amount} "
-              f"mast from node({debug_src_serial_num}) to node({debug_dst_serial_num})")
+        first_edge = route[0]
+        last_edge = route[-1]
+        src_serial_num = graph.nodes[first_edge[0]]['serial_number']
+        dst_serial_num = graph.nodes[last_edge[1]]['serial_number']
+        print(f"\tManager | Trying to transfer {amount} from node({src_serial_num}) to node({dst_serial_num})")
 
     fees_list = calculate_route_fees(graph, route, amount)
-    cumulaive_fees = np.cumsum(fees_list)[::-1]
+    cumulative_fees = np.cumsum(fees_list)[::-1]
     # Transformation of the first channel is the total fees
 
     # Traverse the channels and check if the amount can pass through them.
@@ -38,10 +44,10 @@ def transfer_money_in_graph(graph, amount: int, route, verbose=False):
         else:
             src_node_balance, dst_node_balance = edge_data['node2_balance'], edge_data['node1_balance']
 
-        if src_node_balance < amount + cumulaive_fees[i]:
+        if src_node_balance < amount + cumulative_fees[i]:
             if verbose:
                 print(f"\tManager | Failed! not enough funds in node({graph.nodes[src]['serial_number']})"
-                      f" ({src_node_balance} < {amount + cumulaive_fees[i]})")
+                      f" ({src_node_balance} < {amount + cumulative_fees[i]})")
             return i
 
     for i, (src, dest, channel_id) in enumerate(route):
@@ -51,36 +57,40 @@ def transfer_money_in_graph(graph, amount: int, route, verbose=False):
         else:
             src_node_balance_name, dst_node_balance_name = 'node2_balance', 'node1_balance'
         # Channel Updates
-        edge_data[src_node_balance_name] -= amount + cumulaive_fees[i]
-        edge_data[dst_node_balance_name] += amount + cumulaive_fees[i]
+        edge_data[src_node_balance_name] -= amount + cumulative_fees[i]
+        edge_data[dst_node_balance_name] += amount + cumulative_fees[i]
 
     if verbose:
         print("\tManager | Transferred!!")
     return len(route)
 
-class LightningEniroment:
-    """This object is an openAI-like enviroment: its internal state is the Lightning graph and it sumulates flow in
+
+class LightningEnvironment:
+    """This object is an openAI-like environment: its internal state is the Lightning graph and it sumulates flow in
     it at each step.
     """
 
-    def __init__(self, graph: nx.MultiGraph, tranfers_per_step, transfer_max_amount, verbose=False):
+    def __init__(self, graph: nx.MultiGraph, transfers_per_step, transfer_max_amount, verbose=False):
         self.graph: nx.MultiGraph = graph
         self.positions = nx.spring_layout(self.graph, seed=None)
-        self.tranfers_per_step = tranfers_per_step
+        self.tranfers_per_step = transfers_per_step
         self.transfer_max_amount = transfer_max_amount
         self.num_steps = 0
         self.agent_pub_key = None
         self.debug_last_transfer_trials = []
         self.verbose = verbose
 
-    def get_state(self):
-        """Returns the internal state of this enviroment"""
+    def get_state(self) -> nx.MultiGraph:
+        """
+        Returns the internal state of this environment
+        """
         return self.graph
 
     def step(self, action=None):
         """
         This function gets an action from the agent changes the internal state accordingly and returns the new state
-        :param action: action from the agent a tuple containig (desired enviroment function, desired function arguments)
+        :param action: action from the agent a tuple containing
+        (desired environment function, desired function arguments)
         :return: the new state
         """
         if action is not None:
@@ -96,6 +106,7 @@ class LightningEniroment:
             amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
 
             # # Sample long route for debugging
+            # from utils.graph_helpers import sample_long_route
             # route, src, dest = sample_long_route(self.graph, amount, get_route, min_route_length=4)
 
             # sample random nodes
@@ -115,11 +126,11 @@ class LightningEniroment:
         :return: The public key of the new node
         """
         serial_num = len(self.graph.nodes) + 1
-        pub_key = "Agnent-" + str(serial_num)
+        pub_key = "Agent-" + str(serial_num)
         self.graph.add_node(pub_key, pub_key=pub_key, serial_number=serial_num)
         self.positions[pub_key] = get_new_position_for_node(self.positions)
         if self.agent_pub_key is not None:
-            raise Warning("Enviroment currently supports one agent and one node addition")
+            raise Warning("Environment currently supports one agent and one node addition")
         self.agent_pub_key = pub_key
         return pub_key
 
@@ -133,17 +144,18 @@ class LightningEniroment:
                 total_balance += edge_data['node2_balance']
         return total_balance
 
-    def render(self, save_path=None, agent_balance=None):
+    def render(self, out_dir=None, agent_reward=None):
         """
-        Creates an image describing the current state togetehr with the trasfers made between last state and the
-        current
+        Creates an image describing the current state together with the transfers made
+        between last state and the current one.
         """
-        visualize_graph_state(self.graph, self.positions, transfer_routes=self.debug_last_transfer_trials,
-                              save_path=save_path,
+        visualize_graph_state(self.graph, self.positions,
+                              transfer_routes=self.debug_last_transfer_trials,
+                              out_dir=out_dir,
                               verify_node_serial_number=False,
                               plot_title=f"step-{self.num_steps}",
-                              additional_node_info={self.agent_pub_key: f"Agent balance: {agent_balance}"})
-        self.debug_last_transfer_trials = []
+                              additional_node_info={self.agent_pub_key: f"Agent balance: {agent_reward}"})
+        self.debug_last_transfer_trials = list()
 
     def _add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance, node2_balance):
         """
@@ -156,8 +168,8 @@ class LightningEniroment:
         :return:
         """
         if self.verbose:
-            print( f"\tManager | Adding edge between node({self.graph.nodes[node1_pub]['serial_number']})"
-                   f" and node({self.graph.nodes[node2_pub]['serial_number']})")
+            print(f"\tManager | Adding edge between node({self.graph.nodes[node1_pub]['serial_number']})"
+                  f" and node({self.graph.nodes[node2_pub]['serial_number']})")
         capacity = node1_balance + node2_balance
         channel_id = str(len(self.graph.edges) + 1)
         self.graph.add_edge(node1_pub, node2_pub, channel_id,  # This is ok for multigraphs
