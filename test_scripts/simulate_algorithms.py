@@ -41,7 +41,7 @@ def get_logger(log_dir) -> Optional[Logger]:
     return Logger(consts.SIMULATION_LOG_FREQ, log_dir)
 
 
-def run_experiment(agent_constructors):
+def run_experiment(agent_constructors, out_dir: Optional[str] = None):
     """
     1. Creates a common Lightning environment
     for each agent:
@@ -58,6 +58,9 @@ def run_experiment(agent_constructors):
     for (agent_constructor, kwargs) in agent_constructors:
         # Create agent: A get_edges callable, an instance of a class heriting AbstractAgent
         agent = agent_constructor(new_node_pub_key, initial_funds=MAX_AGENT_FUNDS, **kwargs)
+        # Use the Logger for ploting the reward of each agent
+        simulation_logger: Logger = get_logger(out_dir)
+
         print("Agent:", agent.name)
         for repeat in range(REPEAT_SIMULATION):
             env = deepcopy(env)
@@ -77,6 +80,8 @@ def run_experiment(agent_constructors):
             agent_balance = env.get_node_balance(new_node_pub_key) - MAX_AGENT_FUNDS
             results[agent.name] += [agent_balance]
 
+            simulation_logger.log_step(agent_balance)
+
     print(f"Score over {REPEAT_SIMULATION} simulations of {NUM_TRANSACTIONS} transactions")
     for agent_name in results:
         print(
@@ -85,4 +90,4 @@ def run_experiment(agent_constructors):
 
 if __name__ == '__main__':
     args = [(RandomInvestor, {}), (GreedyNodeInvestor, {}), (LightningPlusPlusAgent, {'alpha': 2})]
-    run_experiment(args)
+    run_experiment(args, out_dir=consts.SIMULATION_OUT_DIR)

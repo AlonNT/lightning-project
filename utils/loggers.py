@@ -59,6 +59,7 @@ class Logger(object):
         # plt.savefig(os.path.join(self.logdir, "transfers.png"))
         # plt.clf()
 
+    # TODO delete
     def pickle_episode_scores(self):
         """
         Dumps the scores per step in a pickle file inside the lig directory.
