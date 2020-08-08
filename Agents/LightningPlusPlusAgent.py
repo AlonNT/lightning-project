@@ -150,10 +150,8 @@ def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
 
 
 class LightningPlusPlusAgent(AbstractAgent):
-
-    def __init__(self, public_key, initial_funds=10, **kwargs):
-        super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds)
-
+    def __init__(self, public_key, initial_funds, channel_cost, **kwargs):
+        super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
         self.alpha = kwargs['alpha']
 
     @property

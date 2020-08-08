@@ -1,6 +1,5 @@
 from Agents.AbstractAgent import AbstractAgent
-from Agents.consts import DEFAULT_INITIAL_FUNDS
-from garbage.consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
+from utils.common import LND_DEFAULT_POLICY
 
 
 def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
@@ -18,7 +17,7 @@ def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
 
     # Traverse all the edges in the graph and append the edge capacity with the relevant nodes
     for n1, n2, edge_data in graph.edges(data=True):
-        edge_keys_to_score.append([(edge_data['capacity'], [n1, n2])])
+        edge_keys_to_score.append((edge_data['capacity'], [n1, n2]))
     # Sort the edges according to the capacity - maximal/minimal capacity
     if minimal_capacity:
         edge_keys_to_score = sorted(edge_keys_to_score)
@@ -26,6 +25,7 @@ def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
         edge_keys_to_score = reversed(sorted(edge_keys_to_score))
 
     for capacity, edge_nodes in edge_keys_to_score:
+        # capacity, edge_nodes = item[0], item[1]
         # Add the nodes to the list if they are not inside already
         for node in edge_nodes:
             if node not in nodes_set:
@@ -36,12 +36,12 @@ def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
 
 
 class GreedyNodeInvestor(AbstractAgent):
-    def __init__(self, public_key: str, initial_funds: int = DEFAULT_INITIAL_FUNDS,  **kwargs):
-        super(GreedyNodeInvestor, self).__init__(public_key, initial_funds)
-        self.default_channel_capacity = 10 ** 6
+    def __init__(self, public_key: str, initial_funds: int, channel_cost: int, **kwargs):
+        super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
+        self.default_channel_capacity = initial_funds / 10
 
         # Boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
-        self.minimal_capacity = kwargs['capacity_strategy']
+        self.minimal_capacity = kwargs['use_minimal_cpacity']
 
     def get_channels(self, graph):
         channels = list()
@@ -58,7 +58,7 @@ class GreedyNodeInvestor(AbstractAgent):
             # Increase the index of the next node to connect to
             other_node_index += 1
             p = 0.5
-            funds_to_spend -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
+            funds_to_spend -= self.channel_cost + p * self.default_channel_capacity
             if funds_to_spend < 0:
                 break
             # Create the channel details for the simulator
@@ -70,6 +70,7 @@ class GreedyNodeInvestor(AbstractAgent):
 
             channels.append(channel_details)
 
+        # assert len(channels) == 0, "Channels list is empty" # Why TF do we need this empty?
         return channels
 
     @property

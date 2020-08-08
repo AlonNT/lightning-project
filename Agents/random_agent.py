@@ -1,16 +1,12 @@
 import random
-
+from Agents.AbstractAgent import AbstractAgent
+from utils.common import LND_DEFAULT_POLICY
 import networkx as nx
 
-from Agents.AbstractAgent import AbstractAgent
-from Agents.consts import DEFAULT_INITIAL_FUNDS
-from garbage.consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
-
-
 class RandomInvestor(AbstractAgent):
-    def __init__(self, public_key: str, initial_funds: int = DEFAULT_INITIAL_FUNDS):
-        super(RandomInvestor, self).__init__(public_key, initial_funds)
-        self.default_channel_capacity = 10 ** 5
+    def __init__(self, public_key: str, initial_funds: int, channel_cost: int):
+        super(RandomInvestor, self).__init__(public_key, initial_funds, channel_cost)
+        self.default_channel_capacity = initial_funds / 10
 
     def get_channels(self, graph: nx.MultiGraph):
         funds_to_spend = self.initial_funds
@@ -18,7 +14,7 @@ class RandomInvestor(AbstractAgent):
         while funds_to_spend > 0:
             random_node_pub_key = random.choice([node for node in graph.nodes if graph.nodes[node]['pub_key'] != self.pub_key])
             p = random.random()
-            funds_to_spend -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
+            funds_to_spend -= self.channel_cost + p * self.default_channel_capacity
             if funds_to_spend < 0:
                 break
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': random_node_pub_key,

@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 from utils.common import human_format, get_sender_policy_and_id
 
 
-def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False, out_dir=None,
-                          additional_node_info=None, plot_title="graph state"):
+def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False,
+                          additional_node_info=None, plot_title="graph state", out_path=None):
     # TODO:  make this function modular by making it work on an input figure and adding info on it
     """Creates an image of the current state of a graph wtih channel balances on edges
     The transfer routes are portrayed too.
@@ -68,9 +68,8 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
             plt.text(x - 0.3, y + 0.1, s=additional_node_info[info], bbox=dict(facecolor='k', alpha=0.5))
     plt.title(plot_title)
     plt.tight_layout()
-    if out_dir is not None:
-        os.makedirs(os.path.dirname(out_dir), exist_ok=True)
-        plt.savefig(out_dir)
+    if out_path is not None:
+        plt.savefig(out_path)
     else:
         plt.show()
 

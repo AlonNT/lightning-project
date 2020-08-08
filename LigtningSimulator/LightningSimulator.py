@@ -3,11 +3,11 @@ from typing import List
 
 import networkx as nx
 import numpy as np
-
-from garbage.consts import LND_DEFAULT_POLICY
+import os
 from routing.LND_routing import get_route
 from utils.common import calculate_route_fees, get_new_position_for_node
 from utils.visualizers import visualize_graph_state
+from utils.common import LND_DEFAULT_POLICY
 
 
 def transfer_money_in_graph(graph: nx.MultiGraph, amount: int, route: List, verbose: bool = False) -> int:
@@ -85,7 +85,6 @@ class LightningSimulator:
         self.transfer_max_amount = transfer_max_amount
         self.agent_pub_key = None
         self.verbose = verbose
-        self.log_dir = None
 
     def get_graph(self) -> nx.MultiGraph:
         """
@@ -93,13 +92,14 @@ class LightningSimulator:
         """
         return self.graph
 
-    def run(self):
+    def run(self, plot_dir=None):
         """
         This function gets an action from the agent changes the internal state accordingly and returns the new state
         :param action: action from the agent a tuple containing
         (desired environment function, desired function arguments)
         :return: the new state
         """
+        comulative_balance = [self.get_node_balance(self.agent_pub_key)]
         for step in range(self.num_transfers):
             amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
 
@@ -111,13 +111,17 @@ class LightningSimulator:
             if route is not None:
                 # Gets the last index int the route of the money transformation
                 debug_last_index = transfer_money_in_graph(self.graph, amount, route)
-                if self.log_dir is not None:
+                if plot_dir is not None:
+                    os.makedirs(plot_dir, exist_ok=True)
                     visualize_graph_state(self.graph, self.positions,
                                           transfer_routes=[(route, debug_last_index)],
-                                          out_dir=self.log_dir,
+                                          out_path=os.path.join(plot_dir, f"step-{step}"),
                                           verify_node_serial_number=False,
                                           plot_title=f"step-{step}",
-                                          additional_node_info=None)
+                                          additional_node_info=None) #{self.agent_pub_key: f"Agent balance: {agent_reward}"})
+            comulative_balance += [self.get_node_balance(self.agent_pub_key)]
+
+        return comulative_balance
 
     def create_agent_node(self):
         """
@@ -166,7 +170,7 @@ class LightningSimulator:
         """
 
         if self.verbose:
-            print(f"\tManager | Adding edge between node({self.graph.nodes[node1_public_key]['serial_number']})"
+            print(f"\tManager | Adding edge between node({self.graph.nodes[node1_pub]['serial_number']})"
                   f" and node({self.graph.nodes[node2_pub]['serial_number']})")
         capacity = node1_balance + node2_balance
         channel_id = str(len(self.graph.edges) + 1)

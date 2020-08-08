@@ -3,6 +3,7 @@ from typing import Tuple, Dict, List
 import networkx as nx
 import numpy as np
 
+LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "fee_rate_milli_msat": 0.001}
 
 def human_format(num):
     """
