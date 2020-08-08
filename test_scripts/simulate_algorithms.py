@@ -16,6 +16,7 @@ ENVIROMENT_NUM_NODES=500
 ENIROMENT_DENSITY=100
 ENVIROMENT_TRANSFERS_MAX_AMOUNT=10**6
 
+
 def get_env():
 
     graph = create_sub_graph_by_node_capacity(k=ENVIROMENT_NUM_NODES,
@@ -24,6 +25,7 @@ def get_env():
     env = LightningEnvironment(graph, transfers_per_step=NUM_TRANSACTIONS,
                                transfer_max_amount=ENVIROMENT_TRANSFERS_MAX_AMOUNT)
     return env
+
 
 def run_experiment(agent_constructors):
 
@@ -64,7 +66,7 @@ def run_experiment(agent_constructors):
 
     print(f"Score over {REPEAT_SIMULATION} simulations of {NUM_TRANSACTIONS} transactions")
     for agent_name in results:
-        print(f"mean: {human_format(np.mean(results[agent_name]))}, std: {np.mean(np.std(results[agent_name]))}")
+        print(f"{agent_name}: mean: {human_format(np.mean(results[agent_name]))}, std: {np.mean(np.std(results[agent_name]))}")
 
 
 if __name__ == '__main__':

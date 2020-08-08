@@ -29,8 +29,8 @@ class GreedyNodeInvestor(AbstractAgent):
         channels = list()
         funds_to_spend = self.initial_funds
         other_node_index: int = 0
-        while funds_to_spend > 0 and other_node_index < len():
-            best_nodes = find_minimal_capacity_channel_nodes(graph, self.initial_funds, self.pub_key)
+        best_nodes = find_minimal_capacity_channel_nodes(graph, self.initial_funds, self.pub_key)
+        while funds_to_spend > 0 and other_node_index < len(best_nodes):
             other_node = best_nodes[other_node_index]
             other_node_index += 1
             p = 0.5
