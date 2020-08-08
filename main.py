@@ -5,19 +5,20 @@ from typing import Optional
 import os
 import numpy as np
 
-from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from Agents.greedy_agent import GreedyNodeInvestor
 from Agents.random_agent import RandomInvestor
-from LigtningSimulator.LightningSimulator import LightningSimulator
+from LightningSimulator import LightningSimulator
 from utils.common import human_format
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 import matplotlib.pyplot as plt
+# import seaborn as sns
+# import pandas as pd
 
 MAX_AGENT_FUNDS = 10**6
-ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 4
-NUM_TRANSACTIONS = 100
+ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 2
+NUM_TRANSACTIONS = 1000
 REPEAT_SIMULATION = 3
-ENVIRONMENT_NUM_NODES = 30
+ENVIRONMENT_NUM_NODES = 50
 ENVIRONMENT_DENSITY = 100
 DEFAULT_INITIAL_FUNDS = 1000
 SIMULATION_OUT_DIR = None
@@ -37,14 +38,15 @@ def get_simulator():
     return simulator
 
 
-def run_experiment(agent_constructors, out_dir: Optional[str] = None):
+def run_experiment(agent_constructors, out_dir=None):
     """
-    1. Creates a common Lightning environment
+    1. Creates a common Lightning simulator
     for each agent:
-    2. Ask agent for edges he want to establish given a funds constraint
+    2. Ask agent for edges it wants to establish given a funds constraint
     3. Add edges to a copy of the ENVIRONMENT
-    4. Repeat simulation of so many transaction and average final balance
+    4. Repeat simulation of so many transaction and plot average results
     param: agent_constructors: list of tuples of an agent constructor and additional Kwargs
+    param: out_dir: optional directory for plotting debug images of the simulation, off if None
     """
     # Create the base ENVIRONMENT whos copies will run all simulations
     simulator = get_simulator()
@@ -58,21 +60,21 @@ def run_experiment(agent_constructors, out_dir: Optional[str] = None):
 
         print("Agent:", agent.name)
         for repeat in range(REPEAT_SIMULATION):
-            simulator = deepcopy(simulator)
+            simulator_copy = deepcopy(simulator) # Todo isn't it better to avoid copy paradigm
 
             # Ask agent for edges to add
-            new_edges = agent.get_channels(simulator.get_graph())  # state is just the graph
+            new_edges = agent.get_channels(simulator_copy.get_graph())  # state is just the graph
 
             # Add edges to a local copy of the simulator
             for edge in new_edges:
-                simulator.add_edge(**edge)
+                simulator_copy.add_edge(**edge)
 
             debug_dir = None
             if out_dir is not None:
-                debug_dir = os.path.join(out_dir, f"sim-{repeat}")
+                debug_dir = os.path.join(out_dir, f"{agent.name}", f"sim-{repeat}")
 
             start = time()
-            simulation_comulative_balance = simulator.run(debug_dir)
+            simulation_comulative_balance = simulator_copy.run(debug_dir)
             print(f"\t{repeat} {human_format(NUM_TRANSACTIONS/(time()-start))} tnx/sec")
 
             results[agent.name] += [simulation_comulative_balance]  # peforms NUM_TRANSACTIONS transactions
@@ -82,8 +84,11 @@ def run_experiment(agent_constructors, out_dir: Optional[str] = None):
         agent_stats = np.array(results[agent_name]) - MAX_AGENT_FUNDS
         mean = agent_stats.mean(0)
         std = agent_stats.std(0)
-        plt.plot(range(len(mean)), mean, label=agent_name, color=colors[i])
-        # plt.errorbar(range(len(mean)), mean, std, label=agent_name, color=c, linestyle='None', marker='^')
+        # plt.plot(range(len(mean)), mean, label=agent_name, color=colors[i])
+        plt.errorbar(range(len(mean)), mean, std, label=agent_name, color=colors[i])
+        # TODO use seaborn
+        # sns.relplot(x="timepoint", y="signal", kind="line", data=pd.DataFrame(agent_stats));
+
     plt.legend()
     plt.show()
 

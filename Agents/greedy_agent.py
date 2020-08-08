@@ -38,7 +38,7 @@ def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int, **kwargs):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
-        self.default_channel_capacity = initial_funds / 10
+        self.default_balance_amount = initial_funds / 10
 
         # Boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
         self.minimal_capacity = kwargs['use_minimal_cpacity']
@@ -46,27 +46,21 @@ class GreedyNodeInvestor(AbstractAgent):
     def get_channels(self, graph):
         channels = list()
         funds_to_spend = self.initial_funds
-        other_node_index: int = 0
         ordered_nodes = find_minimal_capacity_channel_nodes(graph, self.minimal_capacity)
 
         # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
-        while other_node_index < len(ordered_nodes):
-
-            # Select the next node that the agent will connect to
-            other_node = ordered_nodes[other_node_index]
-
-            # Increase the index of the next node to connect to
-            other_node_index += 1
-            p = 0.5
-            funds_to_spend -= self.channel_cost + p * self.default_channel_capacity
-            if funds_to_spend < 0:
+        for other_node in ordered_nodes:
+            # check if there are enough funds to establish a channel
+            if funds_to_spend < self.channel_cost:
                 break
+            chanel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
+            funds_to_spend -= self.channel_cost + chanel_balance
             # Create the channel details for the simulator
             # The other node's policy is determined by the simulator.
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': other_node,
                                'node1_policy': LND_DEFAULT_POLICY,
-                               'node1_balance': p * self.default_channel_capacity,
-                               'node2_balance': (1 - p) * self.default_channel_capacity}
+                               'node1_balance': chanel_balance,
+                               'node2_balance': chanel_balance}
 
             channels.append(channel_details)
 
