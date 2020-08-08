@@ -174,5 +174,5 @@ class LightningSimulator:
                             capacity=capacity, node1_balance=node1_balance, node2_balance=node2_balance)
 
         # Updates the total capacity according to the new channel capacity
-        self.graph.nodes[node1_pub]['total_capacity'] += node2_balance
+        self.graph.nodes[node1_pub]['total_capacity'] += node1_balance
         self.graph.nodes[node2_pub]['total_capacity'] += node2_balance
