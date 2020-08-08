@@ -7,7 +7,7 @@ import consts
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from Agents.greedy_agent import GreedyNodeInvestor
 from Agents.random_agent import RandomInvestor
-from Enviroments.lightning_enviroment import LightningEnvironment
+from LigtningSimulator.LightningSimulator import LightningSimulator
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.loggers import Logger
 from utils.visualizers import create_simulation_gif, compare_simulation_logs
@@ -15,7 +15,7 @@ from utils.visualizers import create_simulation_gif, compare_simulation_logs
 Agent = Union[RandomInvestor, GreedyNodeInvestor, LightningPlusPlusAgent]
 
 
-def get_environment_and_agent(agent_type: str) -> Tuple[LightningEnvironment, Agent]:
+def get_environment_and_agent(agent_type: str) -> Tuple[LightningSimulator, Agent]:
     """
     Gets the agent type created an environment and an agent in that environment.
 
@@ -25,9 +25,9 @@ def get_environment_and_agent(agent_type: str) -> Tuple[LightningEnvironment, Ag
     """
     graph = create_sub_graph_by_node_capacity(k=consts.ENVIRONMENT_NUM_NODES,
                                               highest_capacity_offset=consts.ENVIRONMENT_DENSITY)
-    env = LightningEnvironment(graph,
-                               transfers_per_step=consts.ENVIRONMENT_TRANSFERS_PER_STEP,
-                               transfer_max_amount=consts.ENVIRONMENT_TRANSFERS_MAX_AMOUNT)
+    env = LightningSimulator(graph,
+                             transfers_per_step=consts.ENVIRONMENT_TRANSFERS_PER_STEP,
+                             transfer_max_amount=consts.ENVIRONMENT_TRANSFERS_MAX_AMOUNT)
     agent_pub_key = env.create_agent_node()
 
     if agent_type == "Naive":
@@ -42,7 +42,7 @@ def get_environment_and_agent(agent_type: str) -> Tuple[LightningEnvironment, Ag
     return env, agent
 
 
-def get_agent_reward(env: LightningEnvironment, agent: Agent) -> int:
+def get_agent_reward(env: LightningSimulator, agent: Agent) -> int:
     """
     Return the reward of the given agent in the given environment,
     which is the current balance he owns minus his initial funds.
@@ -65,7 +65,7 @@ def get_logger(log_dir) -> Optional[Logger]:
     return Logger(consts.SIMULATION_LOG_FREQ, log_dir)
 
 
-def simulate_one_episode(env: LightningEnvironment, agent: Agent, num_steps: int,
+def simulate_one_episode(env: LightningSimulator, agent: Agent, num_steps: int,
                          simulation_logger: Optional[Logger] = None, out_dir: Optional[str] = None) -> int:
     """
     Simulate a single episode of the given agent in the given environment.
@@ -80,7 +80,7 @@ def simulate_one_episode(env: LightningEnvironment, agent: Agent, num_steps: int
     """
     print("Simulating one episode...")
 
-    state = env.get_state()
+    state = env.get_graph()
     agent_reward = 0
 
     for step in range(num_steps):
@@ -94,7 +94,7 @@ def simulate_one_episode(env: LightningEnvironment, agent: Agent, num_steps: int
                        agent_reward=agent_reward)
 
         action = agent.act(state)
-        new_state = env.step(action)
+        new_state = env.run(action)
         state = new_state
 
     if out_dir is not None:

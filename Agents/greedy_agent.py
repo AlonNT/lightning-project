@@ -1,8 +1,6 @@
 from consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 from Agents.AbstractAgent import AbstractAgent
-
-# todo delete this after pulling hhe changes
-DEFAULT_INITIAL_FUNDS = 5
+from Agents.consts import DEFAULT_INITIAL_FUNDS
 
 
 def find_minimal_capacity_channel_nodes(graph, funds: int, public_key):
@@ -48,4 +46,3 @@ class GreedyNodeInvestor(AbstractAgent):
     @property
     def name(self) -> str:
         return self.__class__.__name__
-
