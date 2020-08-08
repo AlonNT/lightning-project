@@ -1,6 +1,6 @@
-from consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 from Agents.AbstractAgent import AbstractAgent
 from Agents.consts import DEFAULT_INITIAL_FUNDS
+from garbage.consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 
 
 def find_minimal_capacity_channel_nodes(graph, funds: int, public_key):

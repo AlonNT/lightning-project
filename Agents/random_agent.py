@@ -1,8 +1,10 @@
 import random
+
 import networkx as nx
+
 from Agents.AbstractAgent import AbstractAgent
-from consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 from Agents.consts import DEFAULT_INITIAL_FUNDS
+from garbage.consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 
 
 class RandomInvestor(AbstractAgent):

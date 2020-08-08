@@ -1,11 +1,10 @@
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
-
 from typing import List, Dict
 
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+
 from Agents.AbstractAgent import AbstractAgent
-from consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 
 
 def get_distances_probability_vector(nodes, possible_nodes_mask, distance_matrix):

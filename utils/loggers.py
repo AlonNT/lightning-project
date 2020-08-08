@@ -13,7 +13,6 @@ class Logger(object):
 
     def __init__(self, log_frequency: int, logdir: str = 'LOGS'):
         self.logdir: str = logdir                  # The directory where the logs will be created.
-        self.log_frequency: int = log_frequency    # Every 'log_frequency' iterations statistics wil be outputted.
         self.score_per_step: List[int] = list()    # The scores the agent made in each step of the simulation.
         self.start_time: float = time()            # The starting time of the simulation.
         self.total_steps: int = 0                  # The total number of steps of the simulation.

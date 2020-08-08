@@ -1,16 +1,16 @@
-import numpy as np
-import consts
-from typing import Optional
-from LigtningSimulator.LightningSimulator import LightningSimulator
-from utils.graph_helpers import create_sub_graph_by_node_capacity
-from utils.common import human_format
-from copy import deepcopy
 from collections import defaultdict
-from Agents.random_agent import RandomInvestor
+from copy import deepcopy
+from time import time
+from typing import Optional
+
+import numpy as np
+
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from Agents.greedy_agent import GreedyNodeInvestor
-from utils.loggers import Logger
-from time import time
+from Agents.random_agent import RandomInvestor
+from LigtningSimulator.LightningSimulator import LightningSimulator
+from utils.common import human_format
+from utils.graph_helpers import create_sub_graph_by_node_capacity
 
 MAX_AGENT_FUNDS = 1000000
 NUM_TRANSACTIONS = 100
@@ -18,26 +18,23 @@ REPEAT_SIMULATION = 10
 ENVIRONMENT_NUM_NODES = 500
 ENVIRONMENT_DENSITY = 100
 ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 6
+SIMULATION_OUT_DIR = "TRAIN_DIR"
+
+# The channel creation cost (which is the cost payed for the bitcoin miners
+# to include the channel's creation transaction in their block).
+# This value changes constantly (due to the dynamics of the bitcoin transactions' fees
+# that change according to the load on the blockchain).
+# This approximate value was calculated using buybitcoinworldwide.com to get the cost
+# of a transaction (in usd), then converting us dollars to satoshis (in 8.8.2020).
+CHANNEL_CREATION_COST = 40000
 
 
 def get_simulator():
     graph = create_sub_graph_by_node_capacity(k=ENVIRONMENT_NUM_NODES,
                                               highest_capacity_offset=ENVIRONMENT_DENSITY)
     simulator = LightningSimulator(graph, num_transfers=NUM_TRANSACTIONS,
-                             transfer_max_amount=ENVIRONMENT_TRANSFERS_MAX_AMOUNT)
+                                   transfer_max_amount=ENVIRONMENT_TRANSFERS_MAX_AMOUNT)
     return simulator
-
-
-
-def get_logger(log_dir) -> Optional[Logger]:
-    """
-    :param log_dir: The path to output the logs.
-    :return: None if consts.SIMULATION_LOG_DIR is None, and a relevant Logger instance otherwise.
-    """
-    if consts.SIMULATION_LOG_DIR is None:
-        return None
-
-    return Logger(consts.SIMULATION_LOG_FREQ, log_dir)
 
 
 def run_experiment(agent_constructors, out_dir: Optional[str] = None):
@@ -57,29 +54,25 @@ def run_experiment(agent_constructors, out_dir: Optional[str] = None):
     for (agent_constructor, kwargs) in agent_constructors:
         # Create agent: A get_edges callable, an instance of a class heriting AbstractAgent
         agent = agent_constructor(new_node_pub_key, initial_funds=MAX_AGENT_FUNDS, **kwargs)
-        # Use the Logger for ploting the reward of each agent
-        simulation_logger: Logger = get_logger(out_dir)
 
         print("Agent:", agent.name)
         for repeat in range(REPEAT_SIMULATION):
             env = deepcopy(env)
 
             # Ask agent for edges to add
-            new_edges = agent.get_channels(env.get_state())  # state is just the graph
+            new_edges = agent.get_channels(env.get_graph())  # state is just the graph
 
             # Add edges to a local copy of the environment
             for edge in new_edges:
                 env.add_edge(**edge)
 
             start = time()
-            env.run() # peforms NUM_TRANSACTIONS transactions
+            env.run()  # peforms NUM_TRANSACTIONS transactions
             print(f"\t{repeat} {human_format(NUM_TRANSACTIONS/(time()-start))} tnx/sec")
 
             # report revenue
             agent_balance = env.get_node_balance(new_node_pub_key) - MAX_AGENT_FUNDS
             results[agent.name] += [agent_balance]
-
-            simulation_logger.log_step(agent_balance)
 
     print(f"Score over {REPEAT_SIMULATION} simulations of {NUM_TRANSACTIONS} transactions")
     for agent_name in results:
@@ -89,4 +82,4 @@ def run_experiment(agent_constructors, out_dir: Optional[str] = None):
 
 if __name__ == '__main__':
     args = [(RandomInvestor, {}), (GreedyNodeInvestor, {}), (LightningPlusPlusAgent, {'alpha': 2})]
-    run_experiment(args, out_dir=consts.SIMULATION_OUT_DIR)
+    run_experiment(args, out_dir=SIMULATION_OUT_DIR)

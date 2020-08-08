@@ -3,11 +3,11 @@ from typing import Tuple, Union, Optional
 
 import numpy as np
 
-import consts
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from Agents.greedy_agent import GreedyNodeInvestor
 from Agents.random_agent import RandomInvestor
 from LigtningSimulator.LightningSimulator import LightningSimulator
+from garbage import consts
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.loggers import Logger
 from utils.visualizers import create_simulation_gif, compare_simulation_logs

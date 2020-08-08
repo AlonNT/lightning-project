@@ -1,11 +1,10 @@
 import random
+from typing import List
 
 import networkx as nx
 import numpy as np
 
-from typing import List
-
-from consts import LND_DEFAULT_POLICY
+from garbage.consts import LND_DEFAULT_POLICY
 from routing.LND_routing import get_route
 from utils.common import calculate_route_fees, get_new_position_for_node
 from utils.visualizers import visualize_graph_state
@@ -92,7 +91,6 @@ class LightningSimulator:
         (desired environment function, desired function arguments)
         :return: the new state
         """
-
         for step in range(self.num_transfers):
             amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
 
