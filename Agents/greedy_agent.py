@@ -3,51 +3,69 @@ from Agents.consts import DEFAULT_INITIAL_FUNDS
 from garbage.consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 
 
-def find_minimal_capacity_channel_nodes(graph):
+def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
     """
     Finds nodes with minimal capacity
     :param graph: lightning graph
     :return: list of nodes that the agent want to connect to according to the minimal capacity of their channels
     """
     nodes_to_connect = list()
+    # Use the nodes set for supervise which node we already chose.
+    # if the node is already in this set we won't choose it again
     nodes_set = set()
+    # Each item in this list contains capacity of the channel and the nodes that connected to this channel
     edge_keys_to_score = []
 
     # Traverse all the edges in the graph and append the edge capacity with the relevant nodes
     for n1, n2, edge_data in graph.edges(data=True):
         edge_keys_to_score.append([(edge_data['capacity'], [n1, n2])])
+    # Sort the edges according to the capacity - maximal/minimal capacity
+    if minimal_capacity:
+        edge_keys_to_score = sorted(edge_keys_to_score)
+    else:
+        edge_keys_to_score = reversed(sorted(edge_keys_to_score))
 
-    # Sort the edges according to the capacity
-    edge_keys_to_score = sorted(edge_keys_to_score)
     for nodes in edge_keys_to_score:
+        first_node, second_node = nodes[0][1][0], nodes[0][1][1]
 
         # Add the nodes to the list if they are not inside already
-        if nodes[1][0] not in nodes_set:
-            nodes_to_connect.append(nodes[1][0])
-            nodes_set.add(nodes[1][0])
+        if first_node not in nodes_set:
+            nodes_to_connect.append(first_node)
+            nodes_set.add(first_node)
 
-        if nodes[1][1] not in nodes_set:
-            nodes_to_connect.append(nodes[1][1])
-            nodes_set.add(nodes[1][1])
+        if second_node not in nodes_set:
+            nodes_to_connect.append(second_node)
+            nodes_set.add(second_node)
 
     return nodes_to_connect
 
 
 class GreedyNodeInvestor(AbstractAgent):
-    def __init__(self, public_key: str, initial_funds: int = DEFAULT_INITIAL_FUNDS):
+    def __init__(self, public_key: str, initial_funds: int = DEFAULT_INITIAL_FUNDS,  **kwargs):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds)
         self.default_channel_capacity = 10 ** 6
+
+        # Boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
+        self.minimal_capacity = kwargs['capacity_strategy']
 
     def get_channels(self, graph):
         channels = list()
         funds_to_spend = self.initial_funds
         other_node_index: int = 0
-        best_nodes_to_connect = find_minimal_capacity_channel_nodes(graph)
+        best_nodes_to_connect = find_minimal_capacity_channel_nodes(graph, self.minimal_capacity)
+
+        # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
         while funds_to_spend > 0 and other_node_index < len(best_nodes_to_connect):
+
+            # Select the next node that the agent will connect to
             other_node = best_nodes_to_connect[other_node_index]
+
+            # Increase the index of the next node to connect to
             other_node_index += 1
             p = 0.5
             funds_to_spend -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
+
+            # Create the channel details for the simulator
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': other_node,
                                'node1_policy': LND_DEFAULT_POLICY,
                                'node1_balance': p * self.default_channel_capacity,
@@ -55,7 +73,6 @@ class GreedyNodeInvestor(AbstractAgent):
 
             channels.append(channel_details)
 
-        # assert len(channels) == 0, "Channels list is empty" # Why TF do we need this empty?
         return channels
 
     @property
