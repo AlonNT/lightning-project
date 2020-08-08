@@ -65,44 +65,35 @@ def transfer_money_in_graph(graph: nx.MultiGraph, amount: int, route: List, verb
     return len(route)
 
 
-class LightningEnvironment:
+class LightningSimulator:
     """This object is an openAI-like environment: its internal state is the Lightning graph and it sumulates flow in
     it at each step.
     """
 
-    def __init__(self, graph: nx.MultiGraph, transfers_per_step, transfer_max_amount, verbose=False):
+    def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_max_amount, verbose=False):
         self.graph: nx.MultiGraph = graph
         self.positions = nx.spring_layout(self.graph, seed=None)
-        self.tranfers_per_step = transfers_per_step
+        self.num_transfers = num_transfers
         self.transfer_max_amount = transfer_max_amount
-        self.num_steps = 0
         self.agent_pub_key = None
-        self.debug_last_transfer_trials = []
         self.verbose = verbose
+        self.logdir = None
 
-    def get_state(self) -> nx.MultiGraph:
+    def get_graph(self) -> nx.MultiGraph:
         """
         Returns the internal state of this environment
         """
         return self.graph
 
-    def step(self, action=None):
+    def run(self):
         """
         This function gets an action from the agent changes the internal state accordingly and returns the new state
         :param action: action from the agent a tuple containing
         (desired environment function, desired function arguments)
         :return: the new state
         """
-        if action is not None:
-            function_name, args = action
-            if function_name == "add_edge":
-                self._add_edge(**args)
-            elif function_name == "NOOP":
-                pass
-            else:
-                raise ValueError(f"{function_name} not supported ")
 
-        for step in range(self.tranfers_per_step):
+        for step in range(self.num_transfers):
             amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
 
             # # Sample long route for debugging
@@ -115,10 +106,13 @@ class LightningEnvironment:
             route = get_route(self.graph, nodes[0], nodes[1], amount)
             if route is not None:
                 debug_last_index = transfer_money_in_graph(self.graph, amount, route)
-                self.debug_last_transfer_trials += [(route, debug_last_index)]
-
-        self.num_steps += 1
-        return self.get_state()
+                if self.logdir is not None:
+                    visualize_graph_state(self.graph, self.positions,
+                                          transfer_routes=[(route, debug_last_index)],
+                                          out_dir=self.logdir, # TODO get it from arguments
+                                          verify_node_serial_number=False,
+                                          plot_title=f"step-{step}",
+                                          additional_node_info=None) #{self.agent_pub_key: f"Agent balance: {agent_reward}"})
 
     def create_agent_node(self):
         """
@@ -135,6 +129,7 @@ class LightningEnvironment:
         return pub_key
 
     def get_node_balance(self, node_pub_key):
+        """Sum the balances of the node from all his channels"""
         total_balance = 0
         connected_edges = self.graph.edges(node_pub_key, data=True)
         for _, _, edge_data in connected_edges:
@@ -144,20 +139,8 @@ class LightningEnvironment:
                 total_balance += edge_data['node2_balance']
         return total_balance
 
-    def render(self, out_dir=None, agent_reward=None):
-        """
-        Creates an image describing the current state together with the transfers made
-        between last state and the current one.
-        """
-        visualize_graph_state(self.graph, self.positions,
-                              transfer_routes=self.debug_last_transfer_trials,
-                              out_dir=out_dir,
-                              verify_node_serial_number=False,
-                              plot_title=f"step-{self.num_steps}",
-                              additional_node_info={self.agent_pub_key: f"Agent balance: {agent_reward}"})
-        self.debug_last_transfer_trials = list()
 
-    def _add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance, node2_balance):
+    def add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance, node2_balance):
         """
         Adds an edge_to the graph
         Todo: currently the action sener can switch the pukeys order and choose the other side's policy which is wiered

@@ -1,8 +1,7 @@
 import numpy as np
-import networkx as nx
 import consts
 from typing import Optional
-from Enviroments.lightning_enviroment import LightningEnvironment
+from LigtningSimulator.LightningSimulator import LightningSimulator
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.common import human_format
 from copy import deepcopy
@@ -21,13 +20,13 @@ ENVIRONMENT_DENSITY = 100
 ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 6
 
 
-def get_env() -> nx.MultiGraph:
+def get_simulator():
     graph = create_sub_graph_by_node_capacity(k=ENVIRONMENT_NUM_NODES,
                                               highest_capacity_offset=ENVIRONMENT_DENSITY)
+    simulator = LightningSimulator(graph, num_transfers=NUM_TRANSACTIONS,
+                             transfer_max_amount=ENVIRONMENT_TRANSFERS_MAX_AMOUNT)
+    return simulator
 
-    env = LightningEnvironment(graph, transfers_per_step=NUM_TRANSACTIONS,
-                               transfer_max_amount=ENVIRONMENT_TRANSFERS_MAX_AMOUNT)
-    return env
 
 
 def get_logger(log_dir) -> Optional[Logger]:
@@ -46,12 +45,12 @@ def run_experiment(agent_constructors):
     1. Creates a common Lightning environment
     for each agent:
     2. Ask agent for edges he want to establish given a funds constraint
-    3. Add edges to a copy of the enviroment
+    3. Add edges to a copy of the ENVIRONMENT
     4. Repeat simulation of so many transaction and average final balance
     param: agent_constructors: list of tuples of an agent constructor and additional Kwargs
     """
-    # Create the base environment who's copies will run all simulations
-    env = get_env()
+    # Create the base ENVIRONMENT whos copies will run all simulations
+    env = get_simulator()
     new_node_pub_key = env.create_agent_node()
 
     results = defaultdict(list)
@@ -61,16 +60,17 @@ def run_experiment(agent_constructors):
         print("Agent:", agent.name)
         for repeat in range(REPEAT_SIMULATION):
             env = deepcopy(env)
+            # env.logdir = f"outdir/out_{repeat}"
 
-            # Ask agent for edges to add
-            new_edges = agent.get_channels(env.get_state())  # state is just the graph
+            # ask agent for edges to add
+            new_edges = agent.get_channels(env.get_graph()) # state is just the graph
 
             # Add edges to a local copy of the environment
             for edge in new_edges:
-                env._add_edge(**edge)
+                env.add_edge(**edge)
 
             start = time()
-            env.step()  # preforms NUM_TRANSACTIONS transactions
+            env.run() # peforms NUM_TRANSACTIONS transactions
             print(f"\t{repeat} {human_format(NUM_TRANSACTIONS/(time()-start))} tnx/sec")
 
             # report revenue
@@ -84,5 +84,6 @@ def run_experiment(agent_constructors):
 
 
 if __name__ == '__main__':
-    args = [(RandomInvestor, {}), (GreedyNodeInvestor, {}), (LightningPlusPlusAgent, {'alpha': 2})]
+    args = [(RandomInvestor, {}), (GreedyNodeInvestor, {})]
+    # args = [(LightningPlusPlusAgent, {})]
     run_experiment(args)
