@@ -3,19 +3,34 @@ from Agents.consts import DEFAULT_INITIAL_FUNDS
 from garbage.consts import LN_DEFAULT_CHANNEL_COST, LND_DEFAULT_POLICY
 
 
-def find_minimal_capacity_channel_nodes(graph, funds: int, public_key):
-    """Finds nodes with minimal capacity"""
+def find_minimal_capacity_channel_nodes(graph):
+    """
+    Finds nodes with minimal capacity
+    :param graph: lightning graph
+    :return: list of nodes that the agent want to connect to according to the minimal capacity of their channels
+    """
+    nodes_to_connect = list()
     nodes_set = set()
     edge_keys_to_score = []
-    for n1, n2, edge_data in graph.edges(data=True):
-        edge_keys_to_score += [(edge_data['capacity'], [n1, n2])]
-    edge_keys_to_score = sorted(edge_keys_to_score)
-    for item in edge_keys_to_score:
-        # Added the nodes
-        nodes_set.add(item[1][0])
-        nodes_set.add(item[1][1])
 
-    return list(nodes_set)
+    # Traverse all the edges in the graph and append the edge capacity with the relevant nodes
+    for n1, n2, edge_data in graph.edges(data=True):
+        edge_keys_to_score.append([(edge_data['capacity'], [n1, n2])])
+
+    # Sort the edges according to the capacity
+    edge_keys_to_score = sorted(edge_keys_to_score)
+    for nodes in edge_keys_to_score:
+
+        # Add the nodes to the list if they are not inside already
+        if nodes[1][0] not in nodes_set:
+            nodes_to_connect.append(nodes[1][0])
+            nodes_set.add(nodes[1][0])
+
+        if nodes[1][1] not in nodes_set:
+            nodes_to_connect.append(nodes[1][1])
+            nodes_set.add(nodes[1][1])
+
+    return nodes_to_connect
 
 
 class GreedyNodeInvestor(AbstractAgent):
@@ -27,9 +42,9 @@ class GreedyNodeInvestor(AbstractAgent):
         channels = list()
         funds_to_spend = self.initial_funds
         other_node_index: int = 0
-        best_nodes = find_minimal_capacity_channel_nodes(graph, self.initial_funds, self.pub_key)
-        while funds_to_spend > 0 and other_node_index < len(best_nodes):
-            other_node = best_nodes[other_node_index]
+        best_nodes_to_connect = find_minimal_capacity_channel_nodes(graph)
+        while funds_to_spend > 0 and other_node_index < len(best_nodes_to_connect):
+            other_node = best_nodes_to_connect[other_node_index]
             other_node_index += 1
             p = 0.5
             funds_to_spend -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
