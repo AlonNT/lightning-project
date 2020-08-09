@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 
 MAX_AGENT_FUNDS = 10**6
 ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 2
-NUM_TRANSACTIONS = 1000
-REPEAT_SIMULATION = 3
-ENVIRONMENT_NUM_NODES = 50
-ENVIRONMENT_DENSITY = 100
+NUM_TRANSACTIONS = 500
+REPEAT_SIMULATION = 10
+ENVIRONMENT_NUM_NODES = 30
+ENVIRONMENT_DENSITY = 50
 DEFAULT_INITIAL_FUNDS = 1000
 SIMULATION_OUT_DIR = None
 # The channel creation cost (which is the cost payed for the bitcoin miners
@@ -29,6 +29,7 @@ SIMULATION_OUT_DIR = None
 # This approximate value was calculated using buybitcoinworldwide.com to get the cost
 # of a transaction (in usd), then converting us dollars to satoshis (in 8.8.2020).
 LN_DEFAULT_CHANNEL_COST = 4*10**4
+
 
 def get_simulator():
     graph = create_sub_graph_by_node_capacity(k=ENVIRONMENT_NUM_NODES,
@@ -93,6 +94,6 @@ def run_experiment(agent_constructors, out_dir=None):
     plt.show()
 
 if __name__ == '__main__':
-    args = [(RandomInvestor, {}), (GreedyNodeInvestor, {'use_minimal_cpacity': True})]#, (LightningPlusPlusAgent, {'alpha': 2})]
+    args = [(GreedyNodeInvestor, {'use_minimal_capacity': True})]
     # args = [(GreedyNodeInvestor, {'use_minimal_cpacity': True})]
     run_experiment(args, out_dir=SIMULATION_OUT_DIR)
