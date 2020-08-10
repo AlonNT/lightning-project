@@ -4,7 +4,7 @@ import networkx as nx
 
 from LightningGraph.LN_parser import read_data_to_xgraph, process_lightning_graph
 
-LIGHTNING_GRAPH_DUMP_PATH = '../LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
+LIGHTNING_GRAPH_DUMP_PATH = 'LightningGraph/old_dumps/LN_2020.05.13-08.00.01.json'
 
 
 def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_trials=10000):
@@ -12,6 +12,7 @@ def sample_long_route(graph, amount, get_route_func, min_route_length=4, max_tri
     Sample src, dst nodes from graph and use the given function to find a long enough route between them
     Try until success or max_trials.
     """
+
     # Select random two nodes as src and dest, with the route between them being of length at least 'min_route_length'.
     unisolated_nodes = list(set(graph) - set(nx.isolates(graph)))
 

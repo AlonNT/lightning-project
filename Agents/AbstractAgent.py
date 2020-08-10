@@ -1,13 +1,11 @@
 import networkx as nx
-
 from typing import List, Dict
-from Agents.consts import DEFAULT_INITIAL_FUNDS
-
 
 class AbstractAgent(object):
-    def __init__(self, public_key: str, initial_funds: int = DEFAULT_INITIAL_FUNDS):
+    def __init__(self, public_key: str, initial_funds: int, channel_cost: int):
         self.pub_key: str = public_key
         self.initial_funds: int = initial_funds
+        self.channel_cost = channel_cost
 
     @property
     def name(self) -> str:
