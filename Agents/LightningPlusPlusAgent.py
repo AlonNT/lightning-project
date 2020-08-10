@@ -1,3 +1,4 @@
+import random
 from typing import List, Dict
 
 import matplotlib.pyplot as plt
@@ -5,44 +6,55 @@ import networkx as nx
 import numpy as np
 
 from Agents.AbstractAgent import AbstractAgent
+from Agents.consts import DEFAULT_INITIAL_FUNDS
+from garbage.consts import LN_DEFAULT_CHANNEL_COST
 
 
-def get_distances_probability_vector(nodes, possible_nodes_mask, distance_matrix):
+def get_distances_probability_vector(possible_nodes_mask: np.ndarray, distance_matrix: np.ndarray) -> np.ndarray:
     """
     Get the distances probability vector for the nodes in the graph.
     Sampling a node according to this probability vector will (probably) result
     in a node that is far away from the already chosen nodes.
 
-    :param nodes: A list of the nodes in the graph.
-                  This is important because we want the order of the nodes to be the same,
-                  and calling graph.nodes does not necessarily maintain the order. TODO or is it?
-    :param possible_nodes_mask: A boolean NumPy array indicating whether the relevant node is possible for selection
-                                or was it selected already.
-    :param distance_matrix: A 2D NumPy array which is the distance between every two vertices in the graph.
-                            Speeds up the run-time of this function.
-    :return: A NumPy array that is a probability vector for the nodes in the graph.
+    :param possible_nodes_mask: A boolean NumPy array indicating whether the relevant node is
+                                possible for selection or was it selected already.
+    :param distance_matrix: A 2D NumPy array which is the distance between every two vertices
+                            in the graph. Speeds up the run-time of this function.
+    :return: A NumPy array that is the probability vector for the nodes in the graph.
     """
-    n = len(nodes)
+    n = len(possible_nodes_mask)
 
+    # This is a mask indicating the previously selected nodes.
+    selected_nodes_mask = ~possible_nodes_mask
+
+    # If all node are possible for the selection (meaning there are no nodes that
+    # were already selected), the distances are undefined.
+    # Return the all ones weight vector, so all nodes have the same weight.
     if np.all(possible_nodes_mask):
-        return np.ones(shape=n, dtype=np.float32)
+        weights_vector = np.ones(shape=n, dtype=np.float32)
 
-    distances_p = np.empty(shape=n, dtype=np.float32)
-    for i, distances in enumerate(distance_matrix):  # TODO Do it vectorized
-        distances_p[i] = np.min(distances[~possible_nodes_mask])
+    # Now we know that some nodes were selected, and the distances are well defined.
+    # The weight of each node will be the minimal distance to a previously selected node.
+    else:
+        weights_vector = np.empty(shape=n, dtype=np.float32)
+        for i, distances in enumerate(distance_matrix):
+            weights_vector[i] = np.min(distances[selected_nodes_mask])
 
-    return distances_p
+    probability_vector = weights_vector / weights_vector.sum()
+
+    return probability_vector
 
 
 def get_capacities_probability_vector(graph, nodes, possible_nodes_mask, alpha=2):
     """
     Get the capacities probability vector for the nodes in the graph.
-    Sampling a node according to this probability vector will (probably) result in a node with high capacity.
+    Sampling a node according to this probability vector will (probably)
+    result in a node with high capacity.
 
     :param graph: The graph.
     :param nodes: A list of the nodes in the graph.
                   This is important because we want the order of the nodes to be the same,
-                  and calling graph.nodes does not necessarily maintain the order. TODO or is it?
+                  and calling graph.nodes does not necessarily maintain the order.
     :param possible_nodes_mask: A boolean NumPy array indicating whether the relevant node is possible for selection
                                 or was it selected already.
     :param alpha: The power to raise the capacities before dividing by the sum.
@@ -50,9 +62,6 @@ def get_capacities_probability_vector(graph, nodes, possible_nodes_mask, alpha=2
                   for node with different capacities.
     :return: A NumPy array that is a probability vector for the nodes in the graph.
     """
-    if possible_nodes_mask is None:
-        possible_nodes_mask = np.ones(shape=len(nodes), dtype=np.bool)
-
     capacities_per_node = nx.get_node_attributes(graph, 'total_capacity')
     capacities = np.array([capacities_per_node[node] for node in nodes])
     capacities[~possible_nodes_mask] = 0
@@ -69,24 +78,22 @@ def get_distance_matrix(graph, nodes):
     :param graph: The graph.
     :param nodes: A list of the nodes in the graph.
                   This is important because we want the order of the nodes to be the same,
-                  and calling graph.nodes does not necessarily maintain the order. TODO or is it?
+                  and calling graph.nodes does not necessarily maintain the order.
     :return: A 2D NumPy array which is the distance between every two vertices in the graph.
     """
-    # n = len(graph.nodes)
-    n = len(nodes)  # TODO: is it ok? i want to call graph.nodes only once in order to allow excluding nodes
+    n = len(nodes)
     distance_matrix = np.empty(shape=(n, n), dtype=np.float32)
 
     for source_node, distances_to_targets in nx.shortest_path_length(graph):
-        if source_node in nodes:  # TODO: is this too slow?
-            i = nodes.index(source_node)
-            for target_node, distance in distances_to_targets.items():
-                j = nodes.index(target_node)
-                distance_matrix[i, j] = distance
+        i = nodes.index(source_node)
+        for target_node, distance in distances_to_targets.items():
+            j = nodes.index(target_node)
+            distance_matrix[i, j] = distance
 
     return distance_matrix
 
 
-def visualize_current_step(graph, nodes, positions,  agent_node, selected_node, selected_nodes, p, i, k):
+def visualize_current_step(graph, nodes, positions, agent_node, selected_node, selected_nodes, p, i, k):
     """
     Visualize a single step in the nodes selection algorithm.
 
@@ -106,9 +113,9 @@ def visualize_current_step(graph, nodes, positions,  agent_node, selected_node, 
     for node, (x, y) in positions.items():
         plt.text(x - 0.02, y + 0.05, s='{:.2f}'.format(p[nodes.index(node)]))
 
-    nx.draw_networkx_nodes(graph, positions, nodelist=[agent_node], node_color='yellow', alpha=1)
-    nx.draw_networkx_nodes(graph, positions, nodelist=selected_nodes, node_color='magenta', alpha=1)
-    nx.draw_networkx_nodes(graph, positions, nodelist=[selected_node], node_color='green', alpha=1)
+    nx.draw_networkx_nodes(graph, positions, nodelist=[agent_node], node_color='yellow')
+    nx.draw_networkx_nodes(graph, positions, nodelist=selected_nodes, node_color='magenta')
+    nx.draw_networkx_nodes(graph, positions, nodelist=[selected_node], node_color='green')
     plt.show()
 
 
@@ -124,9 +131,10 @@ def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
     :param visualize: If it's true, visualize each step in the algorithm.
     :return: A list containing the k selected nodes.
     """
-    agent_node = graph.nodes[agent_public_key]
-    nodes = list(graph.nodes)
-    distance_matrix = get_distance_matrix(graph, nodes)
+    agent_public_key = graph.nodes[agent_public_key]['pub_key']
+    nodes = [node for node in graph.nodes if node != agent_public_key]
+    sub_graph = graph.subgraph(nodes).copy()
+    distance_matrix = get_distance_matrix(sub_graph, nodes)
 
     positions = nx.spring_layout(graph)
 
@@ -134,48 +142,93 @@ def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
 
     for i in range(k):
         possible_nodes_mask = np.array([(node not in selected_nodes) for node in nodes])
-        capacities_p = get_capacities_probability_vector(graph, nodes, possible_nodes_mask)
-        distances_p = get_distances_probability_vector(nodes, possible_nodes_mask, distance_matrix)
+        capacities_p = get_capacities_probability_vector(sub_graph, nodes, possible_nodes_mask)
+        distances_p = get_distances_probability_vector(possible_nodes_mask, distance_matrix)
         combined_p = capacities_p * distances_p
-        combined_p[nodes.index(agent_node)] = 0  # Exclude the agent's node from the distribution.
         p = combined_p / combined_p.sum()
 
         selected_node = np.random.choice(nodes, p=p)
         selected_nodes.append(selected_node)
 
         if visualize:
-            visualize_current_step(graph, nodes, positions, agent_node, selected_node, selected_nodes, p, i, k)
+            visualize_current_step(graph, nodes, positions, agent_public_key, selected_node, selected_nodes, p, i, k)
 
     return selected_nodes
 
 
 class LightningPlusPlusAgent(AbstractAgent):
 
-    def __init__(self, public_key, initial_funds=10, **kwargs):
+    def __init__(self, public_key, initial_funds=DEFAULT_INITIAL_FUNDS,
+                 alpha=2, n_channels_per_node=4, money_in_each_channel=10**4):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds)
 
-        self.alpha = kwargs['alpha']
+        self.alpha = alpha
+        self.n_channels_per_node = n_channels_per_node
+        self.money_in_each_channel = money_in_each_channel
 
     @property
     def name(self) -> str:
+        """
+        :return: The name of the agent.
+        """
         class_name = self.__class__.__name__
         return f'{class_name}(alpha={self.alpha})'
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
-        return list()
+        """
+        This function gets the graph as and return the channels the agent wants to create.
 
-    # TODO keep this for he future use of RL.
-    # def act(self, graph):
-    #     if self.nodes_to_connect is None:
-    #         self.nodes_to_connect = find_best_k_nodes(graph, self.max_edges, exclude_nodes=[self.pub_key])
-    #     if self.added_edges < self.max_edges:
-    #         other_node = self.nodes_to_connect[self.added_edges]
-    #         self.added_edges += 1
-    #         p = 0.5
-    #         self.balance -= LN_DEFAULT_CHANNEL_COST + p * self.default_channel_capacity
-    #         command_arguments = {'node1_pub': self.pub_key, 'node2_pub': other_node,
-    #                              'node1_policy': LND_DEFAULT_POLICY,
-    #                              'balance_1': p * self.default_channel_capacity,
-    #                              'balance_2': (1 - p) * self.default_channel_capacity}
-    #         return 'add_edge', list(command_arguments.values())
-    #     return 'NOOP', {}
+        :param graph: The graph where the agent operates in.
+        :return: A list containing the channels the agent wishes to create.
+                 Each channel is a dictionary containing the relevant attributes.
+        """
+        channels = list()
+
+        funds = self.initial_funds
+
+        channel_creation_cost = LN_DEFAULT_CHANNEL_COST  # TODO change
+        money_in_channel_cost = self.money_in_each_channel
+        total_channel_cost = channel_creation_cost + money_in_channel_cost  # TODO split to cost and locked money
+        number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost)
+        assert number_of_nodes_to_surround > 0, "consider subtracting self.n_channels_per_node or the channel cost "
+        nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
+                                              agent_public_key=self.pub_key, visualize=False)
+
+        for node in nodes_to_surround:
+            # TODO maybe not take the minimal our of these?
+            min_fee_base_msat = float('inf')
+            min_fee_rate_milli_msat = float('inf')
+            min_time_lock_delta = float('inf')
+
+            for node1, node2, channel_data in graph.edges(node, data=True):
+                node_i = 1 if node == channel_data['node1_pub'] else 2
+                node_policy = channel_data[f'node{node_i}_policy']
+
+                # TODO are there more values to take into account?
+                fee_base_msat = node_policy['fee_base_msat']
+                fee_rate_milli_msat = node_policy['fee_rate_milli_msat']
+                time_lock_delta = node_policy['time_lock_delta']
+
+                min_fee_base_msat = min(min_fee_base_msat, fee_base_msat)
+                min_fee_rate_milli_msat = min(min_fee_rate_milli_msat, fee_rate_milli_msat)
+                min_time_lock_delta = min(min_time_lock_delta, time_lock_delta)
+
+            nodes_to_connect_with = random.sample(list(graph.neighbors(node)), k=self.n_channels_per_node)
+
+            for node_to_connect in nodes_to_connect_with:
+                p = 0.5
+                funds -= total_channel_cost + p * money_in_channel_cost
+
+                # node2_policy will be determined by the simulator
+                channel_details = {'node1_pub': self.pub_key,
+                                   'node2_pub': node_to_connect,
+                                   'node1_policy': {"time_lock_delta": min_time_lock_delta,
+                                                    "fee_base_msat": min_fee_base_msat,
+                                                    "fee_rate_milli_msat": min_fee_rate_milli_msat},
+                                   'node1_balance': p * money_in_channel_cost,
+                                   'node2_balance': (1 - p) * money_in_channel_cost}
+
+                channels.append(channel_details)
+
+        return channels
+
