@@ -5,6 +5,8 @@ import numpy as np
 
 LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "fee_rate_milli_msat": 0.001}
 
+PLT_COLORS=['r', 'g', 'b', 'k', 'y', 'p', 'k']
+
 def human_format(num):
     """
     :param num: A number to print in a nice readable way.

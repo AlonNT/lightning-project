@@ -2,11 +2,11 @@ from Agents.AbstractAgent import AbstractAgent
 from utils.common import LND_DEFAULT_POLICY
 
 
-def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
+def find_minimize_channel_nodes(graph, minimize: bool):
     """
     Finds nodes with minimal/maximal capacity
     :param graph: lightning graph
-    :param minimal_capacity: boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
+    :param minimize: boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
     :return: list of nodes that the agent want to connect to according to the minimal/maxima; capacity of their channels
     """
     nodes_to_connect = list()
@@ -20,7 +20,7 @@ def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
     for n1, n2, edge_data in graph.edges(data=True):
         edge_keys_to_score.append((edge_data['capacity'], [n1, n2]))
     # Sort the edges according to the capacity - maximal/minimal capacity
-    if minimal_capacity:
+    if minimize:
         edge_keys_to_score = sorted(edge_keys_to_score)
     else:
         edge_keys_to_score = reversed(sorted(edge_keys_to_score))
@@ -36,7 +36,7 @@ def find_minimal_capacity_channel_nodes(graph, minimal_capacity: bool):
     return nodes_to_connect
 
 
-def find_nodes_with_maximal_degree(graph):
+def find_nodes_with_maximal_degree(graph, minimize: bool):
     """
     :param graph: lightning graph
     :return: list with nodes according to their degree from high to low
@@ -48,7 +48,10 @@ def find_nodes_with_maximal_degree(graph):
     # Traverse the nodes in the network and add for each node its degree
     for node in graph.nodes(data=True):
         nodes_degree_data.append((graph.degree[node[0]], node[0]))
-    nodes_degree_data = sorted(nodes_degree_data)
+    if minimize:
+        nodes_degree_data = sorted(nodes_degree_data)
+    else:
+        nodes_degree_data = reversed(sorted(nodes_degree_data))
 
     # Create a list with nodes according to their degree from high to low
     for node_data in nodes_degree_data:
@@ -57,18 +60,20 @@ def find_nodes_with_maximal_degree(graph):
 
 
 class GreedyNodeInvestor(AbstractAgent):
-    def __init__(self, public_key: str, initial_funds: int, channel_cost: int, **kwargs):
+    def __init__(self, public_key: str, initial_funds: int, channel_cost: int, minimize=False, use_node_degree=False):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
         self.default_balance_amount = initial_funds / 10
 
-        # Boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
-        self.minimal_capacity = kwargs['use_minimal_capacity']
+        self.minimize = minimize
+        self.use_node_degree = use_node_degree
 
     def get_channels(self, graph):
         channels = list()
         funds_to_spend = self.initial_funds
-        # ordered_nodes = find_minimal_capacity_channel_nodes(graph, self.minimal_capacity)
-        ordered_nodes = find_nodes_with_maximal_degree(graph)
+        if self.use_node_degree:
+            ordered_nodes = find_nodes_with_maximal_degree(graph, self.minimize)
+        else:
+            ordered_nodes = find_minimize_channel_nodes(graph, self.minimize)
         # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
         for other_node in ordered_nodes:
             # check if there are enough funds to establish a channel
@@ -90,4 +95,14 @@ class GreedyNodeInvestor(AbstractAgent):
 
     @property
     def name(self) -> str:
-        return self.__class__.__name__
+        name =  self.__class__.__name__
+        if self.minimize:
+            name += "-minimal"
+        else:
+            name += "-maximal"
+        if self.use_node_degree:
+            name += "-node_degree"
+        else:
+            name += "-node_capacity"
+
+        return name

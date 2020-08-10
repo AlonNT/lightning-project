@@ -1,12 +1,12 @@
 import os
-import pickle
 from typing import List, Tuple, Dict
-
+import seaborn as sns
+import pandas as pd
+import numpy as np
 import imageio
 import networkx as nx
 from matplotlib import pyplot as plt
-
-from utils.common import human_format, get_sender_policy_and_id
+from utils.common import human_format, get_sender_policy_and_id, PLT_COLORS
 
 
 def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False,
@@ -45,12 +45,11 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
                             font_color='y', font_size=6)
 
     # Highlight specified routes
-    colors = ['g', 'b', 'k', 'y']
     if transfer_routes is not None:
         for i, (full_route, last_node_index) in enumerate(transfer_routes):
             src = full_route[0][0]
             dst = full_route[-1][1]
-            c = colors[i % len(colors)]
+            c = PLT_COLORS[i % len(PLT_COLORS)]
             nx.draw_networkx_edges(graph, positions, edgelist=full_route[:last_node_index],
                                    edge_color=c, width=15, edgecolors='k', alpha=0.5)
             nx.draw_networkx_edges(graph, positions, edgelist=full_route[last_node_index:],
@@ -84,9 +83,6 @@ def visualize_routes(graph, src, dest, routes: Dict[str, List[Tuple[str, str]]])
 
     nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k')
 
-    # colors = plt.cm.rainbow(np.linspace(0, 1, len(routes)))
-    colors = ['r', 'g', 'b', 'p', 'y']
-
     # Add fee visualization on routes edges
     for i, route_name in enumerate(routes):
         edge_labels = {}
@@ -105,7 +101,7 @@ def visualize_routes(graph, src, dest, routes: Dict[str, List[Tuple[str, str]]])
         # nx.draw_networkx_nodes(graph, positions, nodelist=route_nodes,
         #                        node_color=colors[i], edgecolors='k', alpha=0.5)
         nx.draw_networkx_edges(graph, positions, edgelist=route,
-                               edge_color=colors[i], width=10, edgecolors='k', label=route_name, alpha=0.5)
+                               edge_color=PLT_COLORS[i], width=10, edgecolors='k', label=route_name, alpha=0.5)
 
     # Mark src and dest positions
     src_x, src_y = positions[src]
@@ -128,16 +124,24 @@ def create_simulation_gif(folder):
                     duration=0.5)  # modify the frame duration as needed
 
 
-def compare_simulation_logs(logg_dir):
-    for dir_path in os.listdir(logg_dir):
-        agent_name = dir_path.split('-')[0]
-        dir_path = os.path.join(logg_dir, dir_path)
-        if os.path.isdir(dir_path):
-            scores_file = open(os.path.join(dir_path, "step_scores.pkl"), 'rb')
-            episode_scores = pickle.load(scores_file)
-            plt.plot(episode_scores, label=agent_name)
-
-    plt.xlabel('# Step')
-    plt.ylabel("Balance")
-    plt.legend()
-    plt.savefig(os.path.join(logg_dir, "Balance_plot.png"))
+def plot_experiment_mean_and_std(values: np.array, label: str, color, use_seaborn=True):
+    """Plot the mean and std of n experiment with m steps
+        param:values: an n x m array describing the comulative reward of n experiments of a single agent
+    """
+    if use_seaborn:
+        # TODO this is super Slow!
+        print("Plotting with Seaborn")
+        dfs = []
+        # Create a dataframe with multiple experiment, sns.lineplot needs them to have a
+        # common x values in order to compute mean and std
+        for r in range(len(values)):
+            df_row = pd.DataFrame(values[r])
+            df_row['x'] = df_row.index
+            dfs += [df_row]
+        data = pd.concat(dfs)
+        sns.lineplot(x='x', y=0, data=data, label=label, color=color)
+    else: # PLT lame version
+        mean = values.mean(0)
+        std = values.std(0)*0.5 # * 0.5 to make it smaller
+        plt.plot(range(len(mean)), mean, color=color)
+        plt.errorbar(range(len(mean)), mean, std, label=label, color=color, alpha=0.3)

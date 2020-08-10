@@ -20,8 +20,8 @@ class RandomInvestor(AbstractAgent):
 
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': random_node_pub_key,
                                'node1_policy': LND_DEFAULT_POLICY,
-                               'node1_balance': self.default_balance_amount,
-                               'node2_balance': self.default_balance_amount}
+                               'node1_balance': chanel_balance,
+                               'node2_balance': chanel_balance}
             channels.append(channel_details)
 
         # assert len(channels) == 0, "Channels list is empty" # Why TF do we need this empty?
