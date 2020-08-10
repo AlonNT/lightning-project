@@ -11,7 +11,7 @@ class cyclic_list:
     def __getitem__(self, index):
         return self.items[index%len(self.items)]
 
-PLT_COLORS=cyclic_list(['r', 'g', 'b', 'k', 'y', 'p', 'k', 'c', 'm'])
+PLT_COLORS=cyclic_list(['r', 'g', 'b', 'k', 'y', 'k', 'c', 'm'])
 
 def human_format(num):
     """
