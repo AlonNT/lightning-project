@@ -18,9 +18,9 @@ import matplotlib.pyplot as plt
 # ============== Experiment Configuration ============== #
 MAX_AGENT_FUNDS = 10**6
 ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 3
-NUM_TRANSACTIONS = 10000
+NUM_TRANSACTIONS = 1000
 REPEAT_SIMULATION = 3
-ENVIRONMENT_NUM_NODES = 50
+ENVIRONMENT_NUM_NODES = 30
 ENVIRONMENT_DENSITY = 50
 SIMULATION_OUT_DIR = None
 # The channel creation cost (which is the cost payed for the bitcoin miners

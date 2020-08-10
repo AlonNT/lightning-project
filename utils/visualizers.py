@@ -143,5 +143,5 @@ def plot_experiment_mean_and_std(values: np.array, label: str, color, use_seabor
     else: # PLT lame version
         mean = values.mean(0)
         std = values.std(0)*0.5 # * 0.5 to make it smaller
-        plt.plot(range(len(mean)), mean, color=color)
-        plt.errorbar(range(len(mean)), mean, std, label=label, color=color, alpha=0.3)
+        plt.plot(range(len(mean)), mean, color=color, label=label)
+        plt.errorbar(range(len(mean)), mean, std, color=color, alpha=0.3)
