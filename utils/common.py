@@ -5,7 +5,13 @@ import numpy as np
 
 LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "fee_rate_milli_msat": 0.001}
 
-PLT_COLORS=['r', 'g', 'b', 'k', 'y', 'p', 'k']
+class cyclic_list:
+    def __init__(self, items):
+        self.items = items
+    def __getitem__(self, index):
+        return self.items[index%len(self.items)]
+
+PLT_COLORS=cyclic_list(['r', 'g', 'b', 'k', 'y', 'p', 'k', 'c', 'm'])
 
 def human_format(num):
     """

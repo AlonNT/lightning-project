@@ -49,7 +49,7 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
         for i, (full_route, last_node_index) in enumerate(transfer_routes):
             src = full_route[0][0]
             dst = full_route[-1][1]
-            c = PLT_COLORS[i % len(PLT_COLORS)]
+            c = PLT_COLORS[i]
             nx.draw_networkx_edges(graph, positions, edgelist=full_route[:last_node_index],
                                    edge_color=c, width=15, edgecolors='k', alpha=0.5)
             nx.draw_networkx_edges(graph, positions, edgelist=full_route[last_node_index:],
