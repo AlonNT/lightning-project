@@ -121,16 +121,26 @@ class GreedyNodeInvestor(AbstractAgent):
         self.use_node_betweenness = use_node_betweenness
 
     def get_channels(self, graph):
-
+        """
+        This function create channels details according to the agent strategy, This agent can choose the vertices with
+        which he wants to connect according to different strategies:
+            (1) Nodes with maximal/minimal capacity (their balances in all the channels)
+            (2) Nodes with the maximal/minimal degree (i.e have the most/lowest channels in the network)
+            (3) Nodes with the maximal/minimal betweenness
+        :param graph: lightning graph
+        :return: List with channels details (i.e the nodes that opened the channel, balances and policy)
+        """
         channels = list()
         funds_to_spend = self.initial_funds
 
+        # Choose between the strategies
         if self.use_node_degree:
             ordered_nodes = find_nodes_degree(graph, self.minimize)
         elif self.use_node_betweenness:
             ordered_nodes = find_nodes_betweenness(graph, self.minimize)
         else:
             ordered_nodes = find_minimize_channel_nodes(graph, self.minimize)
+
         # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
         for other_node in ordered_nodes:
             # check if there are enough funds to establish a channel
@@ -147,7 +157,6 @@ class GreedyNodeInvestor(AbstractAgent):
 
             channels.append(channel_details)
 
-        # assert len(channels) == 0, "Channels list is empty" # Why TF do we need this empty?
         return channels
 
     @property

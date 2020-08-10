@@ -5,8 +5,8 @@ from typing import Optional
 import os
 import numpy as np
 from utils.common import PLT_COLORS
-from Agents.greedy_agent import GreedyNodeInvestor
-from Agents.random_agent import RandomInvestor
+from Agents.greedyAgent import GreedyNodeInvestor
+from Agents.randomAgent import RandomInvestor
 from LightningSimulator import LightningSimulator
 from utils.common import human_format
 from utils.graph_helpers import create_sub_graph_by_node_capacity
@@ -90,11 +90,17 @@ def run_experiment(agent_constructors, out_dir=None):
     plt.show()
 
 if __name__ == '__main__':
+    # TODO Crash with betweenness (plot with colors doing some problems)
+    # args = [(GreedyNodeInvestor, {}),
+    #         (GreedyNodeInvestor, {'minimize': True}),
+    #         (GreedyNodeInvestor, {'use_node_degree': True}),
+    #         (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+    #         (GreedyNodeInvestor, {'use_node_betweenness': True}),
+    #         (GreedyNodeInvestor, {'use_node_betweenness': True, 'minimize': True}),
+    #         (RandomInvestor, {})]
     args = [(GreedyNodeInvestor, {}),
             (GreedyNodeInvestor, {'minimize': True}),
             (GreedyNodeInvestor, {'use_node_degree': True}),
             (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-            (GreedyNodeInvestor, {'use_node_betweenness': True}),
-            (GreedyNodeInvestor, {'use_node_betweenness': True, 'minimize': True}),
             (RandomInvestor, {})]
     run_experiment(args, out_dir=SIMULATION_OUT_DIR)
