@@ -14,7 +14,6 @@ from utils.visualizers import plot_experiment_mean_and_std
 import matplotlib.pyplot as plt
 
 
-
 # ============== Experiment Configuration ============== #
 MAX_AGENT_FUNDS = 10**6
 ENVIRONMENT_TRANSFERS_MAX_AMOUNT = 10 ** 3
@@ -94,7 +93,8 @@ if __name__ == '__main__':
     args = [(GreedyNodeInvestor, {}),
             (GreedyNodeInvestor, {'minimize': True}),
             (GreedyNodeInvestor, {'use_node_degree': True}),
-            (GreedyNodeInvestor, {'use_node_degree': True, 'minimize':True}),
+            (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+            (GreedyNodeInvestor, {'use_node_betweenness': True}),
+            (GreedyNodeInvestor, {'use_node_betweenness': True, 'minimize': True}),
             (RandomInvestor, {})]
-    # args = [(GreedyNodeInvestor, {'minimize': False})]
     run_experiment(args, out_dir=SIMULATION_OUT_DIR)

@@ -39,7 +39,7 @@ def find_minimize_channel_nodes(graph, minimize: bool):
     return nodes_to_connect
 
 
-def find_nodes_with_maximal_degree(graph, minimize: bool):
+def find_nodes_degree(graph, minimize: bool):
     """
     :param graph: lightning graph
     :return: list with nodes according to their degree from high to low
@@ -62,17 +62,33 @@ def find_nodes_with_maximal_degree(graph, minimize: bool):
     return nodes_to_connect
 
 
-def find_nodes_with_maximal_betweeness(graph):
+def find_nodes_betweenness(graph, minimize: bool):
+    """
+    This function traverse all the paths between node to each other (according to lnd_routing algorithm) and
+    counts the number of times a particular node appeared in the shortest path between two nodes in the graph
+    :param graph: lightning graph
+    :param minimize: boolean indicator To choose which strategy to choose (i.e maximal or minimal betweenness)
+    :return: list of nodes that have the maximal betweenness
+    (i.e nodes that participated in the maximum number of shortest path).
+    """
+    number_of_nodes = graph.number_of_nodes()
+
+    # Betweenness centrality of a node scales with the number of pairs of nodes as suggested by the summation indices.
+    # Therefore, the calculation may be rescaled by dividing through by the number of pairs of nodes.
+    # todo maybe for lightning++
+    normalization_factor_undirected_graph = ((number_of_nodes - 1) * (number_of_nodes - 2)) / 2
 
     # Create a dictionary for all nodes in the graph with a counter that indicate how many short-paths pass through them
     nodes_betweenness_counter = {node: 0 for node in graph.nodes()}
     # Nodes with maximal betweenness ordered
     ordered_nodes_with_maximal_betweenness = list()
-    
+
     # Traverse all the routes between the nodes in the graph (O(N^2)), and getting the route according the lnd_routing
-    for node1 in graph.nodes():
-        for node2 in graph.nodes():
-            route = get_route(graph, node1, node2, BETWEENNESS_TRANSFER_AMOUNT)
+    for src in graph.nodes():
+        for dest in graph.nodes():
+            # todo ask about the amount
+            # Get the path from node1 to node2 according the lnd_routing algorithm
+            route = get_route(graph, src, dest, BETWEENNESS_TRANSFER_AMOUNT)
 
             # No route was found transferring 'amount; from 'source' to 'target'
             if route is None:
@@ -80,33 +96,39 @@ def find_nodes_with_maximal_betweeness(graph):
             # Traverse the nodes in the path and increase the nodes that participate in the route
             for node_path in route:
                 first_node, second_node = node_path[0], node_path[1]
+                # todo consult with alon and ariel about the nodes we want to
                 nodes_betweenness_counter[second_node] += 1
 
     # Sort the dictionary according to the values (i.e nodes that have passed through them the most short paths will
     # be at the start) and append the public key of the 'best betweenness nodes' to ordered list
-    nodes_betweenness_counter_sorted_by_value = sorted(nodes_betweenness_counter.items(), key=lambda item: item[1], reverse=True)
+    nodes_betweenness_counter_sorted_by_value = sorted(nodes_betweenness_counter.items(), key=lambda item: item[1],
+                                                       reverse=minimize)
     for key, _ in nodes_betweenness_counter_sorted_by_value:
         ordered_nodes_with_maximal_betweenness.append(key)
 
-    # todo normalize the betweenness
     return ordered_nodes_with_maximal_betweenness
 
 
 class GreedyNodeInvestor(AbstractAgent):
-    def __init__(self, public_key: str, initial_funds: int, channel_cost: int, minimize=False, use_node_degree=False):
+    # TODO kargs ??
+    def __init__(self, public_key: str, initial_funds: int, channel_cost: int, minimize=False, use_node_degree=False,
+                 use_node_betweenness=False):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
         self.default_balance_amount = initial_funds / 10
 
         self.minimize = minimize
         self.use_node_degree = use_node_degree
+        self.use_node_betweenness = use_node_betweenness
 
     def get_channels(self, graph):
-        find_nodes_with_maximal_betweeness(graph)
+
         channels = list()
         funds_to_spend = self.initial_funds
 
         if self.use_node_degree:
-            ordered_nodes = find_nodes_with_maximal_degree(graph, self.minimize)
+            ordered_nodes = find_nodes_degree(graph, self.minimize)
+        elif self.use_node_betweenness:
+            ordered_nodes = find_nodes_betweenness(graph, self.minimize)
         else:
             ordered_nodes = find_minimize_channel_nodes(graph, self.minimize)
         # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
@@ -130,13 +152,16 @@ class GreedyNodeInvestor(AbstractAgent):
 
     @property
     def name(self) -> str:
-        name =  self.__class__.__name__
+        name = self.__class__.__name__
         if self.minimize:
             name += "-minimal"
         else:
             name += "-maximal"
+
         if self.use_node_degree:
             name += "-node_degree"
+        elif self.use_node_betweenness:
+            name += "-node_betweenness"
         else:
             name += "-node_capacity"
 
