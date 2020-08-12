@@ -8,6 +8,7 @@ import numpy as np
 
 from Agents.greedyAgent import GreedyNodeInvestor
 from Agents.randomAgent import RandomInvestor
+from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from LightningSimulator import LightningSimulator
 from utils.common import PLT_COLORS
 from utils.common import human_format
@@ -28,7 +29,7 @@ SIMULATOR_NUM_TRANSACTIONS = 1000
 NUMBER_REPEATED_SIMULATIONS = 3
 
 # The size of the sub-graph of the lightning network to simulate.
-SIMULATOR_NUM_NODES = 30
+SIMULATOR_NUM_NODES = 100
 
 # The higher this number the more sparse the sub-graph is.
 # The nodes will be ordered by some metric and the M next nodes will be selected.
@@ -111,12 +112,15 @@ def run_experiment(agent_constructors, out_dir=None):
 
 
 if __name__ == '__main__':
-    args = [(GreedyNodeInvestor, dict()),
-            # (GreedyNodeInvestor, {'minimize': True}),
-            (GreedyNodeInvestor, {'use_node_degree': True}),
-            (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-            (GreedyNodeInvestor, {'use_node_routeness': True}),
-            (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-            (RandomInvestor, dict())]
+    args = [
+        (LightningPlusPlusAgent, dict()),
+        # (GreedyNodeInvestor, dict()),
+        # (GreedyNodeInvestor, {'minimize': True}),
+        # (GreedyNodeInvestor, {'use_node_degree': True}),
+        # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
+        (RandomInvestor, dict()),
+    ]
 
     run_experiment(args, out_dir=DEBUG_OUT_DIR)

@@ -1,6 +1,6 @@
 import os
 import random
-from typing import List
+from typing import List, Dict
 
 import networkx as nx
 import numpy as np
@@ -166,7 +166,7 @@ class LightningSimulator:
 
         return total_balance
 
-    def add_edges(self, edges: List):
+    def add_edges(self, edges: List[Dict]):
         """
         Add a list of edges to the graph.
         :param edges: A list of edges to add to the graph.
