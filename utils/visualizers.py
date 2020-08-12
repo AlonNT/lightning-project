@@ -92,7 +92,7 @@ def visualize_routes(graph, src, dest, routes: Dict[str, List[Tuple[str, str]]])
             edge_data = graph.edges[edge_key]
             sender_node_policy, sender_node_id = get_sender_policy_and_id(edge_key[1], edge_data)
             edge_labels[(edge_key[0], edge_key[
-                1])] = f'b:{sender_node_policy["fee_base_msat"]}\nr:{sender_node_policy["fee_rate_milli_msat"]}'
+                1])] = f'b:{sender_node_policy["fee_base_msat"]}\nr:{sender_node_policy["proportional_fee"]}'
 
         nx.draw_networkx_edge_labels(graph, positions, edge_labels=edge_labels, font_color='red', font_size=8)
 
@@ -124,12 +124,17 @@ def create_simulation_gif(folder):
                     duration=0.5)  # modify the frame duration as needed
 
 
-def plot_experiment_mean_and_std(values: np.array, label: str, color, use_seaborn=True):
-    """Plot the mean and std of n experiment with m steps
-        param:values: an n x m array describing the comulative reward of n experiments of a single agent
+def plot_experiment_mean_and_std(values: np.ndarray, label: str, color: str, use_seaborn: bool = False):
     """
-    if use_seaborn:
-        # TODO this is super Slow!
+    Plot the mean and std of n experiment with m steps.
+
+    :param values: An n x m array describing the cumulative reward of n experiments of a single agent
+    :param label:
+    :param color:
+    :param use_seaborn:
+    :return:
+    """
+    if use_seaborn:  # This is slow, matplotlib version is much faster.
         print("Plotting with Seaborn")
         dfs = []
         # Create a dataframe with multiple experiment, sns.lineplot needs them to have a

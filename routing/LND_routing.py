@@ -89,10 +89,10 @@ def lnd_weight(policy: Dict[str, int], amount: int, prev_weight: int) -> Tuple[i
                  (2) The weight of the route starting at node1 and reaching 'target' eventually.
     """
     fee_base = policy['fee_base_msat']
-    fee_proportional = policy['fee_rate_milli_msat']
+    fee_proportional = policy['proportional_fee']
     delay = policy['time_lock_delta']
-    fee = round(fee_base + (amount * fee_proportional))                          # TODO why round ?
-    weight = round(prev_weight + amount * delay * RISK_FACTOR_BILLIONTHS + fee)  # TODO why round ?
+    fee = fee_base + int(amount * fee_proportional)
+    weight = round(prev_weight + amount * delay * RISK_FACTOR_BILLIONTHS + fee)
     return amount + fee, weight
 
 

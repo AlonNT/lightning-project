@@ -1,27 +1,31 @@
+import os
 import random
 from typing import List
 
 import networkx as nx
 import numpy as np
-import os
+
 from routing.LND_routing import get_route
-from utils.common import calculate_route_fees, get_new_position_for_node
-from utils.visualizers import visualize_graph_state
 from utils.common import LND_DEFAULT_POLICY
+from utils.common import calculate_route_fees, get_new_position_for_agent_node
+from utils.visualizers import visualize_graph_state
 
 
 def transfer_money_in_graph(graph: nx.MultiGraph, amount: int, route: List, verbose: bool = False) -> int:
     """
-    Perform transfer of money along a route in a given graph, namely to make sure transaction is possible
-    and change channels balances along the route accordingly.
+    Perform transfer of money along a route in a given graph.
+    It makes sure the transaction is possible, and change channels' balances along the route accordingly.
 
     :param graph: The graph to work on.
     :param amount: Amount to transfer.
-    :param route: List of edges (tuples of 2 nodes)
-    :param verbose: If true, prints progress
+    :param route: List of edges (tuples of 3: 3 nodes and the channel id).
+                  Each edge's two nodes are ordered like source, target.
+                  So in total the source of the transfer is the source of the first edge,
+                  and the target of the transfer is the target of the last edge.
+    :param verbose: If true, prints progress.
     :return: int: len(route) if transaction succeeded
-                  some index i such that 0 < i < len(route) to indicate the first encountered node
-                  that wasn't able to transfer the funds.
+                  Otherwise, it returns some index i such that 0 < i < len(route) to indicate
+                  the first encountered node that wasn't able to transfer the funds.
     """
     if verbose:
         first_edge = route[0]
@@ -74,8 +78,8 @@ def get_nodes_ordered_balance_keys(src, edge_data):
 
 
 class LightningSimulator:
-    """ This object is an openAI-like environment: its internal state is the Lightning graph and it simulates flow in
-    the graph on each step.
+    """
+    This is a simulator for the different agents - each tries to maximize its revenue from the fees it gets.
     """
 
     def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_max_amount, verbose=False):
@@ -96,6 +100,8 @@ class LightningSimulator:
         cumulative_balances = [self.get_node_balance(self.agent_pub_key)]
 
         for step in range(self.num_transfers):
+            # TODO Ariel - is it on purpose that there are only two possible amounts?
+            # TODO it's self.transfer_max_amount - 1 or self.transfer_max_amount...
             amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
 
             # Sample random nodes
@@ -116,7 +122,7 @@ class LightningSimulator:
                                           transfer_routes=[(route, debug_last_node_index_in_route)],
                                           out_path=os.path.join(plot_dir, f"step-{step}"),
                                           verify_node_serial_number=False,
-                                          plot_title=f"step-{step}",
+                                          plot_title=f"step-{step}",  # TODO delete the following commented-out code?
                                           additional_node_info=None)  # {self.agent_pub_key: f"Agent balance: {agent_reward}"})
             cumulative_balances.append(self.get_node_balance(self.agent_pub_key))
 
@@ -127,6 +133,9 @@ class LightningSimulator:
         Add new node to the graph
         :return: The public key of the new node
         """
+        if self.agent_pub_key is not None:
+            raise ValueError("Simulator currently supports one agent and one node addition")
+
         # Check how many nodes is in the graph (X) and define the serial number of the new nodes as X + 1
         serial_num = len(self.graph.nodes) + 1
         pub_key = "Agent-" + str(serial_num)
@@ -135,10 +144,7 @@ class LightningSimulator:
         self.graph.add_node(pub_key, pub_key=pub_key, serial_number=serial_num, total_capacity=0)
 
         # Define the position of the new node (for plotting the networkX graph)
-        self.positions[pub_key] = get_new_position_for_node(self.positions)
-
-        if self.agent_pub_key is not None:
-            raise ValueError("Simulator currently supports one agent and one node addition")
+        self.positions[pub_key] = get_new_position_for_agent_node(self.positions)
 
         self.agent_pub_key = pub_key
         return pub_key
@@ -157,6 +163,7 @@ class LightningSimulator:
         for _, _, edge_data in connected_edges:
             node_i = 1 if (node_public_key == edge_data['node1_pub']) else 2
             total_balance += edge_data[f'node{node_i}_balance']
+
         return total_balance
 
     def add_edges(self, edges: List):
@@ -169,7 +176,8 @@ class LightningSimulator:
 
     def add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance, node2_balance):
         """
-        Adds an edge_to the graph from one node to another
+        Adds an edge_to the graph from one node to another.
+
         :param node1_pub: public_key of node1
         :param node2_pub: public_key of node2
         :param node1_policy:

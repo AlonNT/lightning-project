@@ -13,7 +13,7 @@ class CyclicList:
 
 
 PLT_COLORS = CyclicList(['r', 'g', 'b', 'k', 'y', 'k', 'c', 'm'])
-LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "fee_rate_milli_msat": 0.001}
+LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "proportional_fee": 0.001}
 
 
 def human_format(num):
@@ -30,7 +30,7 @@ def human_format(num):
     return '%.2f%s' % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])  # add more suffices if you need them
 
 
-def get_new_position_for_node(positions: Dict):
+def get_new_position_for_agent_node(positions: Dict):
     """
     Find a new position for the new node in the graph (the agent's node).
     The new position will be the rightmost node, in the middle of the y-axis.
@@ -69,8 +69,12 @@ def calculate_route_fees(graph: nx.MultiGraph, route: List, amount: int, get_deb
     """
     Calculate the route fees, based on the policies of the nodes on the route.
     This is done for checking if the money transfer is valid according to the amount and fee in each channel.
+
     :param graph: The graph to work on.
-    :param route: The route which is a list of edges.
+    :param route: List of edges (tuples of 3: 3 nodes and the channel id).
+                  Each edge's two nodes are ordered like source, target.
+                  So in total the source of the transfer is the source of the first edge,
+                  and the target of the transfer is the target of the last edge.
     :param amount: The amount of money to transfer in the route.
     :param get_debug_str: It true, return a string which is used for debugging purposes.
     :return: The fees for each node in the route.
@@ -84,10 +88,10 @@ def calculate_route_fees(graph: nx.MultiGraph, route: List, amount: int, get_deb
         sender_policy, _ = get_sender_policy_and_id(receiver_node_id=edge_key[1], edge_data=graph.edges[edge_key])
 
         # Gets the fee in this channel
-        fee = sender_policy['fee_base_msat'] + int(total_amount * sender_policy['fee_rate_milli_msat'])
+        fee = sender_policy['fee_base_msat'] + int(total_amount * sender_policy['proportional_fee'])
         if get_debug_str:
             debug_str = f"({human_format(sender_policy['fee_base_msat'])} + " \
-                        f"{human_format(total_amount)}*{sender_policy['fee_rate_milli_msat']})={fee} + " + \
+                        f"{human_format(total_amount)}*{sender_policy['proportional_fee']})={fee} + " + \
                         debug_str
         fees.append(fee)
         total_amount += fee

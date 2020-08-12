@@ -58,13 +58,14 @@ def get_simulator():
 
 def run_experiment(agent_constructors, out_dir=None):
     """
-    1. Creates a common Lightning simulator.
+    Creates a Lightning simulator, common to all of the given agents.
     For each agent:
-    2. Ask agent for edges it wants to establish given a funds constraint.
-    3. Add edges to a copy of the simulator.
-    4. Repeat simulation of so many transaction and plot average results.
-    param: agent_constructors: list of tuples of an agent constructor and additional kwargs
-    param: out_dir: optional directory for plotting debug images of the simulation, off if None
+    1. Ask agent for edges it wants to establish given a funds constraint.
+    2. Add edges to a copy of the simulator.
+    3. Repeat simulation and plot average results.
+
+    :param agent_constructors: list of tuples of an agent constructor and additional kwargs
+    :param out_dir: optional directory for plotting debug images of the simulation, off if None
     """
     # Create the base Simulator which will be copied for each simulation
     simulator = get_simulator()
@@ -89,7 +90,6 @@ def run_experiment(agent_constructors, out_dir=None):
             new_edges = agent.get_channels(simulator_copy.graph)
 
             print(f"\tEstablishing {len(new_edges)} new edges")
-
             simulator_copy.add_edges(new_edges)
 
             debug_dir = None if out_dir is None else os.path.join(out_dir, f"{agent.name}", f"sim-{repeat}")
@@ -104,7 +104,7 @@ def run_experiment(agent_constructors, out_dir=None):
     # Plot experiments
     for i, agent_name in enumerate(results):
         agent_stats = np.array(results[agent_name]) - INITIAL_FUNDS
-        plot_experiment_mean_and_std(agent_stats, label=agent_name, color=PLT_COLORS[i], use_seaborn=False)
+        plot_experiment_mean_and_std(agent_stats, label=agent_name, color=PLT_COLORS[i])
 
     plt.legend()
     plt.show()
@@ -112,11 +112,11 @@ def run_experiment(agent_constructors, out_dir=None):
 
 if __name__ == '__main__':
     args = [(GreedyNodeInvestor, dict()),
-            (GreedyNodeInvestor, {'minimize': True}),
+            # (GreedyNodeInvestor, {'minimize': True}),
             (GreedyNodeInvestor, {'use_node_degree': True}),
-            (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+            # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
             (GreedyNodeInvestor, {'use_node_betweenness': True}),
-            (GreedyNodeInvestor, {'use_node_betweenness': True, 'minimize': True}),
+            # (GreedyNodeInvestor, {'use_node_betweenness': True, 'minimize': True}),
             (RandomInvestor, dict())]
 
     run_experiment(args, out_dir=DEBUG_OUT_DIR)
