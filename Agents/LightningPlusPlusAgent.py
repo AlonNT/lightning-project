@@ -194,8 +194,8 @@ class LightningPlusPlusAgent(AbstractAgent):
 
         for node in nodes_to_surround:
             # TODO maybe not take the minimal our of these?
-            min_fee_base_msat = float('inf')
-            min_fee_rate_milli_msat = float('inf')
+            min_base_fee = float('inf')
+            min_proportional_fee = float('inf')
             min_time_lock_delta = float('inf')
 
             for node1, node2, channel_data in graph.edges(node, data=True):
@@ -203,12 +203,12 @@ class LightningPlusPlusAgent(AbstractAgent):
                 node_policy = channel_data[f'node{node_i}_policy']
 
                 # TODO are there more values to take into account?
-                fee_base_msat = node_policy['fee_base_msat']
-                fee_rate_milli_msat = node_policy['fee_rate_milli_msat']
+                base_fee = node_policy['fee_base_msat']
+                proportional_fee = node_policy['proportional_fee']
                 time_lock_delta = node_policy['time_lock_delta']
 
-                min_fee_base_msat = min(min_fee_base_msat, fee_base_msat)
-                min_fee_rate_milli_msat = min(min_fee_rate_milli_msat, fee_rate_milli_msat)
+                min_base_fee = min(min_base_fee, base_fee)
+                min_proportional_fee = min(min_proportional_fee, proportional_fee)
                 min_time_lock_delta = min(min_time_lock_delta, time_lock_delta)
 
             nodes_to_connect_with = random.sample(list(graph.neighbors(node)), k=self.n_channels_per_node)
@@ -221,8 +221,8 @@ class LightningPlusPlusAgent(AbstractAgent):
                 channel_details = {'node1_pub': self.pub_key,
                                    'node2_pub': node_to_connect,
                                    'node1_policy': {"time_lock_delta": min_time_lock_delta,
-                                                    "fee_base_msat": min_fee_base_msat,
-                                                    "fee_rate_milli_msat": min_fee_rate_milli_msat},
+                                                    "fee_base_msat": min_base_fee,
+                                                    "proportional_fee": min_proportional_fee},
                                    'node1_balance': p * money_in_channel_cost,
                                    'node2_balance': (1 - p) * money_in_channel_cost}
 

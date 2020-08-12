@@ -53,8 +53,7 @@ def cast_channel_data(channel):
             # The "fee_rate_milli_msat" entry describes the proportional fees. Instead of a float or
             # denominator numerator ints it is given as an integer that needs to be devided by 1000
             # therefore the word milli.
-            # TODO rename to 'proportional_fee
-            channel[policy_key]['fee_rate_milli_msat'] = float(channel[policy_key]['fee_rate_milli_msat']) / 1000
+            channel[policy_key]['proportional_fee'] = float(channel[policy_key]['fee_rate_milli_msat']) / 1000
 
 
 def read_data_to_xgraph(json_path):

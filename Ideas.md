@@ -22,27 +22,8 @@
 - [NetworkX](https://networkx.github.io/documentation/latest/tutorial.html)
 
 ## Questions
-- **Routing Algorithms**
-  - What exactly is **recursive** in the routing formulas given in the paper 
-    *Hijacking Routes in Payment Channel Networks: A Predictability Tradeoff*?
-  - Does the amounts which go through each channel change depending on the fees? 
-    We need to understand the following paragraph:
-    ```text
-    ...
-    lnd chooses the path of minimum weight, 
-    calculated using the following recursive formula, 
-    where p is the list of channels in this path, 
-    and ams is the list of amounts the go through 
-    each channel (changes depending on the fees)
-    ...
-    ```
-- How does the fee splits between the two nodes of this channel?
-  There are several possibilities, such as 50-50 or relative to the current state of the channel 
-  (which is known to the two parties). 
-  - Our guess is that it splits relative to the current state of the channel. **TODO: VERIFY** 
-- How do nodes in the Lightning network discover the structure of the network's graph? [Answer](https://bitcoin.stackexchange.com/questions/87585/how-do-new-nodes-learn-the-topology-of-lightning-network)
+- How do nodes in the Lightning network discover the structure of the network's graph?
   - This includes the nodes, channels, and their capacities. 
-  - Maybe they discover it from their neighbors (that discover it from their neighbors, etc). 
   - When does this information updated?
     - Foe example, assume some new node joins the network and connects to several other nodes. When will the entire
       network will be aware of its existence? A quote from the paper
@@ -54,4 +35,5 @@
       graph, nodes utilize source routing to pick their path.
       ...
       ```
+  - [Answer](https://bitcoin.stackexchange.com/questions/87585/how-do-new-nodes-learn-the-topology-of-lightning-network)
 
