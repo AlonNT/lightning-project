@@ -6,6 +6,7 @@ import networkx as nx
 import numpy as np
 
 from Agents.AbstractAgent import AbstractAgent
+from utils.common import calculate_agent_policy
 
 
 def get_distances_probability_vector(possible_nodes_mask: np.ndarray, distance_matrix: np.ndarray) -> np.ndarray:
@@ -193,24 +194,7 @@ class LightningPlusPlusAgent(AbstractAgent):
                                               agent_public_key=self.pub_key, visualize=False)
 
         for node in nodes_to_surround:
-            # TODO maybe not take the minimal our of these?
-            min_base_fee = float('inf')
-            min_proportional_fee = float('inf')
-            min_time_lock_delta = float('inf')
-
-            for node1, node2, channel_data in graph.edges(node, data=True):
-                node_i = 1 if node == channel_data['node1_pub'] else 2
-                node_policy = channel_data[f'node{node_i}_policy']
-
-                # TODO are there more values to take into account?
-                base_fee = node_policy['fee_base_msat']
-                proportional_fee = node_policy['proportional_fee']
-                time_lock_delta = node_policy['time_lock_delta']
-
-                min_base_fee = min(min_base_fee, base_fee)
-                min_proportional_fee = min(min_proportional_fee, proportional_fee)
-                min_time_lock_delta = min(min_time_lock_delta, time_lock_delta)
-
+            min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
             nodes_to_connect_with = random.sample(list(graph.neighbors(node)), k=self.n_channels_per_node)
 
             for node_to_connect in nodes_to_connect_with:

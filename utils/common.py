@@ -100,3 +100,32 @@ def calculate_route_fees(graph: nx.MultiGraph, route: List, amount: int, get_deb
         return fees[::-1], debug_str
 
     return fees[::-1]
+
+
+def calculate_agent_policy(graph, node):
+    """
+    Calculate the agent policy
+    :param graph: lightning graph
+    :param node: tuple of the edge data (node1, node2, channel_data)
+    :return: min_time_lock_delta, min_base_fee, min_proportional_fee for the agent policy
+    """
+
+    # TODO Alon maybe not take the minimal our of these?
+    min_base_fee = float('inf')
+    min_proportional_fee = float('inf')
+    min_time_lock_delta = float('inf')
+
+    for node1, node2, channel_data in graph.edges(node, data=True):
+        node_i = 1 if node == channel_data['node1_pub'] else 2
+        node_policy = channel_data[f'node{node_i}_policy']
+
+        # TODO Alon are there more values to take into account?
+        base_fee = node_policy['fee_base_msat']
+        proportional_fee = node_policy['proportional_fee']
+        time_lock_delta = node_policy['time_lock_delta']
+
+        min_base_fee = min(min_base_fee, base_fee)
+        min_proportional_fee = min(min_proportional_fee, proportional_fee)
+        min_time_lock_delta = min(min_time_lock_delta, time_lock_delta)
+
+    return min_time_lock_delta, min_base_fee, min_proportional_fee

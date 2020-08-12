@@ -1,8 +1,10 @@
-from Agents.AbstractAgent import AbstractAgent
-from utils.common import LND_DEFAULT_POLICY
-from routing.LND_routing import get_route
 from collections import defaultdict
 from typing import NewType
+
+from Agents.AbstractAgent import AbstractAgent
+from routing.LND_routing import get_route
+from utils.common import LND_DEFAULT_POLICY
+from utils.common import calculate_agent_policy
 
 ROUTENESS_TRANSFER_AMOUNT = 10 ** 2
 # TODO Daniel?
@@ -165,35 +167,6 @@ def get_edges_details(sorted_participated_edges_counter):
     return edges_details
 
 
-def calculate_agent_policy(graph, node):
-    """
-    Calculate the agent policy
-    :param graph: lightning graph
-    :param node: tuple of the edge data (node1, node2, channel_data)
-    :return: min_time_lock_delta, min_base_fee, min_proportional_fee for the agent policy
-    """
-
-    # TODO maybe not take the minimal our of these?
-    min_base_fee = float('inf')
-    min_proportional_fee = float('inf')
-    min_time_lock_delta = float('inf')
-
-    for node1, node2, channel_data in graph.edges(node, data=True):
-        node_i = 1 if node == channel_data['node1_pub'] else 2
-        node_policy = channel_data[f'node{node_i}_policy']
-
-        # TODO are there more values to take into account?
-        base_fee = node_policy['fee_base_msat']
-        proportional_fee = node_policy['proportional_fee']
-        time_lock_delta = node_policy['time_lock_delta']
-
-        min_base_fee = min(min_base_fee, base_fee)
-        min_proportional_fee = min(min_proportional_fee, proportional_fee)
-        min_time_lock_delta = min(min_time_lock_delta, time_lock_delta)
-
-    return min_time_lock_delta, min_base_fee, min_proportional_fee
-
-
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int, minimize=False, use_node_degree=False,
                  use_node_routeness=False):
@@ -208,8 +181,8 @@ class GreedyNodeInvestor(AbstractAgent):
     def get_channels_in_routeness_use(self, sorted_participated_edges_counter, ordered_nodes, funds_to_spend, graph):
         """
 
+        :param sorted_participated_edges_counter:
         :param graph:
-        :param participated_edges_counter:
         :param ordered_nodes:
         :param funds_to_spend:
         :return:
