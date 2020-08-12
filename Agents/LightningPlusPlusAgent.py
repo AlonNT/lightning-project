@@ -8,7 +8,9 @@ import numpy as np
 from Agents.AbstractAgent import AbstractAgent
 
 
-def get_distances_probability_vector(possible_nodes_mask: np.ndarray, distance_matrix: np.ndarray) -> np.ndarray:
+def get_distances_probability_vector(possible_nodes_mask: np.ndarray,
+                                     distance_matrix: np.ndarray,
+                                     alpha: float = 3) -> np.ndarray:
     """
     Get the distances probability vector for the nodes in the graph.
     Sampling a node according to this probability vector will (probably) result
@@ -18,6 +20,8 @@ def get_distances_probability_vector(possible_nodes_mask: np.ndarray, distance_m
                                 possible for selection or was it selected already.
     :param distance_matrix: A 2D NumPy array which is the distance between every two vertices
                             in the graph. Speeds up the run-time of this function.
+    :param alpha: The power to raise the weights vector before dividing by the sum.
+                  Higher values enlarge the differences between the resulting probabilities.
     :return: A NumPy array that is the probability vector for the nodes in the graph.
     """
     n = len(possible_nodes_mask)
@@ -38,12 +42,16 @@ def get_distances_probability_vector(possible_nodes_mask: np.ndarray, distance_m
         for i, distances in enumerate(distance_matrix):
             weights_vector[i] = np.min(distances[selected_nodes_mask])
 
-    probability_vector = weights_vector / weights_vector.sum()
+    weights_to_the_power_of_alpha = weights_vector ** alpha
+    probability_vector = weights_to_the_power_of_alpha / weights_to_the_power_of_alpha.sum()
 
     return probability_vector
 
 
-def get_capacities_probability_vector(graph, nodes, possible_nodes_mask, alpha=2):
+def get_capacities_probability_vector(graph: nx.MultiGraph,
+                                      nodes: list,
+                                      possible_nodes_mask: np.ndarray,
+                                      alpha: float = 3) -> np.ndarray:
     """
     Get the capacities probability vector for the nodes in the graph.
     Sampling a node according to this probability vector will (probably)
@@ -63,8 +71,9 @@ def get_capacities_probability_vector(graph, nodes, possible_nodes_mask, alpha=2
     capacities_per_node = nx.get_node_attributes(graph, 'total_capacity')
     capacities = np.array([capacities_per_node[node] for node in nodes])
     capacities[~possible_nodes_mask] = 0
-    capacities_to_the_power_of_alpha = capacities ** alpha
-    p = capacities_to_the_power_of_alpha / capacities_to_the_power_of_alpha.sum()
+    q = capacities / capacities.sum()
+    q_to_the_power_of_alpha = q ** alpha
+    p = q_to_the_power_of_alpha / q_to_the_power_of_alpha.sum()
 
     return p
 
@@ -109,6 +118,8 @@ def visualize_current_step(graph, nodes, positions, agent_node, selected_node, s
     plt.title(f'Iteration #{i + 1} in selecting {k} best nodes')
     nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k')
     for node, (x, y) in positions.items():
+        if node == agent_node:  # There is no probability to plot for the agent node.
+            continue
         plt.text(x - 0.02, y + 0.05, s='{:.2f}'.format(p[nodes.index(node)]))
 
     nx.draw_networkx_nodes(graph, positions, nodelist=[agent_node], node_color='yellow')
@@ -117,7 +128,7 @@ def visualize_current_step(graph, nodes, positions, agent_node, selected_node, s
     plt.show()
 
 
-def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
+def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False):
     """
     Find the best k nodes in the given graph,
     where 'best' means that they have high total capacities
@@ -126,10 +137,11 @@ def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
     :param graph: The graph.
     :param k: The number of nodes to select.
     :param agent_public_key: The agent's public key, needed in order to exclude it from the selection.
+    :param alpha: The power to raise to probability vector.
+                  The higher it is, the differences between high values and small values gets larger.
     :param visualize: If it's true, visualize each step in the algorithm.
     :return: A list containing the k selected nodes.
     """
-    agent_public_key = graph.nodes[agent_public_key]['pub_key']
     nodes = [node for node in graph.nodes if node != agent_public_key]
     sub_graph = graph.subgraph(nodes).copy()
     distance_matrix = get_distance_matrix(sub_graph, nodes)
@@ -140,7 +152,7 @@ def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
 
     for i in range(k):
         possible_nodes_mask = np.array([(node not in selected_nodes) for node in nodes])
-        capacities_p = get_capacities_probability_vector(sub_graph, nodes, possible_nodes_mask)
+        capacities_p = get_capacities_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha)
         distances_p = get_distances_probability_vector(possible_nodes_mask, distance_matrix)
         combined_p = capacities_p * distances_p
         p = combined_p / combined_p.sum()
@@ -157,7 +169,7 @@ def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
 class LightningPlusPlusAgent(AbstractAgent):
 
     def __init__(self, public_key, initial_funds, channel_cost,
-                 alpha=2, n_channels_per_node=4, money_in_each_channel=10**4):
+                 alpha=3, n_channels_per_node=4, money_in_each_channel=10**4):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
         self.alpha = alpha
@@ -170,7 +182,9 @@ class LightningPlusPlusAgent(AbstractAgent):
         :return: The name of the agent.
         """
         class_name = self.__class__.__name__
-        return f'{class_name}(alpha={self.alpha})'
+        return f'{class_name}(a={self.alpha}, ' \
+               f'n={self.n_channels_per_node}, ' \
+               f'm={self.money_in_each_channel})'
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
         """
@@ -188,9 +202,9 @@ class LightningPlusPlusAgent(AbstractAgent):
         money_in_channel_cost = self.money_in_each_channel
         total_channel_cost = channel_creation_cost + money_in_channel_cost
         number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost)
-        assert number_of_nodes_to_surround > 0, "consider subtracting self.n_channels_per_node or the channel cost "
+        assert number_of_nodes_to_surround > 0, "Consider subtracting self.n_channels_per_node or the channel cost "
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
-                                              agent_public_key=self.pub_key, visualize=False)
+                                              agent_public_key=self.pub_key, alpha=self.alpha, visualize=False)
 
         for node in nodes_to_surround:
             # TODO maybe not take the minimal our of these?
@@ -198,7 +212,7 @@ class LightningPlusPlusAgent(AbstractAgent):
             min_proportional_fee = float('inf')
             min_time_lock_delta = float('inf')
 
-            for node1, node2, channel_data in graph.edges(node, data=True):
+            for _, _, channel_data in graph.edges(node, data=True):
                 node_i = 1 if node == channel_data['node1_pub'] else 2
                 node_policy = channel_data[f'node{node_i}_policy']
 
@@ -211,18 +225,22 @@ class LightningPlusPlusAgent(AbstractAgent):
                 min_proportional_fee = min(min_proportional_fee, proportional_fee)
                 min_time_lock_delta = min(min_time_lock_delta, time_lock_delta)
 
-            nodes_to_connect_with = random.sample(list(graph.neighbors(node)), k=self.n_channels_per_node)
+            neighbors = list(graph.neighbors(node))
+            if len(neighbors) <= self.n_channels_per_node:
+                nodes_to_connect_with = neighbors
+            else:
+                nodes_to_connect_with = random.sample(neighbors, k=self.n_channels_per_node)
 
             for node_to_connect in nodes_to_connect_with:
                 p = 0.5
                 funds -= total_channel_cost + p * money_in_channel_cost
 
-                # node2_policy will be determined by the simulator
                 channel_details = {'node1_pub': self.pub_key,
                                    'node2_pub': node_to_connect,
                                    'node1_policy': {"time_lock_delta": min_time_lock_delta,
                                                     "fee_base_msat": min_base_fee,
                                                     "proportional_fee": min_proportional_fee},
+                                   # node2_policy will be determined by the simulator
                                    'node1_balance': p * money_in_channel_cost,
                                    'node2_balance': (1 - p) * money_in_channel_cost}
 
