@@ -115,8 +115,8 @@ if __name__ == '__main__':
             (GreedyNodeInvestor, {'minimize': True}),
             (GreedyNodeInvestor, {'use_node_degree': True}),
             (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-            (GreedyNodeInvestor, {'use_node_betweenness': True}),
-            (GreedyNodeInvestor, {'use_node_betweenness': True, 'minimize': True}),
+            (GreedyNodeInvestor, {'use_node_routeness': True}),
+            (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
             (RandomInvestor, dict())]
 
     run_experiment(args, out_dir=DEBUG_OUT_DIR)
