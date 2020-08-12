@@ -91,16 +91,14 @@ def run_experiment(agent_constructors, out_dir=None):
 
 if __name__ == '__main__':
     # TODO Crash with betweenness (plot with colors doing some problems)
-    # args = [(GreedyNodeInvestor, {}),
-    #         (GreedyNodeInvestor, {'minimize': True}),
-    #         (GreedyNodeInvestor, {'use_node_degree': True}),
-    #         (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-    #         (GreedyNodeInvestor, {'use_node_betweenness': True}),
-    #         (GreedyNodeInvestor, {'use_node_betweenness': True, 'minimize': True}),
-    #         (RandomInvestor, {})]
     args = [(GreedyNodeInvestor, {}),
             (GreedyNodeInvestor, {'minimize': True}),
             (GreedyNodeInvestor, {'use_node_degree': True}),
             (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+            (GreedyNodeInvestor, {'use_node_routeness': True}),
+            (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
             (RandomInvestor, {})]
+
+    # args = [(GreedyNodeInvestor, {'use_node_betweenness': True})]
+
     run_experiment(args, out_dir=SIMULATION_OUT_DIR)
