@@ -68,6 +68,7 @@ def grouped(iterable, number_to_group):
         Example 1:
             Input: [1,2,3,4,5,6], number_to_group=2
             Output: [(1,2), (3,4), (5,6)]
+
     :param iterable: iterable object
     :param number_to_group: number to group the items in the iterable object.
     :return: list of the grouped items in the iterable object.
@@ -100,7 +101,7 @@ def find_nodes_routeness(graph, minimize: bool):
             # Get the path from node1 to node2 according the lnd_routing algorithm
             route = get_route(graph, src, dest, ROUTENESS_TRANSFER_AMOUNT)
 
-            # No route was found transferring 'amount; from 'source' to 'target'.
+            # No route was found transferring 'amount; from 'source' to 'target',
             # or the length of the route is short and its not interesting us
             if route is None or len(route) < 2:
                 continue
@@ -111,8 +112,11 @@ def find_nodes_routeness(graph, minimize: bool):
                 node1_edge2, node2_edge2, channel_id_edge2 = (edge2_data[0], edge2_data[1], edge2_data[2])
 
                 # Voting for group of two edges in the route (without an order)
-                # todo
-                key = frozenset([channel_id_edge1, channel_id_edge2, node1_edge1, node2_edge2])
+                # The keys are set because the order of the vertices does not matter in an undirected graph.
+                # edge like this a-->b identical to b-->a
+                key_edge1_data = (channel_id_edge1, frozenset([node1_edge1, node2_edge1]))
+                key_edge2_data = (channel_id_edge2, frozenset([node1_edge2, node2_edge2]))
+                key = frozenset([key_edge1_data, key_edge2_data])
                 participated_edges_counter[key] += 1
 
     # Sort the dictionary according to the values (i.e group of two edges that have passed through the mose
@@ -122,14 +126,21 @@ def find_nodes_routeness(graph, minimize: bool):
     # For avoiding nodes repetition
     nodes_set = set()
 
+    # Combined the nodes in the edges (every couple of edges contain 3 nodes)
     for edges_data, _ in sorted_participated_edges_counter:
-        # Taking the start node in the first edge and the end of the second edge.
-        # This is for connecting for both of this nodes
-        node1_edge1 = edges_data[0]
-        node2_edge2 = edges_data[4]
-        # todo check reptetiotn - set
-        for node in [node1_edge1, node2_edge2]:
-            ordered_nodes_with_maximal_routeness.append(node)
+
+        # Get the nodes that participate in the edges and combined them to one list
+        nodes_in_edges = [list(second) for first, second in edges_data]
+        nodes_in_edges_combined = [node for item in nodes_in_edges for node in item]
+
+        # Remove middle node, the agent will connect to the ends nodes
+        ends_nodes_in_edges = [node for node in nodes_in_edges_combined if nodes_in_edges_combined.count(node) == 1]
+
+        # Append the nodes that the greedy agent want to connect to
+        for node in ends_nodes_in_edges:
+            if node not in nodes_set:
+                ordered_nodes_with_maximal_routeness.append(node)
+                nodes_set.add(node)
 
     return ordered_nodes_with_maximal_routeness, participated_edges_counter
 
@@ -138,6 +149,7 @@ class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int, minimize=False, use_node_degree=False,
                  use_node_routeness=False):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
+
         self.default_balance_amount = initial_funds / 10
 
         self.minimize = minimize
