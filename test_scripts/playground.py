@@ -24,9 +24,9 @@ def show_shortest_path_in_sparse_graph():
 
     lnd_route, src, dst = sample_long_route(graph, AMOUNT_TO_TRANSFER, routing.LND_routing.get_route,
                                             min_route_length=4)
-    naive_route = routing.naive_routing.get_route(graph, src, dst, AMOUNT_TO_TRANSFER)
+    naive_route = routing.naive_routing.get_route(graph, src, dst)
 
-    ## Analyze resuts
+    # Analyze results
     naive_fees, naive_debug_str = calculate_route_fees(graph, naive_route, AMOUNT_TO_TRANSFER, get_debug_str=True)
     lnd_fees, lnd_debug_str = calculate_route_fees(graph, lnd_route, AMOUNT_TO_TRANSFER, get_debug_str=True)
     print(f"Fees paid for transaction of {AMOUNT_TO_TRANSFER}: msat")

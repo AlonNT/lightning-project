@@ -11,7 +11,7 @@ from utils.common import human_format, get_sender_policy_and_id, PLT_COLORS
 
 def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False,
                           additional_node_info=None, plot_title="graph state", out_path=None):
-    # TODO:  make this function modular by making it work on an input figure and adding info on it
+    # TODO Ariel make this function modular by making it work on an input figure and adding info on it
     """Creates an image of the current state of a graph wtih channel balances on edges
     The transfer routes are portrayed too.
     """
@@ -140,7 +140,7 @@ def plot_experiment_mean_and_std(values: np.array, label: str, color, use_seabor
             dfs += [df_row]
         data = pd.concat(dfs)
         sns.lineplot(x='x', y=0, data=data, label=label, color=color)
-    else: # PLT lame version
+    else:  # PLT lame version
         mean = values.mean(0)
         std = values.std(0)*0.5 # * 0.5 to make it smaller
         plt.plot(range(len(mean)), mean, color=color, label=label)

@@ -6,8 +6,6 @@ import networkx as nx
 import numpy as np
 
 from Agents.AbstractAgent import AbstractAgent
-from Agents.consts import DEFAULT_INITIAL_FUNDS
-from garbage.consts import LN_DEFAULT_CHANNEL_COST
 
 
 def get_distances_probability_vector(possible_nodes_mask: np.ndarray, distance_matrix: np.ndarray) -> np.ndarray:
@@ -158,9 +156,9 @@ def find_best_k_nodes(graph, k, agent_public_key, visualize=False):
 
 class LightningPlusPlusAgent(AbstractAgent):
 
-    def __init__(self, public_key, initial_funds=DEFAULT_INITIAL_FUNDS,
+    def __init__(self, public_key, initial_funds, channel_cost,
                  alpha=2, n_channels_per_node=4, money_in_each_channel=10**4):
-        super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds)
+        super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
         self.alpha = alpha
         self.n_channels_per_node = n_channels_per_node
@@ -186,9 +184,9 @@ class LightningPlusPlusAgent(AbstractAgent):
 
         funds = self.initial_funds
 
-        channel_creation_cost = LN_DEFAULT_CHANNEL_COST  # TODO change
+        channel_creation_cost = self.channel_cost
         money_in_channel_cost = self.money_in_each_channel
-        total_channel_cost = channel_creation_cost + money_in_channel_cost  # TODO split to cost and locked money
+        total_channel_cost = channel_creation_cost + money_in_channel_cost
         number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost)
         assert number_of_nodes_to_surround > 0, "consider subtracting self.n_channels_per_node or the channel cost "
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,

@@ -62,6 +62,8 @@ def find_nodes_degree(graph, minimize: bool):
     return nodes_to_connect
 
 
+# TODO daniel count tuples of edges and vote for them (save a dict with tuple of edges (e1,e2) and vote
+# TODO for them
 def find_nodes_betweenness(graph, minimize: bool):
     """
     This function traverse all the paths between node to each other (according to lnd_routing algorithm) and
@@ -110,7 +112,6 @@ def find_nodes_betweenness(graph, minimize: bool):
 
 
 class GreedyNodeInvestor(AbstractAgent):
-    # TODO kargs ??
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int, minimize=False, use_node_degree=False,
                  use_node_betweenness=False):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
@@ -146,14 +147,14 @@ class GreedyNodeInvestor(AbstractAgent):
             # check if there are enough funds to establish a channel
             if funds_to_spend < self.channel_cost:
                 break
-            chanel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
-            funds_to_spend -= self.channel_cost + chanel_balance
+            channel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
+            funds_to_spend -= self.channel_cost + channel_balance
             # Create the channel details for the simulator
             # The other node's policy is determined by the simulator.
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': other_node,
                                'node1_policy': LND_DEFAULT_POLICY,
-                               'node1_balance': chanel_balance,
-                               'node2_balance': chanel_balance}
+                               'node1_balance': channel_balance,
+                               'node2_balance': channel_balance}
 
             channels.append(channel_details)
 

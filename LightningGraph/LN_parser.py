@@ -49,8 +49,12 @@ def cast_channel_data(channel):
         if channel[policy_key]:
             for value_key in ['min_htlc', 'fee_base_msat', 'fee_rate_milli_msat']:
                 channel[policy_key][value_key] = float(channel[policy_key][value_key])
-            # TODO why was it rounded? It ended up being zeros too many times
-            channel[policy_key]['fee_rate_milli_msat'] = float(channel[policy_key]['fee_rate_milli_msat'] / 1000) # TODO:  Why did saar did this?
+
+            # The "fee_rate_milli_msat" entry describes the proportional fees. Instead of a float or
+            # denominator numerator ints it is given as an integer that needs to be devided by 1000
+            # therefore the word milli.
+            # TODO rename to 'proportional_fee
+            channel[policy_key]['fee_rate_milli_msat'] = float(channel[policy_key]['fee_rate_milli_msat']) / 1000
 
 
 def read_data_to_xgraph(json_path):
