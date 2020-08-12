@@ -1,6 +1,7 @@
 import networkx as nx
 from typing import List, Dict
 
+
 class AbstractAgent(object):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int):
         self.pub_key: str = public_key

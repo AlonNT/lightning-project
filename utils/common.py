@@ -3,15 +3,18 @@ from typing import Tuple, Dict, List
 import networkx as nx
 import numpy as np
 
-LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "fee_rate_milli_msat": 0.001}
 
-class cyclic_list:
+class CyclicList:
     def __init__(self, items):
         self.items = items
-    def __getitem__(self, index):
-        return self.items[index%len(self.items)]
 
-PLT_COLORS=cyclic_list(['r', 'g', 'b', 'k', 'y', 'k', 'c', 'm'])
+    def __getitem__(self, index):
+        return self.items[index % len(self.items)]
+
+
+PLT_COLORS = CyclicList(['r', 'g', 'b', 'k', 'y', 'k', 'c', 'm'])
+LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "fee_rate_milli_msat": 0.001}
+
 
 def human_format(num):
     """
@@ -29,14 +32,14 @@ def human_format(num):
 
 def get_new_position_for_node(positions: Dict):
     """
-    Get new positions for each one of the nodes.
+    Find a new position for the new node in the graph (the agent's node).
+    The new position will be the rightmost node, in the middle of the y-axis.
     :param positions: A dictionary of positions per node.
-    :return: A NumPy array containing the new positions.
+    :return: A NumPy array containing the new position.
     """
-
     positions_array = np.array([x for x in positions.values()])
-    new_positions = np.array([positions_array[:, 0].max() + 0.5, positions_array[:, 1].mean()])
-    return new_positions
+    new_position = np.array([positions_array[:, 0].max() + 0.5, positions_array[:, 1].mean()])
+    return new_position
 
 
 def get_sender_policy_and_id(receiver_node_id, edge_data: Dict) -> Tuple:
@@ -65,7 +68,7 @@ def get_sender_policy_and_id(receiver_node_id, edge_data: Dict) -> Tuple:
 def calculate_route_fees(graph: nx.MultiGraph, route: List, amount: int, get_debug_str: bool = False):
     """
     Calculate the route fees, based on the policies of the nodes on the route.
-    This is done for checking if the money transformation is valid according to the amount and fee in each channel
+    This is done for checking if the money transfer is valid according to the amount and fee in each channel.
     :param graph: The graph to work on.
     :param route: The route which is a list of edges.
     :param amount: The amount of money to transfer in the route.
@@ -76,14 +79,15 @@ def calculate_route_fees(graph: nx.MultiGraph, route: List, amount: int, get_deb
     fees = list()
     debug_str = " "
 
-    # Traverse the route (list of edges) and sum the fee in each step.
+    # Traverse the reversed route (list of edges) from the target to the source and sum the fee in each step.
     for edge_key in route[::-1]:
-        sender_policy, _ = get_sender_policy_and_id(edge_key[1], graph.edges[edge_key])
+        sender_policy, _ = get_sender_policy_and_id(receiver_node_id=edge_key[1], edge_data=graph.edges[edge_key])
+
         # Gets the fee in this channel
-        fee = int(sender_policy['fee_base_msat'] + (total_amount * sender_policy['fee_rate_milli_msat']))
+        fee = sender_policy['fee_base_msat'] + int(total_amount * sender_policy['fee_rate_milli_msat'])
         if get_debug_str:
             debug_str = f"({human_format(sender_policy['fee_base_msat'])} + " \
-                            f"{human_format(total_amount)}*{sender_policy['fee_rate_milli_msat']})={fee} + " + \
+                        f"{human_format(total_amount)}*{sender_policy['fee_rate_milli_msat']})={fee} + " + \
                         debug_str
         fees.append(fee)
         total_amount += fee

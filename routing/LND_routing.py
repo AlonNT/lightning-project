@@ -43,8 +43,6 @@ class UpdatablePrioritySet:
         else:
             self.set.add(node_id)  # avg: O(1), worst: O(log n)
 
-        # TODO Don't we need to brake ties in some (preferably deterministic) way, like the hash used in Saar's code?
-        # TODO Make sure the tie braking happens, using this data-structure with toy elements.
         heapq.heappush(self.heap, (new_priority, node_id))  # O(log n)
 
     def pop(self):
@@ -112,7 +110,7 @@ def get_route(graph: nx.MultiGraph, source_id, target_id, amount: int, max_hops:
     :param max_hops: Maximal number of intermediate nodes in the route.
 
     :return: A triplet representing the selected route:
-                 (1) The path starting from this node to the target node (a list of Nodes).
+                 (1) The path starting from this node to the target node (a list of edges).
     """
     # Initialize the 'amount_node_needs' and 'weight' attributes of each node as INFINITY.
     # These values will be changed during the run of the routing algorithm.
@@ -179,4 +177,4 @@ def get_route(graph: nx.MultiGraph, source_id, target_id, amount: int, max_hops:
                 sender_node_data['amount_node_needs'] = amount_sender_needs
                 sender_node_data['path_to_target'] = [edge_key] + receiver_node_data['path_to_target']
 
-    return None  # No route was found transferring 'amount; from 'source' to 'target'.
+    return None  # No route was found transferring 'amount' from 'source' to 'target'.
