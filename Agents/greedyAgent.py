@@ -2,8 +2,11 @@ from Agents.AbstractAgent import AbstractAgent
 from utils.common import LND_DEFAULT_POLICY
 from routing.LND_routing import get_route
 from collections import defaultdict
+from typing import NewType
 
-BETWEENNESS_TRANSFER_AMOUNT = 10 ** 2
+ROUTENESS_TRANSFER_AMOUNT = 10 ** 2
+# TODO
+GroupOfTwoEdgesKey = NewType('GroupOfTwoEdgesKey', ())
 
 
 def find_minimize_channel_nodes(graph, minimize: bool):
@@ -45,33 +48,31 @@ def find_nodes_degree(graph, minimize: bool):
     :param graph: lightning graph
     :return: list with nodes according to their degree from high to low
     """
-    nodes_to_connect = list()
-    # List that contain the degree of each node in the network with its public key
-    nodes_degree_data = list()
 
-    # Traverse the nodes in the network and add for each node its degree
-    for node in graph.nodes(data=True):
-        nodes_degree_data.append((graph.degree[node[0]], node[0]))
+    # Calculate the degree of all nodes in the lightning graph
+    nodes_degree = list(graph.degree())
     if minimize:
-        nodes_degree_data = sorted(nodes_degree_data)
+        nodes_degree = sorted(nodes_degree, key=lambda item: item[1], reverse=(not minimize))
     else:
-        nodes_degree_data = reversed(sorted(nodes_degree_data))
+        nodes_degree = sorted(nodes_degree, key=lambda item: item[1], reverse=minimize)
 
-    # Create a list with nodes according to their degree from high to low
-    for node_data in nodes_degree_data:
-        nodes_to_connect.append(node_data[1])
+    # Create a list with nodes according to their degree from high to low according to minimize indicator
+    nodes_to_connect = [node_data[0] for node_data in nodes_degree]
     return nodes_to_connect
 
 
 def grouped(iterable, number_to_group):
     """
-
-    :param iterable: iterable
-    :param number_to_group:
-    :return:
+    Take an iterable object and group it's items to 'number_to_group'.
+    For example:
+        Example 1:
+            Input: [1,2,3,4,5,6], number_to_group=2
+            Output: [(1,2), (3,4), (5,6)]
+    :param iterable: iterable object
+    :param number_to_group: number to group the items in the iterable object.
+    :return: list of the grouped items in the iterable object.
     """
-    # In case number_to_group = n we group every n elements
-    "s -> (s0,s1,s2,...sn-1), (sn,sn+1,sn+2,...s2n-1), (s2n,s2n+1,s2n+2,...s3n-1), ..."
+
     return zip(*[iter(iterable)] * number_to_group)
 
 
@@ -95,40 +96,42 @@ def find_nodes_routeness(graph, minimize: bool):
     # Traverse all the routes between the nodes in the graph (O(N^2)), and getting the route according the lnd_routing
     for src in graph.nodes():
         for dest in graph.nodes():
-            # todo the amount is ok?
+            # TODO the amount is ok?
             # Get the path from node1 to node2 according the lnd_routing algorithm
-            route = get_route(graph, src, dest, BETWEENNESS_TRANSFER_AMOUNT)
+            route = get_route(graph, src, dest, ROUTENESS_TRANSFER_AMOUNT)
 
             # No route was found transferring 'amount; from 'source' to 'target'.
             # or the length of the route is short and its not interesting us
             if route is None or len(route) < 2:
                 continue
 
-            # Traverse the edges in the path in gruop of 2 (i.e every iteration takes two adjacent edges)
+            # Traverse the edges in the path in group of 2 (i.e every iteration takes two adjacent edges)
             for edge1_data, edge2_data in grouped(route, number_to_group=2):
                 node1_edge1, node2_edge1, channel_id_edge1 = (edge1_data[0], edge1_data[1], edge1_data[2])
                 node1_edge2, node2_edge2, channel_id_edge2 = (edge2_data[0], edge2_data[1], edge2_data[2])
 
-                # Voting for group of two edges in the route, saving
-                # TODO cant save dict as a key (graph.edges((edge1_data[0], edge1_data[1], edge1_data[2])),
-                # TODO saving tuple of 6 elements - maybe there is a smarter way? type?
-                participated_edges_counter[(node1_edge1, node2_edge1, channel_id_edge1,
-                                            node1_edge2, node2_edge2, channel_id_edge2)] += 1
+                # Voting for group of two edges in the route (without an order)
+                # todo
+                key = frozenset([channel_id_edge1, channel_id_edge2, node1_edge1, node2_edge2])
+                participated_edges_counter[key] += 1
 
     # Sort the dictionary according to the values (i.e group of two edges that have passed through the mose
     # time are at the start/end according the minimize indicator)
     sorted_participated_edges_counter = sorted(participated_edges_counter.items(), key=lambda item: item[1],
                                                reverse=(not minimize))
+    # For avoiding nodes repetition
+    nodes_set = set()
 
     for edges_data, _ in sorted_participated_edges_counter:
         # Taking the start node in the first edge and the end of the second edge.
         # This is for connecting for both of this nodes
         node1_edge1 = edges_data[0]
         node2_edge2 = edges_data[4]
+        # todo check reptetiotn - set
         for node in [node1_edge1, node2_edge2]:
             ordered_nodes_with_maximal_routeness.append(node)
 
-    return ordered_nodes_with_maximal_routeness
+    return ordered_nodes_with_maximal_routeness, participated_edges_counter
 
 
 class GreedyNodeInvestor(AbstractAgent):
@@ -183,6 +186,7 @@ class GreedyNodeInvestor(AbstractAgent):
     @property
     def name(self) -> str:
         name = self.__class__.__name__
+
         if self.minimize:
             name += "-minimal"
         else:
