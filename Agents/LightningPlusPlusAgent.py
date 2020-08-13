@@ -192,7 +192,7 @@ class LightningPlusPlusAgent(AbstractAgent):
         channel_creation_cost = self.channel_cost
         total_channel_cost = channel_creation_cost + self.new_channel_balance
         # get more nodes to surround than possible with the fiven funds and costs: try to fully utilize initial funds
-        number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost) + 1
+        number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost) + 2
         assert number_of_nodes_to_surround > 0, "Consider subtracting self.n_channels_per_node or the channel cost "
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
                                               agent_public_key=self.pub_key, alpha=self.alpha, visualize=False)

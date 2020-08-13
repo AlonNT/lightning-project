@@ -16,23 +16,24 @@ from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.visualizers import plot_experiment_mean_and_std
 
 # ============== Experiment Configuration ============== #
+# TODO # bitcoint == 10**8 satoshies but it seems like the fees are working with msat sot is it bitcoin == 10*11 msat ?
 # The initial funds of the agents.
-INITIAL_FUNDS = 10 ** 6
+INITIAL_FUNDS = 10 ** 8
 
 # The maximal amount that can be transferred between two nodes.
-SIMULATOR_TRANSFERS_MAX_AMOUNT = 10 ** 3
+SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
 
 # defines the balance in the other side of new channels in proportion of the first side balance
 SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
 
 # How many transaction the simulator will simulate.
-SIMULATOR_NUM_TRANSACTIONS = 10000
+SIMULATOR_NUM_TRANSACTIONS = 100000
 
 # How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
 NUMBER_REPEATED_SIMULATIONS = 3
 
 # The size of the sub-graph of the lightning network to simulate.
-SIMULATOR_NUM_NODES = 100
+SIMULATOR_NUM_NODES = 30
 
 # The higher this number the more sparse the sub-graph is.
 # The nodes will be ordered by some metric and the M next nodes will be selected.
@@ -125,7 +126,7 @@ def verify_channles(new_edges):
         funds_spent += edge['node1_balance'] + LN_DEFAULT_CHANNEL_COST
     assert funds_spent <= INITIAL_FUNDS
     print(f"\t\tEstablishing {len(new_edges)} new edges")
-    print("\t\tUsed %d of funds" % (100 * funds_spent / INITIAL_FUNDS))
+    print(f"\t\tUsed {int(100 * funds_spent / INITIAL_FUNDS)}% of funds")
 
 if __name__ == '__main__':
     args = [
