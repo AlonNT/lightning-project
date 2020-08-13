@@ -205,8 +205,7 @@ class GreedyNodeInvestor(AbstractAgent):
                                    'node1_policy': {"time_lock_delta": min_time_lock_delta,
                                                     "fee_base_msat": min_base_fee,
                                                     "proportional_fee": min_proportional_fee},
-                                   'node1_balance': channel_balance,
-                                   'node2_balance': channel_balance}
+                                   'node1_balance': channel_balance}
                 channels.append(channel_details)
         return channels
 
@@ -249,8 +248,7 @@ class GreedyNodeInvestor(AbstractAgent):
             # The other node's policy is determined by the simulator.
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': other_node,
                                'node1_policy': LND_DEFAULT_POLICY,
-                               'node1_balance': channel_balance,
-                               'node2_balance': channel_balance}
+                               'node1_balance': channel_balance}
 
             channels.append(channel_details)
 

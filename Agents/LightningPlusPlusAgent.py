@@ -170,22 +170,12 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False):
 class LightningPlusPlusAgent(AbstractAgent):
 
     def __init__(self, public_key, initial_funds, channel_cost,
-                 alpha=3, n_channels_per_node=4, money_in_each_channel=10**4):
+                 alpha=3, n_channels_per_node=2):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
         self.alpha = alpha
         self.n_channels_per_node = n_channels_per_node
-        self.money_in_each_channel = money_in_each_channel
-
-    @property
-    def name(self) -> str:
-        """
-        :return: The name of the agent.
-        """
-        class_name = self.__class__.__name__
-        return f'{class_name}(a={self.alpha}, ' \
-               f'n={self.n_channels_per_node}, ' \
-               f'm={self.money_in_each_channel})'
+        self.new_channel_balance = initial_funds // 10
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
         """
@@ -200,9 +190,9 @@ class LightningPlusPlusAgent(AbstractAgent):
         funds = self.initial_funds
 
         channel_creation_cost = self.channel_cost
-        money_in_channel_cost = self.money_in_each_channel
-        total_channel_cost = channel_creation_cost + money_in_channel_cost
-        number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost)
+        total_channel_cost = channel_creation_cost + self.new_channel_balance
+        # get more nodes to surround than possible with the fiven funds and costs: try to fully utilize initial funds
+        number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost) + 1
         assert number_of_nodes_to_surround > 0, "Consider subtracting self.n_channels_per_node or the channel cost "
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
                                               agent_public_key=self.pub_key, alpha=self.alpha, visualize=False)
@@ -217,19 +207,27 @@ class LightningPlusPlusAgent(AbstractAgent):
                 nodes_to_connect_with = random.sample(neighbors, k=self.n_channels_per_node)
 
             for node_to_connect in nodes_to_connect_with:
-                p = 0.5
-                funds -= total_channel_cost + p * money_in_channel_cost
+                if funds < total_channel_cost:
+                    return channels
+                funds -= total_channel_cost
 
                 channel_details = {'node1_pub': self.pub_key,
                                    'node2_pub': node_to_connect,
                                    'node1_policy': {"time_lock_delta": min_time_lock_delta,
                                                     "fee_base_msat": min_base_fee,
                                                     "proportional_fee": min_proportional_fee},
-                                   # node2_policy will be determined by the simulator
-                                   'node1_balance': p * money_in_channel_cost,
-                                   'node2_balance': (1 - p) * money_in_channel_cost}
+                                   'node1_balance': self.new_channel_balance}
 
                 channels.append(channel_details)
 
         return channels
 
+    @property
+    def name(self) -> str:
+        """
+        :return: The name of the agent.
+        """
+        class_name = self.__class__.__name__
+        return f'{class_name}(a={self.alpha}, ' \
+               f'n={self.n_channels_per_node}, ' \
+               f'm={self.new_channel_balance})'

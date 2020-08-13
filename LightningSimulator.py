@@ -82,9 +82,10 @@ class LightningSimulator:
     This is a simulator for the different agents - each tries to maximize its revenue from the fees it gets.
     """
 
-    def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_max_amount, verbose=False):
+    def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_max_amount, other_balance_proportion, 
+                 verbose=False):
         self.graph: nx.MultiGraph = graph
-
+        self.other_balance_proportion = other_balance_proportion;
         # For plotting the graph in networkX framework, each node (vertex) has position (x,y)
         self.positions = nx.spring_layout(self.graph)
         self.num_transfers = num_transfers
@@ -174,7 +175,7 @@ class LightningSimulator:
         for edge in edges:
             self.add_edge(**edge)
 
-    def add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance, node2_balance):
+    def add_edge(self, node1_pub, node2_pub, node1_policy, node1_balance):
         """
         Adds an edge_to the graph from one node to another.
 
@@ -182,8 +183,8 @@ class LightningSimulator:
         :param node2_pub: public_key of node2
         :param node1_policy:
         :param node1_balance: node1 balance
-        :param node2_balance: node2 balance
         """
+        node2_balance = self.other_balance_proportion*node1_balance
         if self.verbose:
             print(f"\tManager | Adding edge between "
                   f"node({self.graph.nodes[node1_pub]['serial_number']})"

@@ -36,8 +36,7 @@ class RandomInvestor(AbstractAgent):
             # The other node's policy is determined by the simulator.
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': random_node_pub_key,
                                'node1_policy': LND_DEFAULT_POLICY,
-                               'node1_balance': chanel_balance,
-                               'node2_balance': chanel_balance}
+                               'node1_balance': chanel_balance}
             channels.append(channel_details)
 
         return channels
