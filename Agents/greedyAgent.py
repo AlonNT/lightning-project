@@ -193,7 +193,8 @@ class GreedyNodeInvestor(AbstractAgent):
         for edge_details in edges_details:
             min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
                                                                                              edge_details)
-            # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
+
+            # Choose the connected nodes to channel with minimal capacity until the initial_funds is over
             for node_to_connect in ordered_nodes:
                 # check if there are enough funds to establish a channel
                 if funds_to_spend < self.channel_cost:
@@ -233,7 +234,7 @@ class GreedyNodeInvestor(AbstractAgent):
         else:
             ordered_nodes = find_minimize_channel_nodes(graph, self.minimize)
 
-        # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
+        # Choose the connected nodes to channel with minimal capacity until the initial_funds is over
         for other_node in ordered_nodes:
             # check if there are enough funds to establish a channel
             if funds_to_spend < self.channel_cost:
