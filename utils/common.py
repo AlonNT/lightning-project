@@ -104,7 +104,7 @@ def calculate_route_fees(graph: nx.MultiGraph, route: List, amount: int, get_deb
 
 def calculate_agent_policy(graph, node):
     """
-    Calculate the agent policy
+    Calculate a policy with minimal values out of all the edge-policies of the given node in edges touching it
     :param graph: lightning graph
     :param node: tuple of the edge data (node1, node2, channel_data)
     :return: min_time_lock_delta, min_base_fee, min_proportional_fee for the agent policy

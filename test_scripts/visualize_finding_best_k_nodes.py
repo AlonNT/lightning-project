@@ -27,7 +27,6 @@ def main():
                             remove_isolated=False,
                             total_capacity=True,
                             infer_implementation=False,
-                            compute_betweenness=False,
                             add_dummy_balances=True)
 
     find_best_k_nodes(graph, k=3, agent_public_key=list(graph.nodes)[0], visualize=True)

@@ -213,6 +213,7 @@ class LightningPlusPlusAgent(AbstractAgent):
             if len(neighbors) <= self.n_channels_per_node:
                 nodes_to_connect_with = neighbors
             else:
+                # TODO maybe beter to sortt by capacity/betweeness/etc..
                 nodes_to_connect_with = random.sample(neighbors, k=self.n_channels_per_node)
 
             for node_to_connect in nodes_to_connect_with:
