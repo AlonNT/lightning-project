@@ -150,6 +150,7 @@ def find_nodes_routeness(graph, minimize: bool):
 
     return ordered_nodes_with_maximal_routeness, sorted_participated_edges_counter
 
+
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int,
                  minimize=False, use_node_degree=False, use_node_routeness=False):
@@ -178,23 +179,20 @@ class GreedyNodeInvestor(AbstractAgent):
         if self.use_node_degree:
             ordered_nodes = sort_nodes_by_degree(graph, self.minimize)
         elif self.use_node_routeness:
-            # For routeness strategy we calculate a new policy for the agent. sorted_participated_edges_counter is for
-            #  getting the edge data and the policy of the other nodes (this is for taking into account the fees that
-            #  they take, and the greedy agent will take lower fees for getting more reward)
-            ordered_nodes, sorted_participated_edges_counter = find_nodes_routeness(graph, self.minimize)
-
-            # return self.get_channels_in_routeness_use(sorted_participated_edges_counter, ordered_nodes,
-            #                                           funds_to_spend, graph)
+            ordered_nodes, _ = find_nodes_routeness(graph, self.minimize)
         else:
             ordered_nodes = sort_nodes_by_channel_capacity(graph, self.minimize)
 
         # Choose the connected nodes to channel with minimal capacity until the initial_funds is over
         for node_to_connect in ordered_nodes:
-            # check if there are enough funds to establish a channel
-            if funds_to_spend < self.channel_cost:
-                break
+
             channel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
             funds_to_spend -= self.channel_cost + channel_balance
+
+            # Check if there are enough funds to establish a channel
+            # TODO [Daniel] why ariel changed it?
+            if funds_to_spend < 0:
+                break
 
             # Create the channel details for the simulator
             # The other node's policy is determined by the simulator.
@@ -205,14 +203,12 @@ class GreedyNodeInvestor(AbstractAgent):
                                    'node1_policy': {"time_lock_delta": min_time_lock_delta,
                                                     "fee_base_msat": min_base_fee,
                                                     "proportional_fee": min_proportional_fee},
-                                   'node1_balance': channel_balance,
-                                   'node2_balance': channel_balance}
+                                   'node1_balance': channel_balance}
             else:
 
                 channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
                                    'node1_policy': LND_DEFAULT_POLICY,
-                                   'node1_balance': channel_balance,
-                                   'node2_balance': channel_balance}
+                                   'node1_balance': channel_balance}
 
             channels.append(channel_details)
 
