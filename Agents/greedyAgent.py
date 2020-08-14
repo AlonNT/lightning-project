@@ -87,8 +87,11 @@ def find_nodes_routeness(graph, minimize: bool):
     Than, takes the nodes that  were on the start/end of the first_edge/second_edge accordingly
     :param graph: lightning graph
     :param minimize: boolean indicator To choose which strategy to choose (i.e maximal or minimal betweenness)
-    :return: list of nodes that have the maximal betweenness
-    (i.e nodes that participated in the maximum number of shortest path).
+    :return:
+            (1) list of nodes that have the maximal betweenness
+                (i.e nodes that participated in the maximum number of shortest path).
+            (2) Dictionary that contain the edges data (i.e contains the nodes we want to connect and the channel_id,
+                this is for getting the edges data for evaluating a new policy)
     """
 
     # Create a dictionary that the key are group of two edges in the graph with a counter that
@@ -101,13 +104,13 @@ def find_nodes_routeness(graph, minimize: bool):
     for src in graph.nodes():
         for dest in graph.nodes():
             if dest == src or dest in graph.neighbors(src):
-                continue # early termination for cases where a two edges fastest route cannot exist
+                continue  # Early termination for cases where a two edges fastest route cannot exist
 
             # Get the path from node1 to node2 according the lnd_routing algorithm
             route = get_route(graph, src, dest, ROUTENESS_TRANSFER_AMOUNT)
             if route is None:
-                continue # No route was found transferring 'amount; from 'source' to 'target',
-            assert len(route) > 1 # this should not happen: we verified no shourt route can exist
+                continue  # No route was found transferring 'amount; from 'source' to 'target',
+            assert len(route) > 1  # This should not happen: we verified no short route can exist
 
             # Traverse the edges in the path in group of 2 (i.e every iteration takes two adjacent edges)
             for edge1_data, edge2_data in grouped(route, number_to_group=2):
@@ -133,10 +136,10 @@ def find_nodes_routeness(graph, minimize: bool):
     for edges_data, _ in sorted_participated_edges_counter:
 
         # Get the nodes that participate in the edges and combined them to one list
-        nodes_in_edges = [list(nodes) for channel_id, nodes in edges_data] # Note the list cast from frozenset
+        nodes_in_edges = [list(nodes) for channel_id, nodes in edges_data]  # Note the list cast from frozenset
         nodes_in_edges_combined = [node for nodes_list in nodes_in_edges for node in nodes_list]
 
-        # Remove middle node, the agent will connect to the ends nodes # middle nodes shows in both edges i.e count==2
+        # Remove middle node, the agent will connect to the ends nodes (middle node is in both edges i.e count == 2)
         ends_nodes_in_edges = [node for node in nodes_in_edges_combined if nodes_in_edges_combined.count(node) == 1]
 
         # Append the nodes that the greedy agent want to connect to
@@ -146,26 +149,6 @@ def find_nodes_routeness(graph, minimize: bool):
                 nodes_set.add(node)
 
     return ordered_nodes_with_maximal_routeness, sorted_participated_edges_counter
-
-
-def get_edges_details(sorted_participated_edges_counter):
-    """
-
-    :param participated_edges_counter:
-    :return:
-    """
-    # TODO Daniel - there is a bug here
-    edges_details = list()
-    for edges_data, _ in sorted_participated_edges_counter:
-        # Get the nodes that participate in the edges and combined them to one list + the channel id
-        edge_data = [edge for edge in edges_data]
-
-        edge_details = [node for node in list(edge_data[1])]
-        edge_details.append(edge_details[0])
-        edges_details.append(edge_details)
-
-    return edges_details
-
 
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int,
@@ -177,38 +160,6 @@ class GreedyNodeInvestor(AbstractAgent):
         self.minimize = minimize
         self.use_node_degree = use_node_degree
         self.use_node_routeness = use_node_routeness
-
-    def get_channels_in_routeness_use(self, sorted_participated_edges_counter, ordered_nodes, funds_to_spend, graph):
-        """
-
-        :param sorted_participated_edges_counter:
-        :param graph:
-        :param ordered_nodes:
-        :param funds_to_spend:
-        :return:
-        """
-        channels = list()
-
-        edges_details = get_edges_details(sorted_participated_edges_counter)
-        for edge_details in edges_details:
-            min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
-                                                                                             node=edge_details)
-            # Choose the connected nodes to channel with minimal capcity until the initial_funds is over
-            for node_to_connect in ordered_nodes:
-                # check if there are enough funds to establish a channel
-                if funds_to_spend < self.channel_cost:
-                    break
-                channel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
-                funds_to_spend -= self.channel_cost + channel_balance
-
-                channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
-                                   'node1_policy': {"time_lock_delta": min_time_lock_delta,
-                                                    "fee_base_msat": min_base_fee,
-                                                    "proportional_fee": min_proportional_fee},
-                                   'node1_balance': channel_balance,
-                                   'node2_balance': channel_balance}
-                channels.append(channel_details)
-        return channels
 
     def get_channels(self, graph):
         """
@@ -227,18 +178,18 @@ class GreedyNodeInvestor(AbstractAgent):
         if self.use_node_degree:
             ordered_nodes = sort_nodes_by_degree(graph, self.minimize)
         elif self.use_node_routeness:
-            ordered_nodes, sorted_participated_edges_counter = \
-                                find_nodes_routeness(graph,  self.minimize)
-            # TODO: [Ariel] : I comment this function as it does not seem to work. And also its not clear why
-            # TODO: There is a need for anything more than the ordered nodes list
-            # TODO: Please add explanations when you uncommment this
+            # For routeness strategy we calculate a new policy for the agent. sorted_participated_edges_counter is for
+            #  getting the edge data and the policy of the other nodes (this is for taking into account the fees that
+            #  they take, and the greedy agent will take lower fees for getting more reward)
+            ordered_nodes, sorted_participated_edges_counter = find_nodes_routeness(graph, self.minimize)
+
             # return self.get_channels_in_routeness_use(sorted_participated_edges_counter, ordered_nodes,
             #                                           funds_to_spend, graph)
         else:
             ordered_nodes = sort_nodes_by_channel_capacity(graph, self.minimize)
 
         # Choose the connected nodes to channel with minimal capacity until the initial_funds is over
-        for other_node in ordered_nodes:
+        for node_to_connect in ordered_nodes:
             # check if there are enough funds to establish a channel
             if funds_to_spend < self.channel_cost:
                 break
@@ -247,10 +198,21 @@ class GreedyNodeInvestor(AbstractAgent):
 
             # Create the channel details for the simulator
             # The other node's policy is determined by the simulator.
-            channel_details = {'node1_pub': self.pub_key, 'node2_pub': other_node,
-                               'node1_policy': LND_DEFAULT_POLICY,
-                               'node1_balance': channel_balance,
-                               'node2_balance': channel_balance}
+            if self.use_node_routeness:
+                min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
+                                                                                                 node=node_to_connect)
+                channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
+                                   'node1_policy': {"time_lock_delta": min_time_lock_delta,
+                                                    "fee_base_msat": min_base_fee,
+                                                    "proportional_fee": min_proportional_fee},
+                                   'node1_balance': channel_balance,
+                                   'node2_balance': channel_balance}
+            else:
+
+                channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
+                                   'node1_policy': LND_DEFAULT_POLICY,
+                                   'node1_balance': channel_balance,
+                                   'node2_balance': channel_balance}
 
             channels.append(channel_details)
 
