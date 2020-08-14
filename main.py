@@ -16,20 +16,24 @@ from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.visualizers import plot_experiment_mean_and_std
 
 # ============== Experiment Configuration ============== #
+# TODO # bitcoint == 10**8 satoshies but it seems like the fees are working with msat sot is it bitcoin == 10*11 msat ?
 # The initial funds of the agents.
-INITIAL_FUNDS = 10 ** 6
+INITIAL_FUNDS = 10 ** 8
 
 # The maximal amount that can be transferred between two nodes.
-SIMULATOR_TRANSFERS_MAX_AMOUNT = 10 ** 3
+SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
+
+# defines the balance in the other side of new channels in proportion of the first side balance
+SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
 
 # How many transaction the simulator will simulate.
-SIMULATOR_NUM_TRANSACTIONS = 1000
+SIMULATOR_NUM_TRANSACTIONS = 100000
 
 # How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
 NUMBER_REPEATED_SIMULATIONS = 3
 
 # The size of the sub-graph of the lightning network to simulate.
-SIMULATOR_NUM_NODES = 100
+SIMULATOR_NUM_NODES = 30
 
 # The higher this number the more sparse the sub-graph is.
 # The nodes will be ordered by some metric and the M next nodes will be selected.
@@ -53,7 +57,8 @@ def get_simulator():
     graph = create_sub_graph_by_node_capacity(k=SIMULATOR_NUM_NODES,
                                               highest_capacity_offset=GRAPH_DENSITY_OFFSET)
     simulator = LightningSimulator(graph, num_transfers=SIMULATOR_NUM_TRANSACTIONS,
-                                   transfer_max_amount=SIMULATOR_TRANSFERS_MAX_AMOUNT)
+                                   transfer_max_amount=SIMULATOR_TRANSFERS_MAX_AMOUNT,
+                                   other_balance_proportion=SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION)
     return simulator
 
 
@@ -85,12 +90,13 @@ def run_experiment(agent_constructors, out_dir=None):
 
         print("Agent:", agent.name)
         for repeat in range(NUMBER_REPEATED_SIMULATIONS):
+            print(f"\trepeat {repeat}:")
             simulator_copy = deepcopy(simulator)  # Todo isn't it better to avoid copy paradigm
 
             # Ask agent for edges to add.
             new_edges = agent.get_channels(simulator_copy.graph)
 
-            print(f"\tEstablishing {len(new_edges)} new edges")
+            verify_channles(new_edges)
             simulator_copy.add_edges(new_edges)
 
             debug_dir = None if out_dir is None else os.path.join(out_dir, f"{agent.name}", f"sim-{repeat}")
@@ -98,7 +104,7 @@ def run_experiment(agent_constructors, out_dir=None):
             # Run the simulation
             start = time()
             simulation_cumulative_balance = simulator_copy.run(debug_dir)
-            print(f"\t{repeat} {human_format(SIMULATOR_NUM_TRANSACTIONS / (time() - start))} tnx/sec")
+            print(f"\t\t{human_format(SIMULATOR_NUM_TRANSACTIONS / (time() - start))} tnx/sec")
 
             results[agent.name].append(simulation_cumulative_balance)
 
@@ -111,9 +117,21 @@ def run_experiment(agent_constructors, out_dir=None):
     plt.show()
 
 
+def verify_channles(new_edges):
+    """
+    This function verifies the agent provided channels that do not exceed the funds it was given
+    """
+    funds_spent = 0
+    for edge in new_edges:
+        funds_spent += edge['node1_balance'] + LN_DEFAULT_CHANNEL_COST
+    assert funds_spent <= INITIAL_FUNDS
+    print(f"\t\tEstablishing {len(new_edges)} new edges")
+    print(f"\t\tUsed {int(100 * funds_spent / INITIAL_FUNDS)}% of funds")
+
 if __name__ == '__main__':
     args = [
         (LightningPlusPlusAgent, dict()),
+        (LightningPlusPlusAgent, {'n_channels_per_node':4}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
         # (GreedyNodeInvestor, {'use_node_degree': True}),
