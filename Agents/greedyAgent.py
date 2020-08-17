@@ -8,7 +8,9 @@ from utils.common import calculate_agent_policy
 
 # this number is used in the LND routing algorithm that is used to sort edges by their attractiveness for  transactions
 # it is better to keep this number as close as possible to the amount that the simulator actually transfers
-ROUTENESS_TRANSFER_AMOUNT = 10 ** 2
+
+# TODO [Daniel] keep playing with this const for better results
+ROUTENESS_TRANSFER_AMOUNT = 10**2
 
 
 def sort_nodes_by_channel_capacity(graph, minimize: bool):
@@ -224,7 +226,7 @@ class GreedyNodeInvestor(AbstractAgent):
             name += "-maximal"
 
         if self.use_node_degree:
-            name += "-node_routeness"
+            name += "-node_degree"
         elif self.use_node_routeness:
             name += "-node_routeness"
         else:
