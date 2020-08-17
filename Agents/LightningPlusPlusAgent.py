@@ -189,10 +189,8 @@ class LightningPlusPlusAgent(AbstractAgent):
 
         funds = self.initial_funds
 
-        channel_creation_cost = self.channel_cost
-        total_channel_cost = channel_creation_cost + self.new_channel_balance
         # get more nodes to surround than possible with the fiven funds and costs: try to fully utilize initial funds
-        number_of_nodes_to_surround = funds // (self.n_channels_per_node * total_channel_cost) + 2
+        number_of_nodes_to_surround = funds // (self.n_channels_per_node * (self.channel_cost + self.new_channel_balance)) + 2
         assert number_of_nodes_to_surround > 0, "Consider subtracting self.n_channels_per_node or the channel cost "
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
                                               agent_public_key=self.pub_key, alpha=self.alpha, visualize=False)
@@ -207,16 +205,18 @@ class LightningPlusPlusAgent(AbstractAgent):
                 nodes_to_connect_with = random.sample(neighbors, k=self.n_channels_per_node)
 
             for node_to_connect in nodes_to_connect_with:
-                if funds < total_channel_cost:
+                if funds < self.channel_cost:
                     return channels
-                funds -= total_channel_cost
+                channel_balance = min(self.new_channel_balance, funds - self.channel_cost) # Allows using all the funds
+
+                funds -= channel_balance + self.channel_cost
 
                 channel_details = {'node1_pub': self.pub_key,
                                    'node2_pub': node_to_connect,
                                    'node1_policy': {"time_lock_delta": min_time_lock_delta,
                                                     "fee_base_msat": min_base_fee,
                                                     "proportional_fee": min_proportional_fee},
-                                   'node1_balance': self.new_channel_balance}
+                                   'node1_balance': channel_balance}
 
                 channels.append(channel_details)
 
