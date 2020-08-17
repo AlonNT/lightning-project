@@ -82,17 +82,17 @@ class LightningSimulator:
     This is a simulator for the different agents - each tries to maximize its revenue from the fees it gets.
     """
 
-    def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_max_amount, other_balance_proportion, 
+    def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_amount, other_balance_proportion, 
                  verbose=False):
         self.graph: nx.MultiGraph = graph
         self.other_balance_proportion = other_balance_proportion;
         # For plotting the graph in networkX framework, each node (vertex) has position (x,y)
         self.positions = nx.spring_layout(self.graph)
         self.num_transfers = num_transfers
-        self.transfer_max_amount = transfer_max_amount
+        self.transfer_amount = transfer_amount
         self.agent_pub_key = None
         self.verbose = verbose
-        self.route_memory = {}
+        self.route_memory = dict()
 
     def run(self, plot_dir=None):
         """
@@ -102,26 +102,19 @@ class LightningSimulator:
         cumulative_balances = [self.get_node_balance(self.agent_pub_key)]
 
         for step in range(self.num_transfers):
-            # TODO Ariel - is it on purpose that there are only two possible amounts?
-            # TODO it's self.transfer_max_amount - 1 or self.transfer_max_amount...
-            amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
-
             # Sample random nodes
             possible_nodes = [node_pub_key for node_pub_key in self.graph.nodes if node_pub_key != self.agent_pub_key]
             node1, node2 = random.sample(possible_nodes, 2)
 
-            # Get the route from node1 to node2 with the routing algorithm and transfer the money.
-            if (node1, node2) in self.route_memory:
-                route = self.route_memory[(node1, node2)]
-            else:
-                route = get_route(self.graph, node1, node2, amount)
-                self.route_memory[(node1, node2)] = route
+            if (node1, node2) not in self.route_memory:
+                self.route_memory[(node1, node2)] = get_route(self.graph, node1, node2, self.transfer_amount)
+            route = self.route_memory[(node1, node2)]
 
             # If the routing was not successful, nothing to do.
             if route is not None:
                 # Gets the index of the last node that can get the money (if the money was
                 # transferred, this is node2).
-                debug_last_node_index_in_route = transfer_money_in_graph(self.graph, amount, route)
+                debug_last_node_index_in_route = transfer_money_in_graph(self.graph, self.transfer_amount, route)
                 if plot_dir is not None:
                     os.makedirs(plot_dir, exist_ok=True)
                     visualize_graph_state(self.graph, self.positions,

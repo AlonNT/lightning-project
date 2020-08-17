@@ -27,7 +27,7 @@ SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
 SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
 
 # How many transaction the simulator will simulate.
-SIMULATOR_NUM_TRANSACTIONS = 10000
+SIMULATOR_NUM_TRANSACTIONS = 50000
 
 # How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
 NUMBER_REPEATED_SIMULATIONS = 3
@@ -57,7 +57,7 @@ def get_simulator():
     graph = create_sub_graph_by_node_capacity(k=SIMULATOR_NUM_NODES,
                                               highest_capacity_offset=GRAPH_DENSITY_OFFSET)
     simulator = LightningSimulator(graph, num_transfers=SIMULATOR_NUM_TRANSACTIONS,
-                                   transfer_max_amount=SIMULATOR_TRANSFERS_MAX_AMOUNT,
+                                   transfer_amount=SIMULATOR_TRANSFERS_MAX_AMOUNT,
                                    other_balance_proportion=SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION)
     return simulator
 
@@ -133,7 +133,7 @@ def verify_channles(new_edges):
 
 if __name__ == '__main__':
     args = [
-        (LightningPlusPlusAgent, {'desired_num_edges':20}),
+        (LightningPlusPlusAgent, {'desired_num_edges':10}),
         (LightningPlusPlusAgent, {'desired_num_edges':5}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
@@ -141,8 +141,8 @@ if __name__ == '__main__':
         # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-        (RandomInvestor, {'desired_num_edges':20}),
-        (RandomInvestor, {'desired_num_edges':5})
+        (RandomInvestor, {'desired_num_edges':5}),
+        (RandomInvestor, {'desired_num_edges':12})
     ]
 
     run_experiment(args, out_dir=DEBUG_OUT_DIR)
