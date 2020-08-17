@@ -176,7 +176,6 @@ class GreedyNodeInvestor(AbstractAgent):
         """
         channels = list()
         funds_to_spend = self.initial_funds
-
         # Choose between the strategies
         if self.use_node_degree:
             ordered_nodes = sort_nodes_by_degree(graph, self.minimize)
@@ -188,13 +187,12 @@ class GreedyNodeInvestor(AbstractAgent):
         # Choose the connected nodes to channel with minimal capacity until the initial_funds is over
         for node_to_connect in ordered_nodes:
 
+            # Check if there are enough funds to establish a channel
+            if funds_to_spend < self.channel_cost:
+                break
+
             channel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
             funds_to_spend -= self.channel_cost + channel_balance
-
-            # Check if there are enough funds to establish a channel
-            # TODO [Daniel] why ariel changed it?
-            if funds_to_spend < 0:
-                break
 
             # Create the channel details for the simulator
             # The other node's policy is determined by the simulator.

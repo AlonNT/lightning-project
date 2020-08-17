@@ -21,16 +21,15 @@ class RandomInvestor(AbstractAgent):
         funds_to_spend = self.initial_funds
         channels = list()
         while funds_to_spend >= self.channel_cost:
+            # Check if there are enough funds to establish a channel
+            if funds_to_spend < self.channel_cost:
+                break
             # Choose random public_key for connection
             random_node_pub_key = random.choice([node for node in graph.nodes if graph.nodes[node]['pub_key'] != self.pub_key])
 
             # Randomize the balances
             chanel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
             funds_to_spend -= self.channel_cost + chanel_balance
-
-            # check if there are enough funds to establish a channel
-            if funds_to_spend < 0:
-                break
 
             # Create the channel details for the simulator
             # The other node's policy is determined by the simulator.
