@@ -85,7 +85,7 @@ class LightningSimulator:
     def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_amount, other_balance_proportion, 
                  verbose=False):
         self.graph: nx.MultiGraph = graph
-        self.other_balance_proportion = other_balance_proportion;
+        self.other_balance_proportion = other_balance_proportion
         # For plotting the graph in networkX framework, each node (vertex) has position (x,y)
         self.positions = nx.spring_layout(self.graph)
         self.num_transfers = num_transfers

@@ -147,6 +147,6 @@ def plot_experiment_mean_and_std(values: np.ndarray, label: str, color: str, use
         sns.lineplot(x='x', y=0, data=data, label=label, color=color)
     else:  # PLT lame version
         mean = values.mean(0)
-        std = values.std(0)*0.1 # * 0.5 to make it smaller
+        std = values.std(0) # * 0.5 to make it smaller
         plt.plot(range(len(mean)), mean, color=color, label=label)
-        plt.errorbar(range(len(mean)), mean, std, color=color, alpha=0.3)
+        plt.errorbar(range(len(mean)), mean, std, color=color, alpha=0.03)

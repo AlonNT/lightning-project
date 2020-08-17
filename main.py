@@ -5,6 +5,7 @@ from time import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 from Agents.greedyAgent import GreedyNodeInvestor
 from Agents.randomAgent import RandomInvestor
@@ -109,14 +110,17 @@ def run_experiment(agent_constructors, out_dir=None):
             results[agent.name].append(simulation_cumulative_balance)
 
     # Plot experiments
+    os.makedirs("outputs", exist_ok=True)
     for i, agent_name in enumerate(results):
         agent_stats = np.array(results[agent_name]) - INITIAL_FUNDS
-        plot_experiment_mean_and_std(agent_stats, label=agent_name, color=PLT_COLORS[i])
-
-
+        plot_experiment_mean_and_std(agent_stats, label=agent_name, color=PLT_COLORS[i], use_seaborn=False)
+        results[agent_name] = agent_stats.tolist()
+    pickle.dump(results, open('outputs/ot_dict.pkl', 'wb'))
+    
     plt.title(f"#Nodes: {human_format(SIMULATOR_NUM_NODES)}, Density: {human_format(GRAPH_DENSITY_OFFSET)},"
               f" Funds: {human_format(INITIAL_FUNDS)}, tx-amount: {human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}")
     plt.legend()
+    plt.savefig("outputs/Simulator_log.png")
     plt.show()
 
 
@@ -134,15 +138,15 @@ def verify_channles(new_edges):
 if __name__ == '__main__':
     args = [
         (LightningPlusPlusAgent, {'desired_num_edges':10}),
-        (LightningPlusPlusAgent, {'desired_num_edges':5}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':5}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
-        # (GreedyNodeInvestor, {'use_node_degree': True}),
-        # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-        # (GreedyNodeInvestor, {'use_node_routeness': True}),
+        (GreedyNodeInvestor, {'use_node_degree': True}),
+        (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+        (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-        (RandomInvestor, {'desired_num_edges':5}),
-        (RandomInvestor, {'desired_num_edges':12})
+        # (RandomInvestor, {'desired_num_edges':5}),
+        (RandomInvestor, {'desired_num_edges':10})
     ]
 
     run_experiment(args, out_dir=DEBUG_OUT_DIR)
