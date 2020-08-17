@@ -10,7 +10,7 @@ from utils.common import calculate_agent_policy
 # it is better to keep this number as close as possible to the amount that the simulator actually transfers
 
 # TODO [Daniel] keep playing with this const for better results
-ROUTENESS_TRANSFER_AMOUNT = 10**2
+ROUTENESS_TRANSFER_AMOUNT = 10 ** 2
 
 
 def sort_nodes_by_channel_capacity(graph, minimize: bool):
@@ -201,16 +201,15 @@ class GreedyNodeInvestor(AbstractAgent):
             if self.use_node_routeness:
                 min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
                                                                                                  node=node_to_connect)
-                channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
-                                   'node1_policy': {"time_lock_delta": min_time_lock_delta,
-                                                    "fee_base_msat": min_base_fee,
-                                                    "proportional_fee": min_proportional_fee},
-                                   'node1_balance': channel_balance}
+                agent_policy = {"time_lock_delta": min_time_lock_delta,
+                                "fee_base_msat": min_base_fee,
+                                "proportional_fee": min_proportional_fee}
             else:
+                agent_policy = LND_DEFAULT_POLICY
 
-                channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
-                                   'node1_policy': LND_DEFAULT_POLICY,
-                                   'node1_balance': channel_balance}
+            channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
+                               'node1_policy': agent_policy,
+                               'node1_balance': channel_balance}
 
             channels.append(channel_details)
 
