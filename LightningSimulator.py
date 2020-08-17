@@ -92,6 +92,7 @@ class LightningSimulator:
         self.transfer_max_amount = transfer_max_amount
         self.agent_pub_key = None
         self.verbose = verbose
+        self.route_memory = {}
 
     def run(self, plot_dir=None):
         """
@@ -110,7 +111,11 @@ class LightningSimulator:
             node1, node2 = random.sample(possible_nodes, 2)
 
             # Get the route from node1 to node2 with the routing algorithm and transfer the money.
-            route = get_route(self.graph, node1, node2, amount)
+            if (node1, node2) in self.route_memory:
+                route = self.route_memory[(node1, node2)]
+            else:
+                route = get_route(self.graph, node1, node2, amount)
+                self.route_memory[(node1, node2)] = route
 
             # If the routing was not successful, nothing to do.
             if route is not None:
