@@ -155,14 +155,14 @@ def find_nodes_routeness(graph, minimize: bool):
 
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int,
-                 minimize=False, use_node_degree=False, use_node_routeness=False):
+                 minimize=False, use_node_degree=False, use_node_routeness=False, desired_num_edges=10):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
-
-        self.default_balance_amount = initial_funds / 10
 
         self.minimize = minimize
         self.use_node_degree = use_node_degree
         self.use_node_routeness = use_node_routeness
+        self.desired_num_edges = desired_num_edges
+        self.default_balance_amount = initial_funds / self.desired_num_edges
 
     def get_channels(self, graph):
         """
@@ -230,5 +230,5 @@ class GreedyNodeInvestor(AbstractAgent):
             name += "-node_routeness"
         else:
             name += "-node_capacity"
-
+        name += f'(d={self.desired_num_edges})'
         return name

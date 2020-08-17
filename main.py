@@ -18,7 +18,7 @@ from utils.visualizers import plot_experiment_mean_and_std
 # ============== Experiment Configuration ============== #
 # TODO # bitcoint == 10**8 satoshies but it seems like the fees are working with msat sot is it bitcoin == 10*11 msat ?
 # The initial funds of the agents.
-INITIAL_FUNDS = 10 ** 8
+INITIAL_FUNDS = 10 ** 9
 
 # The maximal amount that can be transferred between two nodes.
 SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
@@ -27,13 +27,13 @@ SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
 SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
 
 # How many transaction the simulator will simulate.
-SIMULATOR_NUM_TRANSACTIONS = 100000
+SIMULATOR_NUM_TRANSACTIONS = 10000
 
 # How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
 NUMBER_REPEATED_SIMULATIONS = 3
 
 # The size of the sub-graph of the lightning network to simulate.
-SIMULATOR_NUM_NODES = 30
+SIMULATOR_NUM_NODES = 100
 
 # The higher this number the more sparse the sub-graph is.
 # The nodes will be ordered by some metric and the M next nodes will be selected.
@@ -113,6 +113,9 @@ def run_experiment(agent_constructors, out_dir=None):
         agent_stats = np.array(results[agent_name]) - INITIAL_FUNDS
         plot_experiment_mean_and_std(agent_stats, label=agent_name, color=PLT_COLORS[i])
 
+
+    plt.title(f"#Nodes: {human_format(SIMULATOR_NUM_NODES)}, Density: {human_format(GRAPH_DENSITY_OFFSET)},"
+              f" Funds: {human_format(INITIAL_FUNDS)}, tx-amount: {human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}")
     plt.legend()
     plt.show()
 
@@ -130,15 +133,16 @@ def verify_channles(new_edges):
 
 if __name__ == '__main__':
     args = [
-        (LightningPlusPlusAgent, dict()),
-        (LightningPlusPlusAgent, {'n_channels_per_node':4}),
+        (LightningPlusPlusAgent, {'desired_num_edges':20}),
+        (LightningPlusPlusAgent, {'desired_num_edges':5}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
         # (GreedyNodeInvestor, {'use_node_degree': True}),
         # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-        (RandomInvestor, dict()),
+        (RandomInvestor, {'desired_num_edges':20}),
+        (RandomInvestor, {'desired_num_edges':5})
     ]
 
     run_experiment(args, out_dir=DEBUG_OUT_DIR)

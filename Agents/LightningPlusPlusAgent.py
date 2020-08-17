@@ -170,12 +170,13 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False):
 class LightningPlusPlusAgent(AbstractAgent):
 
     def __init__(self, public_key, initial_funds, channel_cost,
-                 alpha=3, n_channels_per_node=2):
+                 alpha=3, n_channels_per_node=2, desired_num_edges=10):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
         self.alpha = alpha
         self.n_channels_per_node = n_channels_per_node
-        self.new_channel_balance = initial_funds // 10
+        self.desired_num_edges = desired_num_edges
+        self.new_channel_balance = initial_funds // desired_num_edges
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
         """
@@ -230,4 +231,4 @@ class LightningPlusPlusAgent(AbstractAgent):
         class_name = self.__class__.__name__
         return f'{class_name}(a={self.alpha}, ' \
                f'n={self.n_channels_per_node}, ' \
-               f'm={self.new_channel_balance})'
+               f'd={self.desired_num_edges})'
