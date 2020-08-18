@@ -4,6 +4,7 @@ from copy import deepcopy
 from time import time
 
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import cm
 import numpy as np
 import pickle
 
@@ -11,7 +12,7 @@ from Agents.greedyAgent import GreedyNodeInvestor
 from Agents.randomAgent import RandomInvestor
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from LightningSimulator import LightningSimulator
-from utils.common import PLT_COLORS, human_format
+from utils.common import human_format
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.visualizers import plot_experiment_mean_and_std
 
@@ -27,7 +28,7 @@ SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
 SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
 
 # How many transaction the simulator will simulate.
-SIMULATOR_NUM_TRANSACTIONS = 50000
+SIMULATOR_NUM_TRANSACTIONS = 10000
 
 # How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
 NUMBER_REPEATED_SIMULATIONS = 3
@@ -114,16 +115,14 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
 
             results[agent.name].append(simulation_cumulative_balance)
 
-    # Plot experiments
-    for i, agent_name in enumerate(results):
-        agent_stats = np.array(results[agent_name]) - INITIAL_FUNDS
-        plot_experiment_mean_and_std(agent_stats, label=agent_name, color=PLT_COLORS[i], use_seaborn=False)
-        results[agent_name] = agent_stats.tolist()
+    for k in results:
+        results[k] = np.array(results[k]) - INITIAL_FUNDS
+
     pickle.dump(results, open(os.path.join(out_dir, 'results_dict.pkl'), 'wb'))
 
-    plt.title(get_experiment_description_string(delim=", "))
-    plt.legend()
-    plt.savefig(os.path.join(out_dir, "/Simulator_log.png"))
+    plot_experiment_mean_and_std(results)
+    plt.title(get_experiment_description_string(prefix="plot-", delim=", "))
+    plt.savefig(os.path.join(out_dir, "Simulator_log.png"))
     plt.show()
 
 
@@ -141,7 +140,7 @@ def verify_channles(new_edges):
 
 def get_experiment_description_string(prefix="", delim="_"):
     return f"{prefix}" \
-           f"{delim}N[{human_format(SIMULATOR_NUM_NODES)}]" \
+           f"N[{human_format(SIMULATOR_NUM_NODES)}]" \
            f"{delim}D[{human_format(GRAPH_DENSITY_OFFSET)}]" \
            f"{delim}F[{human_format(INITIAL_FUNDS)}]" \
            f"{delim}T[{human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}]"
@@ -149,14 +148,14 @@ def get_experiment_description_string(prefix="", delim="_"):
 if __name__ == '__main__':
     args = [
         (LightningPlusPlusAgent, {'desired_num_edges':10}),
-        # (LightningPlusPlusAgent, {'desired_num_edges':5}),
-        # (GreedyNodeInvestor, dict()),
-        # (GreedyNodeInvestor, {'minimize': True}),
+        (LightningPlusPlusAgent, {'desired_num_edges':5}),
+        (GreedyNodeInvestor, dict()),
+        (GreedyNodeInvestor, {'minimize': True}),
         (GreedyNodeInvestor, {'use_node_degree': True}),
         (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
         (GreedyNodeInvestor, {'use_node_routeness': True}),
-        # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-        # (RandomInvestor, {'desired_num_edges':5}),
+        (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
+        (RandomInvestor, {'desired_num_edges':5}),
         (RandomInvestor, {'desired_num_edges':10})
     ]
 

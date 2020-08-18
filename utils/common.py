@@ -3,16 +3,6 @@ from typing import Tuple, Dict, List
 import networkx as nx
 import numpy as np
 
-
-class CyclicList:
-    def __init__(self, items):
-        self.items = items
-
-    def __getitem__(self, index):
-        return self.items[index % len(self.items)]
-
-
-PLT_COLORS = CyclicList(['r', 'g', 'b', 'k', 'y', 'k', 'c', 'm'])
 LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "proportional_fee": 0.001}
 
 
