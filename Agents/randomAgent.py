@@ -43,5 +43,5 @@ class RandomInvestor(AbstractAgent):
 
     @property
     def name(self) -> str:
-        class_name = self.__class__.__name__
+        class_name = "Random"
         return f'{class_name}(d={self.desired_num_edges})'

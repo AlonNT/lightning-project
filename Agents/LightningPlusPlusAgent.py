@@ -228,7 +228,7 @@ class LightningPlusPlusAgent(AbstractAgent):
         """
         :return: The name of the agent.
         """
-        class_name = self.__class__.__name__
+        class_name = "LPP"
         return f'{class_name}(a={self.alpha}, ' \
                f'n={self.n_channels_per_node}, ' \
                f'd={self.desired_num_edges})'

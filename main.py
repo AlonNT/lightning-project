@@ -28,13 +28,13 @@ SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
 SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
 
 # How many transaction the simulator will simulate.
-SIMULATOR_NUM_TRANSACTIONS = 10000
+SIMULATOR_NUM_TRANSACTIONS = 1000
 
 # How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
-NUMBER_REPEATED_SIMULATIONS = 3
+NUMBER_REPEATED_SIMULATIONS = 2
 
 # The size of the sub-graph of the lightning network to simulate.
-SIMULATOR_NUM_NODES = 100
+SIMULATOR_NUM_NODES = 30
 
 # The higher this number the more sparse the sub-graph is.
 # The nodes will be ordered by some metric and the M next nodes will be selected.
@@ -120,9 +120,9 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
 
     pickle.dump(results, open(os.path.join(out_dir, 'results_dict.pkl'), 'wb'))
 
-    plot_experiment_mean_and_std(results)
-    plt.title(get_experiment_description_string(prefix="plot-", delim=", "))
-    plt.savefig(os.path.join(out_dir, "Simulator_log.png"))
+    fig, ax = plot_experiment_mean_and_std(results)
+    fig.suptitle(get_experiment_description_string(prefix="plot-", delim=", "))
+    fig.savefig(os.path.join(out_dir, "Simulator_log.png"))
     plt.show()
 
 
@@ -148,13 +148,13 @@ def get_experiment_description_string(prefix="", delim="_"):
 if __name__ == '__main__':
     args = [
         (LightningPlusPlusAgent, {'desired_num_edges':10}),
-        (LightningPlusPlusAgent, {'desired_num_edges':5}),
-        (GreedyNodeInvestor, dict()),
-        (GreedyNodeInvestor, {'minimize': True}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':5}),
+        # (GreedyNodeInvestor, dict()),
+        # (GreedyNodeInvestor, {'minimize': True}),
         (GreedyNodeInvestor, {'use_node_degree': True}),
-        (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-        (GreedyNodeInvestor, {'use_node_routeness': True}),
-        (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
+        # # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
         (RandomInvestor, {'desired_num_edges':5}),
         (RandomInvestor, {'desired_num_edges':10})
     ]

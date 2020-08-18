@@ -137,10 +137,19 @@ def plot_experiment_mean_and_std(values):
     m = next(iter(values.values())).shape[1]
     xs = range(m)
     colors = cm.rainbow(np.linspace(0, 1, len(values)))
+
+    fig = plt.figure(figsize=(12,8))
+    ax = plt.subplot(111)
+
     for i, agent_name in enumerate(values):
         mean = values[agent_name].mean(0)
         std = values[agent_name].std(0) # * 0.5 to make it smaller
-        plt.plot(xs, mean, color=colors[i], label=agent_name)
-        plt.errorbar(xs[::m//error_plot_sparcity], mean[::m//error_plot_sparcity],
+        ax.plot(xs, mean, color=colors[i], label=agent_name)
+        ax.errorbar(xs[::m//error_plot_sparcity], mean[::m//error_plot_sparcity],
                      std[::m//error_plot_sparcity], color=colors[i], alpha=0.1)
-    plt.legend()
+
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='upper center', ncol=2)
+
+    return fig, ax

@@ -213,18 +213,18 @@ class GreedyNodeInvestor(AbstractAgent):
 
     @property
     def name(self) -> str:
-        name = self.__class__.__name__
+        name = "Greedy"
 
         if self.minimize:
-            name += "-minimal"
+            name += "-min"
         else:
-            name += "-maximal"
+            name += "-max"
 
         if self.use_node_degree:
-            name += "-node_degree"
+            name += "-degree"
         elif self.use_node_routeness:
-            name += "-node_routeness"
+            name += "-routeness"
         else:
-            name += "-node_capacity"
+            name += "-capacity"
         name += f'(d={self.desired_num_edges})'
         return name
