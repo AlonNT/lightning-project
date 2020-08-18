@@ -82,17 +82,18 @@ class LightningSimulator:
     This is a simulator for the different agents - each tries to maximize its revenue from the fees it gets.
     """
 
-    def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_amount, other_balance_proportion, 
+    def __init__(self, graph: nx.MultiGraph, num_transactions, transfer_amount, other_balance_proportion, 
                  verbose=False):
         self.graph: nx.MultiGraph = graph
         self.other_balance_proportion = other_balance_proportion
         # For plotting the graph in networkX framework, each node (vertex) has position (x,y)
         self.positions = nx.spring_layout(self.graph)
-        self.num_transfers = num_transfers
+        self.num_transactions = num_transactions
         self.transfer_amount = transfer_amount
         self.agent_pub_key = None
         self.verbose = verbose
         self.route_memory = dict()
+        self.successfull_transactions = 0
 
     def run(self, plot_dir=None):
         """
@@ -101,7 +102,7 @@ class LightningSimulator:
         """
         cumulative_balances = [self.get_node_balance(self.agent_pub_key)]
 
-        for step in range(self.num_transfers):
+        for step in range(self.num_transactions):
             # Sample random nodes
             possible_nodes = [node_pub_key for node_pub_key in self.graph.nodes if node_pub_key != self.agent_pub_key]
             node1, node2 = random.sample(possible_nodes, 2)
@@ -115,6 +116,8 @@ class LightningSimulator:
                 # Gets the index of the last node that can get the money (if the money was
                 # transferred, this is node2).
                 debug_last_node_index_in_route = transfer_money_in_graph(self.graph, self.transfer_amount, route)
+                if debug_last_node_index_in_route == len(route):
+                    self.successfull_transactions += 1
                 if plot_dir is not None:
                     os.makedirs(plot_dir, exist_ok=True)
                     visualize_graph_state(self.graph, self.positions,

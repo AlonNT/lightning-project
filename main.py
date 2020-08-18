@@ -62,7 +62,7 @@ def get_simulator():
     """
     graph = create_sub_graph_by_node_capacity(k=SIMULATOR_NUM_NODES,
                                               highest_capacity_offset=GRAPH_DENSITY_OFFSET)
-    simulator = LightningSimulator(graph, num_transfers=SIMULATOR_NUM_TRANSACTIONS,
+    simulator = LightningSimulator(graph, num_transactions=SIMULATOR_NUM_TRANSACTIONS,
                                    transfer_amount=SIMULATOR_TRANSFERS_MAX_AMOUNT,
                                    other_balance_proportion=SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION)
     return simulator
@@ -111,7 +111,9 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
             # Run the simulation
             start = time()
             simulation_cumulative_balance = simulator_copy.run(graph_debug_dir)
-            print(f"\t\t{human_format(SIMULATOR_NUM_TRANSACTIONS / (time() - start))} tnx/sec")
+            print(f"\t\ttnx/sec: {human_format(SIMULATOR_NUM_TRANSACTIONS / (time() - start))}")
+            print(f"\t\tSuccessfull transactions rate: "
+                  f"{100*simulator_copy.successfull_transactions / float(SIMULATOR_NUM_TRANSACTIONS)}%")
 
             results[agent.name].append(simulation_cumulative_balance)
 
