@@ -14,46 +14,7 @@ from LightningSimulator import LightningSimulator
 from utils.common import human_format
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.visualizers import plot_experiment_mean_and_std
-
-# ============== Experiment Configuration ============== #
-# TODO # bitcoint == 10**8 satoshies but it seems like the fees are working with msat sot is it bitcoin == 10*11 msat ?
-# The initial funds of the agents.
-INITIAL_FUNDS = 10 ** 8
-
-# The maximal amount that can be transferred between two nodes.
-SIMULATOR_TRANSFERS_MAX_AMOUNT = 10 ** 6
-
-# The channel creation cost (which is the cost payed for the bitcoin miners
-# to include the channel's creation transaction in their block).
-# This value changes constantly (due to the dynamics of the bitcoin transactions' fees
-# that change according to the load on the blockchain).
-# This approximate value was calculated using buybitcoinworldwide.com to get the cost
-# of a transaction (in usd), then converting us dollars to satoshis (in 8.8.2020).
-LN_DEFAULT_CHANNEL_COST = 4 * 10 ** 4 # Warning: Changing this to 0 leads to bugs as agent open lots of channells
-
-# defines the balance in the other side of new channels in proportion of the first side balance
-SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
-
-# How many transaction the simulator will simulate.
-SIMULATOR_NUM_TRANSACTIONS = 1000
-
-# How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
-NUMBER_REPEATED_SIMULATIONS = 3
-
-# The size of the sub-graph of the lightning network to simulate.
-SIMULATOR_NUM_NODES = 30
-
-# The higher this number the more sparse the sub-graph is.
-# The nodes will be ordered by some metric and the M next nodes will be selected.
-GRAPH_DENSITY_OFFSET = 50
-
-# Where to save plots and images
-DEBUG_OUT_DIR = "Experiments"
-
-# Turn on to create debug images of the transactionsin the simulator; this is very slow so make sure
-# you work with short simulations
-VISUALIZE_TRANSACTIONS=False
-
+from opt import *
 
 
 def get_simulator():
