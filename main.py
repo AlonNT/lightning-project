@@ -6,8 +6,8 @@ from time import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Agents.greedyAgent import GreedyNodeInvestor
-from Agents.randomAgent import RandomInvestor
+from Agents.GreedyAgent import GreedyNodeInvestor
+from Agents.RandomAgent import RandomInvestor
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from LightningSimulator import LightningSimulator
 from utils.common import PLT_COLORS
