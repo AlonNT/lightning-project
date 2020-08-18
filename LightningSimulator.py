@@ -53,10 +53,10 @@ def transfer_money_in_graph(graph: nx.MultiGraph, amount: int, route: List, verb
     # amount transfer is valid, and hence updating the channels with new amounts.
     for i, (src, dest, channel_id) in enumerate(route):
         edge_data = graph.edges[(src, dest, channel_id)]
-        src_node_balance_keys, dest_node_balance_key = get_nodes_ordered_balance_keys(src, edge_data)
+        src_node_balance_key, dest_node_balance_key = get_nodes_ordered_balance_keys(src, edge_data)
 
         # Channel Updates with the cumulative fees in the route and the amount to transfer
-        edge_data[src_node_balance_keys] -= amount + reversed_cumulative_fees[i]
+        edge_data[src_node_balance_key] -= amount + reversed_cumulative_fees[i]
         edge_data[dest_node_balance_key] += amount + reversed_cumulative_fees[i]
 
     if verbose:

@@ -4,7 +4,6 @@ from copy import deepcopy
 from time import time
 
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import cm
 import numpy as np
 import pickle
 
@@ -19,10 +18,18 @@ from utils.visualizers import plot_experiment_mean_and_std
 # ============== Experiment Configuration ============== #
 # TODO # bitcoint == 10**8 satoshies but it seems like the fees are working with msat sot is it bitcoin == 10*11 msat ?
 # The initial funds of the agents.
-INITIAL_FUNDS = 10 ** 9
+INITIAL_FUNDS = 10 ** 8
 
 # The maximal amount that can be transferred between two nodes.
-SIMULATOR_TRANSFERS_MAX_AMOUNT = 5*10 ** 6
+SIMULATOR_TRANSFERS_MAX_AMOUNT = 10 ** 6
+
+# The channel creation cost (which is the cost payed for the bitcoin miners
+# to include the channel's creation transaction in their block).
+# This value changes constantly (due to the dynamics of the bitcoin transactions' fees
+# that change according to the load on the blockchain).
+# This approximate value was calculated using buybitcoinworldwide.com to get the cost
+# of a transaction (in usd), then converting us dollars to satoshis (in 8.8.2020).
+LN_DEFAULT_CHANNEL_COST = 4 * 10 ** 4 # Warning: Changing this to 0 leads to bugs as agent open lots of channells
 
 # defines the balance in the other side of new channels in proportion of the first side balance
 SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
@@ -31,7 +38,7 @@ SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION = 1.0
 SIMULATOR_NUM_TRANSACTIONS = 1000
 
 # How many times to repeat the experiment, in order to get the mean & std of the reward in each step.
-NUMBER_REPEATED_SIMULATIONS = 2
+NUMBER_REPEATED_SIMULATIONS = 3
 
 # The size of the sub-graph of the lightning network to simulate.
 SIMULATOR_NUM_NODES = 30
@@ -47,13 +54,6 @@ DEBUG_OUT_DIR = "Experiments"
 # you work with short simulations
 VISUALIZE_TRANSACTIONS=False
 
-# The channel creation cost (which is the cost payed for the bitcoin miners
-# to include the channel's creation transaction in their block).
-# This value changes constantly (due to the dynamics of the bitcoin transactions' fees
-# that change according to the load on the blockchain).
-# This approximate value was calculated using buybitcoinworldwide.com to get the cost
-# of a transaction (in usd), then converting us dollars to satoshis (in 8.8.2020).
-LN_DEFAULT_CHANNEL_COST = 4 * 10 ** 4
 
 
 def get_simulator():
@@ -142,23 +142,23 @@ def verify_channles(new_edges):
 
 def get_experiment_description_string(prefix="", delim="_"):
     return f"{prefix}" \
-           f"N[{human_format(SIMULATOR_NUM_NODES)}]" \
-           f"{delim}D[{human_format(GRAPH_DENSITY_OFFSET)}]" \
+           f"N[{SIMULATOR_NUM_NODES}]" \
+           f"{delim}D[{GRAPH_DENSITY_OFFSET}]" \
            f"{delim}F[{human_format(INITIAL_FUNDS)}]" \
            f"{delim}T[{human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}]"
 
 if __name__ == '__main__':
     args = [
-        (LightningPlusPlusAgent, {'desired_num_edges':10}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':10}),
         # (LightningPlusPlusAgent, {'desired_num_edges':5}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
-        (GreedyNodeInvestor, {'use_node_degree': True}),
+        (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
         # # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-        (RandomInvestor, {'desired_num_edges':5}),
-        (RandomInvestor, {'desired_num_edges':10})
+        (RandomInvestor, {'desired_num_edges':4}),
+        # (RandomInvestor, {'desired_num_edges':10})
     ]
 
     out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())
