@@ -11,8 +11,7 @@ from Agents.greedyAgent import GreedyNodeInvestor
 from Agents.randomAgent import RandomInvestor
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from LightningSimulator import LightningSimulator
-from utils.common import PLT_COLORS
-from utils.common import human_format
+from utils.common import PLT_COLORS, human_format
 from utils.graph_helpers import create_sub_graph_by_node_capacity
 from utils.visualizers import plot_experiment_mean_and_std
 
@@ -40,7 +39,12 @@ SIMULATOR_NUM_NODES = 100
 # The nodes will be ordered by some metric and the M next nodes will be selected.
 GRAPH_DENSITY_OFFSET = 50
 
-DEBUG_OUT_DIR = None
+# Where to save plots and images
+DEBUG_OUT_DIR = "Experiments"
+
+# Turn on to create debug images of the transactionsin the simulator; this is very slow so make sure
+# you work with short simulations
+VISUALIZE_TRANSACTIONS=False
 
 # The channel creation cost (which is the cost payed for the bitcoin miners
 # to include the channel's creation transaction in their block).
@@ -63,7 +67,7 @@ def get_simulator():
     return simulator
 
 
-def run_experiment(agent_constructors, out_dir=None):
+def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
     """
     Creates a Lightning simulator, common to all of the given agents.
     For each agent:
@@ -72,7 +76,8 @@ def run_experiment(agent_constructors, out_dir=None):
     3. Repeat simulation and plot average results.
 
     :param agent_constructors: list of tuples of an agent constructor and additional kwargs
-    :param out_dir: optional directory for plotting debug images of the simulation, off if None
+    :param out_dir: debug outputs dir
+    : plot_graph_transactions:  create visualisaztion image for each transaction (very slow)
     """
     # Create the base Simulator which will be copied for each simulation
     simulator = get_simulator()
@@ -100,27 +105,25 @@ def run_experiment(agent_constructors, out_dir=None):
             verify_channles(new_edges)
             simulator_copy.add_edges(new_edges)
 
-            debug_dir = None if out_dir is None else os.path.join(out_dir, f"{agent.name}", f"sim-{repeat}")
+            graph_debug_dir = os.path.join(out_dir, f"{agent.name}", f"sim-{repeat}") if plot_graph_transactions else None
 
             # Run the simulation
             start = time()
-            simulation_cumulative_balance = simulator_copy.run(debug_dir)
+            simulation_cumulative_balance = simulator_copy.run(graph_debug_dir)
             print(f"\t\t{human_format(SIMULATOR_NUM_TRANSACTIONS / (time() - start))} tnx/sec")
 
             results[agent.name].append(simulation_cumulative_balance)
 
     # Plot experiments
-    os.makedirs("outputs", exist_ok=True)
     for i, agent_name in enumerate(results):
         agent_stats = np.array(results[agent_name]) - INITIAL_FUNDS
         plot_experiment_mean_and_std(agent_stats, label=agent_name, color=PLT_COLORS[i], use_seaborn=False)
         results[agent_name] = agent_stats.tolist()
-    pickle.dump(results, open('outputs/ot_dict.pkl', 'wb'))
-    
-    plt.title(f"#Nodes: {human_format(SIMULATOR_NUM_NODES)}, Density: {human_format(GRAPH_DENSITY_OFFSET)},"
-              f" Funds: {human_format(INITIAL_FUNDS)}, tx-amount: {human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}")
+    pickle.dump(results, open(os.path.join(out_dir, 'results_dict.pkl'), 'wb'))
+
+    plt.title(get_experiment_description_string(delim=", "))
     plt.legend()
-    plt.savefig("outputs/Simulator_log.png")
+    plt.savefig(os.path.join(out_dir, "/Simulator_log.png"))
     plt.show()
 
 
@@ -134,6 +137,14 @@ def verify_channles(new_edges):
     assert funds_spent <= INITIAL_FUNDS
     print(f"\t\tEstablishing {len(new_edges)} new edges")
     print(f"\t\tUsed {int(100 * funds_spent / INITIAL_FUNDS)}% of funds")
+
+
+def get_experiment_description_string(prefix="", delim="_"):
+    return f"{prefix}" \
+           f"{delim}N[{human_format(SIMULATOR_NUM_NODES)}]" \
+           f"{delim}D[{human_format(GRAPH_DENSITY_OFFSET)}]" \
+           f"{delim}F[{human_format(INITIAL_FUNDS)}]" \
+           f"{delim}T[{human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}]"
 
 if __name__ == '__main__':
     args = [
@@ -149,4 +160,6 @@ if __name__ == '__main__':
         (RandomInvestor, {'desired_num_edges':10})
     ]
 
-    run_experiment(args, out_dir=DEBUG_OUT_DIR)
+    out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())
+    os.makedirs(out_dir, exist_ok=True)
+    run_experiment(args, out_dir=out_dir, plot_graph_transactions=VISUALIZE_TRANSACTIONS)
