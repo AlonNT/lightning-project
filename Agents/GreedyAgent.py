@@ -82,7 +82,7 @@ def grouped(iterable, number_to_group):
     return zip(*[iter(iterable)] * number_to_group)
 
 
-def find_nodes_routeness(graph, minimize: bool):
+def sort_nodes_by_routeness(graph, minimize: bool):
     """
     This function traverse all the paths between node to each other (according to lnd_routing algorithm) and
     counts the number of times a group of two edges appeared in the shortest path between two nodes in the graph.
@@ -92,8 +92,6 @@ def find_nodes_routeness(graph, minimize: bool):
     :return:
             (1) list of nodes that have the maximal betweenness
                 (i.e nodes that participated in the maximum number of shortest path).
-            (2) Dictionary that contain the edges data (i.e contains the nodes we want to connect and the channel_id,
-                this is for getting the edges data for evaluating a new policy)
     """
 
     # Create a dictionary that the key are group of two edges in the graph with a counter that
@@ -150,7 +148,7 @@ def find_nodes_routeness(graph, minimize: bool):
                 ordered_nodes_with_maximal_routeness.append(node)
                 nodes_set.add(node)
 
-    return ordered_nodes_with_maximal_routeness, sorted_participated_edges_counter
+    return ordered_nodes_with_maximal_routeness
 
 
 class GreedyNodeInvestor(AbstractAgent):
@@ -180,7 +178,7 @@ class GreedyNodeInvestor(AbstractAgent):
         if self.use_node_degree:
             ordered_nodes = sort_nodes_by_degree(graph, self.minimize)
         elif self.use_node_routeness:
-            ordered_nodes, _ = find_nodes_routeness(graph, self.minimize)
+            ordered_nodes = sort_nodes_by_routeness(graph, self.minimize)
         else:
             ordered_nodes = sort_nodes_by_channel_capacity(graph, self.minimize)
 
@@ -215,18 +213,18 @@ class GreedyNodeInvestor(AbstractAgent):
 
     @property
     def name(self) -> str:
-        name = self.__class__.__name__
+        name = "Greedy"
 
         if self.minimize:
-            name += "-minimal"
+            name += "-min"
         else:
-            name += "-maximal"
+            name += "-max"
 
         if self.use_node_degree:
-            name += "-node_degree"
+            name += "-degree"
         elif self.use_node_routeness:
-            name += "-node_routeness"
+            name += "-routeness"
         else:
-            name += "-node_capacity"
+            name += "-capacity"
         name += f'(d={self.desired_num_edges})'
         return name

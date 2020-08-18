@@ -6,8 +6,9 @@ import numpy as np
 import imageio
 import networkx as nx
 from matplotlib import pyplot as plt
-from utils.common import human_format, get_sender_policy_and_id, PLT_COLORS
+from matplotlib.pyplot import cm
 
+from utils.common import human_format, get_sender_policy_and_id
 
 def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False,
                           additional_node_info=None, plot_title="graph state", out_path=None):
@@ -46,10 +47,11 @@ def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_se
 
     # Highlight specified routes
     if transfer_routes is not None:
+        colors = cm.rainbow(np.linspace(0, 1, len(transfer_routes)))  # 15 = number_of colors
         for i, (full_route, last_node_index) in enumerate(transfer_routes):
             src = full_route[0][0]
             dst = full_route[-1][1]
-            c = PLT_COLORS[i]
+            c = colors[i]
             nx.draw_networkx_edges(graph, positions, edgelist=full_route[:last_node_index],
                                    edge_color=c, width=15, edgecolors='k', alpha=0.5)
             nx.draw_networkx_edges(graph, positions, edgelist=full_route[last_node_index:],
@@ -84,6 +86,7 @@ def visualize_routes(graph, src, dest, routes: Dict[str, List[Tuple[str, str]]])
     nx.draw(graph, positions, with_labels=False, font_weight='bold', node_color='k')
 
     # Add fee visualization on routes edges
+    colors = cm.rainbow(np.linspace(0, 1, len(routes)))  # 15 = number_of colors
     for i, route_name in enumerate(routes):
         edge_labels = {}
         route = routes[route_name]
@@ -101,7 +104,7 @@ def visualize_routes(graph, src, dest, routes: Dict[str, List[Tuple[str, str]]])
         # nx.draw_networkx_nodes(graph, positions, nodelist=route_nodes,
         #                        node_color=colors[i], edgecolors='k', alpha=0.5)
         nx.draw_networkx_edges(graph, positions, edgelist=route,
-                               edge_color=PLT_COLORS[i], width=10, edgecolors='k', label=route_name, alpha=0.5)
+                               edge_color=colors[i], width=10, edgecolors='k', label=route_name, alpha=0.5)
 
     # Mark src and dest positions
     src_x, src_y = positions[src]
@@ -124,29 +127,29 @@ def create_simulation_gif(folder):
                     duration=0.5)  # modify the frame duration as needed
 
 
-def plot_experiment_mean_and_std(values: np.ndarray, label: str, color: str, use_seaborn: bool = False):
+def plot_experiment_mean_and_std(values):
     """
     Plot the mean and std of n experiment with m steps.
-
-    :param values: An n x m array describing the cumulative reward of n experiments of a single agent
-    :param label:
-    :param color:
-    :param use_seaborn:
-    :return:
+    :param values: dict maping an agent name to An n x m numpy array describing the cumulative
+                    reward of n experiments of a single agent
     """
-    if use_seaborn:  # This is slow, matplotlib version is much faster.
-        print("Plotting with Seaborn")
-        dfs = []
-        # Create a dataframe with multiple experiment, sns.lineplot needs them to have a
-        # common x values in order to compute mean and std
-        for r in range(len(values)):
-            df_row = pd.DataFrame(values[r])
-            df_row['x'] = df_row.index
-            dfs += [df_row]
-        data = pd.concat(dfs)
-        sns.lineplot(x='x', y=0, data=data, label=label, color=color)
-    else:  # PLT lame version
-        mean = values.mean(0)
-        std = values.std(0)*0.1 # * 0.5 to make it smaller
-        plt.plot(range(len(mean)), mean, color=color, label=label)
-        plt.errorbar(range(len(mean)), mean, std, color=color, alpha=0.3)
+    error_plot_sparcity = 1000
+    m = next(iter(values.values())).shape[1]
+    xs = range(m)
+    colors = cm.rainbow(np.linspace(0, 1, len(values)))
+
+    fig = plt.figure(figsize=(12,8))
+    ax = plt.subplot(111)
+
+    for i, agent_name in enumerate(values):
+        mean = values[agent_name].mean(0)
+        std = values[agent_name].std(0) # * 0.5 to make it smaller
+        ax.plot(xs, mean, color=colors[i], label=agent_name)
+        ax.errorbar(xs[::m//error_plot_sparcity], mean[::m//error_plot_sparcity],
+                     std[::m//error_plot_sparcity], color=colors[i], alpha=0.1)
+
+
+    # Put a legend to the right of the current axis
+    ax.legend(loc='upper center', ncol=2)
+
+    return fig, ax

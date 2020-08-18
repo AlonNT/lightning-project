@@ -53,10 +53,10 @@ def transfer_money_in_graph(graph: nx.MultiGraph, amount: int, route: List, verb
     # amount transfer is valid, and hence updating the channels with new amounts.
     for i, (src, dest, channel_id) in enumerate(route):
         edge_data = graph.edges[(src, dest, channel_id)]
-        src_node_balance_keys, dest_node_balance_key = get_nodes_ordered_balance_keys(src, edge_data)
+        src_node_balance_key, dest_node_balance_key = get_nodes_ordered_balance_keys(src, edge_data)
 
         # Channel Updates with the cumulative fees in the route and the amount to transfer
-        edge_data[src_node_balance_keys] -= amount + reversed_cumulative_fees[i]
+        edge_data[src_node_balance_key] -= amount + reversed_cumulative_fees[i]
         edge_data[dest_node_balance_key] += amount + reversed_cumulative_fees[i]
 
     if verbose:
@@ -82,16 +82,18 @@ class LightningSimulator:
     This is a simulator for the different agents - each tries to maximize its revenue from the fees it gets.
     """
 
-    def __init__(self, graph: nx.MultiGraph, num_transfers, transfer_max_amount, other_balance_proportion, 
+    def __init__(self, graph: nx.MultiGraph, num_transactions, transfer_amount, other_balance_proportion, 
                  verbose=False):
         self.graph: nx.MultiGraph = graph
-        self.other_balance_proportion = other_balance_proportion;
+        self.other_balance_proportion = other_balance_proportion
         # For plotting the graph in networkX framework, each node (vertex) has position (x,y)
         self.positions = nx.spring_layout(self.graph)
-        self.num_transfers = num_transfers
-        self.transfer_max_amount = transfer_max_amount
+        self.num_transactions = num_transactions
+        self.transfer_amount = transfer_amount
         self.agent_pub_key = None
         self.verbose = verbose
+        self.route_memory = dict()
+        self.successfull_transactions = 0
 
     def run(self, plot_dir=None):
         """
@@ -100,23 +102,22 @@ class LightningSimulator:
         """
         cumulative_balances = [self.get_node_balance(self.agent_pub_key)]
 
-        for step in range(self.num_transfers):
-            # TODO Ariel - is it on purpose that there are only two possible amounts?
-            # TODO it's self.transfer_max_amount - 1 or self.transfer_max_amount...
-            amount = random.randint(self.transfer_max_amount - 1, self.transfer_max_amount)
-
+        for step in range(self.num_transactions):
             # Sample random nodes
             possible_nodes = [node_pub_key for node_pub_key in self.graph.nodes if node_pub_key != self.agent_pub_key]
             node1, node2 = random.sample(possible_nodes, 2)
 
-            # Get the route from node1 to node2 with the routing algorithm and transfer the money.
-            route = get_route(self.graph, node1, node2, amount)
+            if (node1, node2) not in self.route_memory:
+                self.route_memory[(node1, node2)] = get_route(self.graph, node1, node2, self.transfer_amount)
+            route = self.route_memory[(node1, node2)]
 
             # If the routing was not successful, nothing to do.
             if route is not None:
                 # Gets the index of the last node that can get the money (if the money was
                 # transferred, this is node2).
-                debug_last_node_index_in_route = transfer_money_in_graph(self.graph, amount, route)
+                debug_last_node_index_in_route = transfer_money_in_graph(self.graph, self.transfer_amount, route)
+                if debug_last_node_index_in_route == len(route):
+                    self.successfull_transactions += 1
                 if plot_dir is not None:
                     os.makedirs(plot_dir, exist_ok=True)
                     visualize_graph_state(self.graph, self.positions,
