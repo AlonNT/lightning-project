@@ -28,7 +28,7 @@ parser.add_argument('--GRAPH_DENSITY_OFFSET', type=int, default=50,
                          'The nodes will be ordered by some metric and the M next nodes will be selected..')
 parser.add_argument('--DEBUG_OUT_DIR', type=str, default="Experiments",
                     help='Where to save plots and images.')
-parser.add_argument('--VISUALIZE_TRANSACTIONS', type=bool, default=False,
+parser.add_argument('--VISUALIZE_TRANSACTIONS', action='store_true',
                     help='Turn on to create debug images of the transactionsin the simulator; this is very slow so '
                          'make sure you work with short simulations.')
 

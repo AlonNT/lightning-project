@@ -13,7 +13,7 @@ from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from LightningSimulator import LightningSimulator
 from utils.common import human_format
 from utils.graph_helpers import create_sub_graph_by_node_capacity
-from utils.visualizers import plot_experiment_mean_and_std
+from utils.visualizers import plot_experiment_mean_and_std, visualize_graph_state
 from opt import *
 
 
@@ -78,10 +78,9 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
 
             results[agent.name].append(simulation_cumulative_balance)
 
-    for k in results:
-        results[k] = np.array(results[k]) - INITIAL_FUNDS
+        results[agent.name] = np.array(results[agent.name]) - INITIAL_FUNDS
+        pickle.dump(results[agent.name], open(os.path.join(out_dir, f'{agent.name}-results_dict.pkl'), 'wb'))
 
-    pickle.dump(results, open(os.path.join(out_dir, 'results_dict.pkl'), 'wb'))
 
     fig, ax = plot_experiment_mean_and_std(results)
     fig.suptitle(get_experiment_description_string(prefix="plot-", delim=", "))
@@ -110,18 +109,19 @@ def get_experiment_description_string(prefix="", delim="_"):
 
 if __name__ == '__main__':
     args = [
-        (LightningPlusPlusAgent, {'desired_num_edges': 10}),
-        # (LightningPlusPlusAgent, {'desired_num_edges':5}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 4}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':2}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 4, 'use_node_degree': True}),
         # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True, 'minimize': True}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True, 'minimize': True}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
-        # (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
+        # (GreedyNodeInvestor, {'use_node_degree': True}),
         # # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-        # (RandomInvestor, {'desired_num_edges': 10}),
-        # (RandomInvestor, {'desired_num_edges':10})
+        # (RandomInvestor, {'desired_num_edges': 10})
+        (RandomInvestor, {'desired_num_edges':4})
     ]
 
     out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())

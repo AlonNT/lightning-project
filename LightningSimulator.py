@@ -124,8 +124,7 @@ class LightningSimulator:
                                           transfer_routes=[(route, debug_last_node_index_in_route)],
                                           out_path=os.path.join(plot_dir, f"step-{step}"),
                                           verify_node_serial_number=False,
-                                          plot_title=f"step-{step}",  # TODO delete the following commented-out code?
-                                          additional_node_info=None)  # {self.agent_pub_key: f"Agent balance: {agent_reward}"})
+                                          plot_title=f"step-{step}")
             cumulative_balances.append(self.get_node_balance(self.agent_pub_key))
 
         return cumulative_balances
@@ -185,6 +184,8 @@ class LightningSimulator:
         :param node1_policy:
         :param node1_balance: node1 balance
         """
+        if self.graph.has_edge(node1_pub, node2_pub):
+            raise ValueError("Multiple edges to the same node is forbiden for agents")
         node2_balance = self.other_balance_proportion*node1_balance
         if self.verbose:
             print(f"\tManager | Adding edge between "
