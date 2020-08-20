@@ -131,7 +131,7 @@ def sort_nodes_by_routeness(graph, minimize: bool):
                                                reverse=(not minimize))
     # For avoiding nodes repetition
     nodes_set = set()
-
+    nodes_rank = dict()
     # Combined the nodes in the edges (every couple of edges contain 3 nodes)
     for edges_data, _ in sorted_participated_edges_counter:
 
@@ -148,7 +148,7 @@ def sort_nodes_by_routeness(graph, minimize: bool):
                 ordered_nodes_with_maximal_routeness.append(node)
                 nodes_set.add(node)
 
-    return ordered_nodes_with_maximal_routeness
+    return ordered_nodes_with_maximal_routeness, participated_edges_counter
 
 
 class GreedyNodeInvestor(AbstractAgent):
@@ -178,7 +178,7 @@ class GreedyNodeInvestor(AbstractAgent):
         if self.use_node_degree:
             ordered_nodes = sort_nodes_by_degree(graph, self.minimize)
         elif self.use_node_routeness:
-            ordered_nodes = sort_nodes_by_routeness(graph, self.minimize)
+            ordered_nodes, _ = sort_nodes_by_routeness(graph, self.minimize)
         else:
             ordered_nodes = sort_nodes_by_channel_capacity(graph, self.minimize)
 

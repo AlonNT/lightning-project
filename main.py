@@ -64,7 +64,7 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
             # Ask agent for edges to add.
             new_edges = agent.get_channels(simulator_copy.graph)
 
-            verify_channles(new_edges)
+            verify_channels(new_edges)
             simulator_copy.add_edges(new_edges)
 
             graph_debug_dir = os.path.join(out_dir, f"{agent.name}", f"sim-{repeat}") if plot_graph_transactions else None
@@ -89,7 +89,7 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
     plt.show()
 
 
-def verify_channles(new_edges):
+def verify_channels(new_edges):
     """
     This function verifies the agent provided channels that do not exceed the funds it was given
     """
@@ -114,9 +114,9 @@ if __name__ == '__main__':
         # (LightningPlusPlusAgent, {'desired_num_edges':5}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
-        (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
+        # (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
         # # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-        # (GreedyNodeInvestor, {'use_node_routeness': True}),
+        (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
         (RandomInvestor, {'desired_num_edges':4}),
         # (RandomInvestor, {'desired_num_edges':10})

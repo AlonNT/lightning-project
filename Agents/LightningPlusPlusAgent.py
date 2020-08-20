@@ -7,6 +7,7 @@ import numpy as np
 
 from Agents.AbstractAgent import AbstractAgent
 from utils.common import calculate_agent_policy
+from Agents.GreedyAgent import sort_nodes_by_routeness
 
 
 def get_distances_probability_vector(possible_nodes_mask: np.ndarray,
@@ -77,6 +78,14 @@ def get_capacities_probability_vector(graph: nx.MultiGraph,
     p = q_to_the_power_of_alpha / q_to_the_power_of_alpha.sum()
 
     return p
+
+
+def get_routeness_probability_vector(graph: nx.MultiGraph,
+                                     nodes: list,
+                                     possible_nodes_mask: np.ndarray,
+                                     alpha: float = 3) -> np.ndarray:
+
+    _, participated_edges_counter = sort_nodes_by_routeness(graph, True)
 
 
 def get_distance_matrix(graph, nodes):
@@ -152,6 +161,7 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False):
     selected_nodes = list()
 
     for i in range(k):
+        # Vector with 1's in the unselected nodes and 0's in the selcted nodes (for not choosing them again)
         possible_nodes_mask = np.array([(node not in selected_nodes) for node in nodes])
         capacities_p = get_capacities_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha)
         distances_p = get_distances_probability_vector(possible_nodes_mask, distance_matrix)
@@ -167,8 +177,25 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False):
     return selected_nodes
 
 
-class LightningPlusPlusAgent(AbstractAgent):
+# todo maybe delete this
+def find_best_k_edges(graph, k, agent_public_key, alpha=3):
+    nodes = [node for node in graph.nodes if node != agent_public_key]
+    sub_graph = graph.subgraph(nodes).copy()
+    selected_edges = list()
 
+    for i in range(k):
+        # Vector with 1's in the unselected nodes and 0's in the selcted nodes (for not choosing them again)
+        possible_nodes_mask = np.array([(node not in selected_nodes) for node in nodes])
+        routeness_p = get_routeness_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha)
+        p = routeness_p / routeness_p.sum()
+
+        selected_edge = np.random.choice(nodes, p=p)
+        selected_edges.append(selected_edge)
+
+    return selected_edges
+
+
+class LightningPlusPlusAgent(AbstractAgent):
     def __init__(self, public_key, initial_funds, channel_cost,
                  alpha=3, n_channels_per_node=2, desired_num_edges=10):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
@@ -191,7 +218,8 @@ class LightningPlusPlusAgent(AbstractAgent):
         funds = self.initial_funds
 
         # get more nodes to surround than possible with the fiven funds and costs: try to fully utilize initial funds
-        number_of_nodes_to_surround = funds // (self.n_channels_per_node * (self.channel_cost + self.new_channel_balance)) + 2
+        number_of_nodes_to_surround = funds // (
+        self.n_channels_per_node * (self.channel_cost + self.new_channel_balance)) + 2
         assert number_of_nodes_to_surround > 0, "Consider subtracting self.n_channels_per_node or the channel cost "
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
                                               agent_public_key=self.pub_key, alpha=self.alpha, visualize=False)
@@ -208,7 +236,7 @@ class LightningPlusPlusAgent(AbstractAgent):
             for node_to_connect in nodes_to_connect_with:
                 if funds < self.channel_cost:
                     return channels
-                channel_balance = min(self.new_channel_balance, funds - self.channel_cost) # Allows using all the funds
+                channel_balance = min(self.new_channel_balance, funds - self.channel_cost)  # Allows using all the funds
 
                 funds -= channel_balance + self.channel_cost
 
