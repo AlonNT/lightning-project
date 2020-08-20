@@ -63,7 +63,7 @@ def sort_nodes_by_degree(graph, minimize: bool):
 
     # Create a list with nodes according to their degree from high to low according to minimize indicator
     nodes_to_connect = [node_data[0] for node_data in nodes_degree]
-    return nodes_to_connect
+    return nodes_to_connect, nodes_degree
 
 
 def grouped(iterable, number_to_group):
@@ -176,7 +176,7 @@ class GreedyNodeInvestor(AbstractAgent):
         funds_to_spend = self.initial_funds
         # Choose between the strategies
         if self.use_node_degree:
-            ordered_nodes = sort_nodes_by_degree(graph, self.minimize)
+            ordered_nodes, _ = sort_nodes_by_degree(graph, self.minimize)
         elif self.use_node_routeness:
             ordered_nodes, _ = sort_nodes_by_routeness(graph, self.minimize)
         else:
