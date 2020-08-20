@@ -55,6 +55,6 @@ def create_sub_graph_by_node_capacity(dump_path=LIGHTNING_GRAPH_DUMP_PATH, k=64,
 
     # This may return a graph with less than k nodes
     process_lightning_graph(graph, remove_isolated=True, total_capacity=True)
-    print("Creating sub graph with %d/%d nodes" % (len(graph.nodes), len(sorted_nodes)))
+    print(f"Creating sub graph with {len(graph.nodes)}/{len(sorted_nodes)} nodes and {len(graph.edges)} edges")
 
     return graph

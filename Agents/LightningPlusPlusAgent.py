@@ -45,6 +45,7 @@ def get_distances_probability_vector(possible_nodes_mask: np.ndarray,
             weights_vector[i] = np.min(distances[selected_nodes_mask])
 
     weights_to_the_power_of_alpha = weights_vector ** alpha
+    weights_to_the_power_of_alpha[weights_to_the_power_of_alpha == np.inf] = 0
     probability_vector = weights_to_the_power_of_alpha / weights_to_the_power_of_alpha.sum()
 
     return probability_vector
@@ -99,7 +100,7 @@ def get_distance_matrix(graph, nodes):
     :return: A 2D NumPy array which is the distance between every two vertices in the graph.
     """
     n = len(nodes)
-    distance_matrix = np.empty(shape=(n, n), dtype=np.float32)
+    distance_matrix = np.full(shape=(n, n), fill_value=np.inf, dtype=np.float32) # np.empty initializes with nans
 
     for source_node, distances_to_targets in nx.shortest_path_length(graph):
         i = nodes.index(source_node)
@@ -167,7 +168,7 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False):
         distances_p = get_distances_probability_vector(possible_nodes_mask, distance_matrix)
         combined_p = capacities_p * distances_p
         p = combined_p / combined_p.sum()
-
+        
         selected_node = np.random.choice(nodes, p=p)
         selected_nodes.append(selected_node)
 
