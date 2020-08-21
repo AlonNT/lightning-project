@@ -246,15 +246,14 @@ class LightningPlusPlusAgent(AbstractAgent):
                                               agent_public_key=self.pub_key, alpha=self.alpha, visualize=False,
                                               use_node_degree=self.use_node_degree, minimize=self.minimize)
 
+        nodes_in_already_chosen_edges = []
+
         for node in nodes_to_surround:
             min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
-            neighbors = list(graph.neighbors(node))
-            if len(neighbors) <= self.n_channels_per_node:
-                nodes_to_connect_with = neighbors
-            else:
+            nodes_to_connect_with = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
+            if len(nodes_to_connect_with) > self.n_channels_per_node:
                 # TODO maybe beter to sortt by capacity/betweeness/etc..
-                nodes_to_connect_with = random.sample(neighbors, k=self.n_channels_per_node)
-
+                nodes_to_connect_with = random.sample(nodes_to_connect_with, k=self.n_channels_per_node)
             for node_to_connect in nodes_to_connect_with:
                 if funds < self.channel_cost:
                     return channels
@@ -270,6 +269,8 @@ class LightningPlusPlusAgent(AbstractAgent):
                                    'node1_balance': channel_balance}
 
                 channels.append(channel_details)
+
+            nodes_in_already_chosen_edges += nodes_to_connect_with
 
         return channels
 

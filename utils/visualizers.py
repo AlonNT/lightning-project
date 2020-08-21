@@ -91,7 +91,6 @@ def plot_experiment_mean_and_std(values):
     :param values: dict maping an agent name to An n x m numpy array describing the cumulative
                     reward of n experiments of a single agent
     """
-    error_plot_sparcity = 1000
     m = next(iter(values.values())).shape[1]
     xs = range(m)
     colors = cm.rainbow(np.linspace(0, 1, len(values)))
@@ -104,21 +103,21 @@ def plot_experiment_mean_and_std(values):
         mean = values[agent_name].mean(0)
         ax.plot(xs, mean, color=colors[i], label=agent_name,  linewidth=4)
 
-        # # Plot error
-        # # option 1: plot all area between min and max plots; good when using few repeats
-        # ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1, color=colors[i])
+        # Plot error
+        # option 1: plot all area between min and max plots; good when using few repeats
+        ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1, color=colors[i])
 
         # option 2:
         # plot std error bats
+        # error_plot_sparcity = 1000
         # std = values[agent_name].std(0) # * 0.5 to make it smaller
         # ax.errorbar(xs[::m//error_plot_sparcity], mean[::m//error_plot_sparcity],
         #              std[::m//error_plot_sparcity], color=colors[i], alpha=0.1)
 
-        # option 3
-        # plot all experiments
-        colors = cm.rainbow(np.linspace(0, 1, len(values[agent_name])))
-        for j, row in enumerate(values[agent_name]):
-            ax.plot(xs, row, color=colors[j], linewidth=1, label=str(j))
+        # # option 3
+        # # plot all experiments
+        # for row in values[agent_name]:
+        #     ax.plot(xs, row, color=colors[i], linewidth=1)
 
     # Put a legend to the right of the current axis
     ax.legend(loc='upper center', ncol=2)
