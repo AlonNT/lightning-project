@@ -110,15 +110,17 @@ def get_experiment_description_string(prefix="", delim="_"):
 
 if __name__ == '__main__':
     args = [
-        (LightningPlusPlusAgent, {'desired_num_edges': 10}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 10}),
         # (LightningPlusPlusAgent, {'desired_num_edges':5}),
         # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True, 'minimize': True}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True, 'minimize': True}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True, 'minimize': True}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
         # (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
         # # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-        # (GreedyNodeInvestor, {'use_node_routeness': True}),
+        (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
         # (RandomInvestor, {'desired_num_edges': 10}),
         # (RandomInvestor, {'desired_num_edges':10})

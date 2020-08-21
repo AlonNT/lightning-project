@@ -131,9 +131,9 @@ def sort_nodes_by_routeness(graph, minimize: bool):
                                                reverse=(not minimize))
     # For avoiding nodes repetition
     nodes_set = set()
-    nodes_rank = dict()
+    routeness_per_node = defaultdict(lambda: 0)
     # Combined the nodes in the edges (every couple of edges contain 3 nodes)
-    for edges_data, _ in sorted_participated_edges_counter:
+    for edges_data, edges_counter in sorted_participated_edges_counter:
 
         # Get the nodes that participate in the edges and combined them to one list
         nodes_in_edges = [list(nodes) for channel_id, nodes in edges_data]  # Note the list cast from frozenset
@@ -147,8 +147,9 @@ def sort_nodes_by_routeness(graph, minimize: bool):
             if node not in nodes_set:
                 ordered_nodes_with_maximal_routeness.append(node)
                 nodes_set.add(node)
+                routeness_per_node[node] += edges_counter
 
-    return ordered_nodes_with_maximal_routeness, participated_edges_counter
+    return ordered_nodes_with_maximal_routeness, routeness_per_node
 
 
 class GreedyNodeInvestor(AbstractAgent):
@@ -226,5 +227,7 @@ class GreedyNodeInvestor(AbstractAgent):
             name += "-routeness"
         else:
             name += "-capacity"
+
         name += f'(d={self.desired_num_edges})'
+
         return name

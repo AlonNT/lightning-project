@@ -117,8 +117,15 @@ def get_degree_probability_vector(graph: nx.MultiGraph,
 def get_routeness_probability_vector(graph: nx.MultiGraph,
                                      nodes: list,
                                      possible_nodes_mask: np.ndarray,
-                                     alpha: float = 3) -> np.ndarray:
-    _, participated_edges_counter = sort_nodes_by_routeness(graph, True)
+                                     alpha: float = 3,  minimize: bool=False) -> np.ndarray:
+
+    _, routeness_per_node = sort_nodes_by_routeness(graph, minimize)
+    routeness = np.array([routeness_per_node[node] for node in nodes])
+    routeness[~possible_nodes_mask] = 0
+    q = routeness / routeness.sum()
+    q_to_the_power_of_alpha = q ** alpha
+    p = q_to_the_power_of_alpha / q_to_the_power_of_alpha.sum()
+    return p
 
 
 def get_distance_matrix(graph, nodes):
@@ -171,7 +178,8 @@ def visualize_current_step(graph, nodes, positions, agent_node, selected_node, s
     plt.show()
 
 
-def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_node_degree=False, minimize=False):
+def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_node_degree=False,
+                      use_node_routeness=False, minimize=False):
     """
     Find the best k nodes in the given graph,
     where 'best' means that they have high total capacities
@@ -198,6 +206,8 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_
         possible_nodes_mask = np.array([(node not in selected_nodes) for node in nodes])
         if use_node_degree:
             p_feature = get_degree_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha, minimize)
+        elif use_node_routeness:
+            p_feature = get_routeness_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha, minimize)
         else:
             p_feature = get_capacities_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha)
 
@@ -216,7 +226,8 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_
 
 class LightningPlusPlusAgent(AbstractAgent):
     def __init__(self, public_key, initial_funds, channel_cost,
-                 alpha=3, n_channels_per_node=2, desired_num_edges=10,  minimize=False, use_node_degree=False):
+                 alpha=3, n_channels_per_node=2, desired_num_edges=10,  minimize=False, use_node_degree=False,
+                 use_node_routeness=False):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
         self.alpha = alpha
@@ -225,6 +236,7 @@ class LightningPlusPlusAgent(AbstractAgent):
         self.new_channel_balance = initial_funds // desired_num_edges
         self.minimize = minimize
         self.use_node_degree = use_node_degree
+        self.use_node_routeness = use_node_routeness
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
         """
@@ -244,7 +256,8 @@ class LightningPlusPlusAgent(AbstractAgent):
         assert number_of_nodes_to_surround > 0, "Consider subtracting self.n_channels_per_node or the channel cost "
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
                                               agent_public_key=self.pub_key, alpha=self.alpha, visualize=False,
-                                              use_node_degree=self.use_node_degree, minimize=self.minimize)
+                                              use_node_degree=self.use_node_degree,
+                                              use_node_routeness=self.use_node_routeness, minimize=self.minimize)
 
         for node in nodes_to_surround:
             min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
