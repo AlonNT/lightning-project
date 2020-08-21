@@ -293,12 +293,15 @@ class LightningPlusPlusAgent(AbstractAgent):
         :return: The name of the agent.
         """
         class_name = "LPP"
+        if self.minimize:
+            class_name += "-min"
+        else:
+            class_name += "-max"
+
         if self.use_node_degree:
-            if self.minimize:
-                class_name += "-min"
-            else:
-                class_name += "-max"
             class_name += "-degree"
+        elif self.use_node_routeness:
+            class_name += "-routeness"
         else:
             class_name += "-capacity"
 
