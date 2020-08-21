@@ -259,15 +259,14 @@ class LightningPlusPlusAgent(AbstractAgent):
                                               use_node_degree=self.use_node_degree,
                                               use_node_routeness=self.use_node_routeness, minimize=self.minimize)
 
+        nodes_in_already_chosen_edges = []
+
         for node in nodes_to_surround:
             min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
-            neighbors = list(graph.neighbors(node))
-            if len(neighbors) <= self.n_channels_per_node:
-                nodes_to_connect_with = neighbors
-            else:
+            nodes_to_connect_with = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
+            if len(nodes_to_connect_with) > self.n_channels_per_node:
                 # TODO maybe beter to sortt by capacity/betweeness/etc..
-                nodes_to_connect_with = random.sample(neighbors, k=self.n_channels_per_node)
-
+                nodes_to_connect_with = random.sample(nodes_to_connect_with, k=self.n_channels_per_node)
             for node_to_connect in nodes_to_connect_with:
                 if funds < self.channel_cost:
                     return channels
@@ -284,6 +283,8 @@ class LightningPlusPlusAgent(AbstractAgent):
 
                 channels.append(channel_details)
 
+            nodes_in_already_chosen_edges += nodes_to_connect_with
+
         return channels
 
     @property
@@ -292,6 +293,15 @@ class LightningPlusPlusAgent(AbstractAgent):
         :return: The name of the agent.
         """
         class_name = "LPP"
+        if self.use_node_degree:
+            if self.minimize:
+                class_name += "-min"
+            else:
+                class_name += "-max"
+            class_name += "-degree"
+        else:
+            class_name += "-capacity"
+
         return f'{class_name}(a={self.alpha}, ' \
                f'n={self.n_channels_per_node}, ' \
                f'd={self.desired_num_edges})'

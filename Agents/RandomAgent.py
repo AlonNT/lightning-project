@@ -20,11 +20,12 @@ class RandomInvestor(AbstractAgent):
         :return: List with channels details (i.e the nodes that opened the channel, balances and policy)
         """
         funds_to_spend = self.initial_funds
+        possible_nodes = [node for node in graph.nodes if graph.nodes[node]['pub_key'] != self.pub_key]
         channels = list()
         while funds_to_spend >= self.channel_cost:
             # Choose random public_key for connection
-            random_node_pub_key = random.choice([node for node in graph.nodes if graph.nodes[node]['pub_key'] != self.pub_key])
-
+            random_node_pub_key = random.choice(possible_nodes)
+            possible_nodes.remove(random_node_pub_key)
             # Randomize the balances
             chanel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
             funds_to_spend -= self.channel_cost + chanel_balance
