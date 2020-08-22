@@ -1,16 +1,17 @@
 from collections import defaultdict
-from typing import NewType
+from random import randint
 
 from Agents.AbstractAgent import AbstractAgent
 from routing.LND_routing import get_route
 from utils.common import LND_DEFAULT_POLICY
 from utils.common import calculate_agent_policy
 
-# this number is used in the LND routing algorithm that is used to sort edges by their attractiveness for  transactions
-# it is better to keep this number as close as possible to the amount that the simulator actually transfers
+# Those numbers are used in the LND routing algorithm that is used to sort edges by their attractiveness for
+# transactions. It is better to keep this number as close as possible to the amount that the simulator actually
+# transfers
 
-# TODO [Daniel] keep playing with this const for better results
-ROUTENESS_TRANSFER_AMOUNT = 10 ** 2
+ROUTENESS_MAX_TRANSFER_AMOUNT = 10 ** 6
+ROUTENESS_MIN_TRANSFER_AMOUNT = 10 ** 5
 
 
 def sort_nodes_by_channel_capacity(graph, minimize: bool):
@@ -106,8 +107,10 @@ def sort_nodes_by_routeness(graph, minimize: bool):
             if dest == src or dest in graph.neighbors(src):
                 continue  # Early termination for cases where a two edges fastest route cannot exist
 
+            amount = randint(ROUTENESS_MIN_TRANSFER_AMOUNT, ROUTENESS_MAX_TRANSFER_AMOUNT)
+
             # Get the path from node1 to node2 according the lnd_routing algorithm
-            route = get_route(graph, src, dest, ROUTENESS_TRANSFER_AMOUNT)
+            route = get_route(graph, src, dest, amount)
             if route is None:
                 continue  # No route was found transferring 'amount; from 'source' to 'target',
             assert len(route) > 1  # This should not happen: we verified no short route can exist
