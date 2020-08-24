@@ -102,27 +102,48 @@ def verify_channels(new_edges):
 
 def get_experiment_description_string(prefix="", delim="_"):
     return f"{prefix}" \
-           f"N[{SIMULATOR_NUM_NODES}]" \
-           f"{delim}D[{GRAPH_DENSITY_OFFSET}]" \
-           f"{delim}F[{human_format(INITIAL_FUNDS)}]" \
-           f"{delim}T[{human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}]"
+           f"Nodes[{SIMULATOR_NUM_NODES}]" \
+           f"{delim}Density[{GRAPH_DENSITY_OFFSET}]" \
+           f"{delim}IFunds[{human_format(INITIAL_FUNDS)}]" \
+           f"{delim}TAmount[{human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}]" \
+           f"{delim}CCost[{human_format(LN_DEFAULT_CHANNEL_COST)}]" \
+           f"{delim}NTransfer[{human_format(SIMULATOR_NUM_TRANSACTIONS)}]"
+
 
 if __name__ == '__main__':
     args = [
-        # (LightningPlusPlusAgent, {'desired_num_edges': 10}),
-        # (LightningPlusPlusAgent, {'desired_num_edges':5}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 2}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':4}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':8}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':16}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':32}),
+        # (LightningPlusPlusAgent, {'desired_num_edges':64}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 4, 'use_node_degree': True}),
         # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True}),
         # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True, 'minimize': True}),
         # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True}),
         # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True, 'minimize': True}),
         # (GreedyNodeInvestor, dict()),
         # (GreedyNodeInvestor, {'minimize': True}),
-        # (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
+        (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':2}),
+        (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':4}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':8}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':16}),
+        # (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 2}),
+        # (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 4}),
+        # (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 8}),
+        # (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 16}),
+        # (GreedyNodeInvestor, {'use_node_degree': True}),
+        # (GreedyNodeInvestor, {'use_node_degree': True}),
+        # (GreedyNodeInvestor, {'use_node_degree': True}),
         # # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-        (GreedyNodeInvestor, {'use_node_routeness': True}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True}),
         # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
         # (RandomInvestor, {'desired_num_edges': 10})
-        (RandomInvestor, {'desired_num_edges': 4})
+        # (RandomInvestor, {'desired_num_edges':2}),
+        # (RandomInvestor, {'desired_num_edges':4}),
+        # (RandomInvestor, {'desired_num_edges':8}),
+        # (RandomInvestor, {'desired_num_edges':16}),
     ]
 
     out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())

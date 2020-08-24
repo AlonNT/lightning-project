@@ -203,3 +203,4 @@ class LightningSimulator:
         # Updates the total capacity according to the new channel capacity
         for node_pub in [node1_pub, node2_pub]:
             self.graph.nodes[node_pub]['total_capacity'] += capacity
+
