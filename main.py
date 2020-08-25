@@ -20,6 +20,7 @@ from opt import *
 def get_simulator():
     """
     Builds the simulator from a simplified version of the lightning dump
+    :return: Simulator
     """
     graph = create_sub_graph_by_node_capacity(k=SIMULATOR_NUM_NODES,
                                               highest_capacity_offset=GRAPH_DENSITY_OFFSET)
@@ -81,7 +82,6 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
         results[agent.name] = np.array(results[agent.name]) - INITIAL_FUNDS
         pickle.dump(results[agent.name], open(os.path.join(out_dir, f'{agent.name}-results_dict.pkl'), 'wb'))
 
-
     fig, ax = plot_experiment_mean_and_std(results)
     fig.suptitle(get_experiment_description_string(prefix="plot-", delim=", "))
     fig.savefig(os.path.join(out_dir, "Simulator_log.png"))
@@ -107,23 +107,75 @@ def get_experiment_description_string(prefix="", delim="_"):
            f"{delim}F[{human_format(INITIAL_FUNDS)}]" \
            f"{delim}T[{human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}]"
 
-if __name__ == '__main__':
+
+def get_experiment_greedy_vs_lpp():
     args = [
-        # (LightningPlusPlusAgent, {'desired_num_edges': 10}),
-        # (LightningPlusPlusAgent, {'desired_num_edges':5}),
-        # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True}),
-        # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True, 'minimize': True}),
-        # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True}),
-        # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True, 'minimize': True}),
-        # (GreedyNodeInvestor, dict()),
-        # (GreedyNodeInvestor, {'minimize': True}),
-        # (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
-        # # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
-        (GreedyNodeInvestor, {'use_node_routeness': True}),
-        # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
-        # (RandomInvestor, {'desired_num_edges': 10})
-        (RandomInvestor, {'desired_num_edges': 4})
+        # Capacity
+        (LightningPlusPlusAgent, {'desired_num_edges': 16,  'use_nodes_distance': False}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': False, 'minimize': True}),
+
+        # Degree
+        # (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'minimize': True,
+        #                           'use_nodes_distance': False}),
+
+        # Routeness
+        # (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'use_nodes_distance': False}),
+        # (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'minimize': True,
+        #                           'use_nodes_distance': False}),
+
+        # Capacity
+        (GreedyNodeInvestor, {'desired_num_edges': 16}, ),
+        (GreedyNodeInvestor, {'desired_num_edges': 16, 'minimize': True},),
+
+        # Degree
+        # (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 16}),
+        # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True, 'desired_num_edges': 16}),
+        #
+        # # Routeness
+        # (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges': 16}),
+        # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True, 'desired_num_edges': 16}),
     ]
+    return args
+
+
+def get_experiment_distance_lpp():
+    args = [
+        # Capacity
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': False}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': True}),
+
+        # Degree
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': True}),
+
+        # Routeness
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'use_nodes_distance': False}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'use_nodes_distance': True}),
+
+    ]
+    return args
+
+if __name__ == '__main__':
+    # args = [
+    #     (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_nodes_distance': False}),
+    #     (LightningPlusPlusAgent, {'desired_num_edges': 10,  'use_nodes_distance': False, 'minimize': True}),
+    #     # (LightningPlusPlusAgent, {'desired_num_edges':5}),
+    #     # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True}),
+    #     # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_degree': True, 'minimize': True}),
+    #     # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True}),
+    #     # (LightningPlusPlusAgent, {'desired_num_edges': 10, 'use_node_routeness': True, 'minimize': True}),
+    #     # (GreedyNodeInvestor, dict()),
+    #     # (GreedyNodeInvestor, {'minimize': True}),
+    #     # (GreedyNodeInvestor, {'use_node_degree': True,'desired_num_edges':4}),
+    #     # (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True}),
+    #     (GreedyNodeInvestor, {'use_node_routeness': True}),
+    #     # (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True}),
+    #     # (RandomInvestor, {'desired_num_edges': 10})
+    #     (RandomInvestor, {'desired_num_edges': 4})
+    # ]
+
+    args = get_experiment_greedy_vs_lpp()
 
     out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())
     os.makedirs(out_dir, exist_ok=True)
