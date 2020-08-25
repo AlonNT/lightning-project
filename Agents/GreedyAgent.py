@@ -202,17 +202,12 @@ class GreedyNodeInvestor(AbstractAgent):
 
             # Create the channel details for the simulator
             # The other node's policy is determined by the simulator.
-            if self.use_node_routeness:
-                min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
-                                                                                                 node=node_to_connect)
-                agent_policy = {"time_lock_delta": min_time_lock_delta,
-                                "fee_base_msat": min_base_fee,
-                                "proportional_fee": min_proportional_fee}
-            else:
-                agent_policy = LND_DEFAULT_POLICY
-
+            min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
+                                                                                             node=node_to_connect)
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
-                               'node1_policy': agent_policy,
+                               'node1_policy': {"time_lock_delta": min_time_lock_delta,
+                                                "fee_base_msat": min_base_fee,
+                                                "proportional_fee": min_proportional_fee},
                                'node1_balance': channel_balance}
 
             channels.append(channel_details)
