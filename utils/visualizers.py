@@ -85,7 +85,7 @@ def create_simulation_gif(folder):
                     duration=0.5)  # modify the frame duration as needed
 
 
-def plot_experiment_mean_and_std(values):
+def plot_experiment_mean_and_std(values, ax):
     """
     Plot the mean and std of n experiment with m steps.
     :param values: dict maping an agent name to An n x m numpy array describing the cumulative
@@ -93,33 +93,28 @@ def plot_experiment_mean_and_std(values):
     """
     m = next(iter(values.values())).shape[1]
     xs = range(m)
-    colors = cm.rainbow(np.linspace(0, 1, len(values)))
+    rainbow = cm.rainbow(np.linspace(0, 1, len(values)))
+    color_mapping = dict(zip(values.keys(), rainbow))
 
-    fig = plt.figure(figsize=(12,8))
-    ax = plt.subplot(111)
 
-    for i, agent_name in enumerate(values):
+    for agent_name in values:
 
         mean = values[agent_name].mean(0)
-        ax.plot(xs, mean, color=colors[i], label=agent_name,  linewidth=4)
+        ax.plot(xs, mean, color=color_mapping[agent_name], label=agent_name,  linewidth=4)
 
         # Plot error
         # option 1: plot all area between min and max plots; good when using few repeats
-        ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1, color=colors[i])
+        ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1, color=color_mapping[agent_name])
 
         # option 2:
         # plot std error bats
         # error_plot_sparcity = 1000
         # std = values[agent_name].std(0) # * 0.5 to make it smaller
         # ax.errorbar(xs[::m//error_plot_sparcity], mean[::m//error_plot_sparcity],
-        #              std[::m//error_plot_sparcity], color=colors[i], alpha=0.1)
+        #              std[::m//error_plot_sparcity], color=color_mapping[agent_name], alpha=0.1)
 
         # # option 3
         # # plot all experiments
         # for row in values[agent_name]:
-        #     ax.plot(xs, row, color=colors[i], linewidth=1)
+        #     ax.plot(xs, row, color=color_mapping[agent_name], linewidth=1)
 
-    # Put a legend to the right of the current axis
-    ax.legend(loc='upper center', ncol=2)
-
-    return fig, ax
