@@ -85,7 +85,7 @@ def create_simulation_gif(folder):
                     duration=0.5)  # modify the frame duration as needed
 
 
-def plot_experiment_mean_and_std(values, ax):
+def plot_experiment_mean_and_std(values, ax, color_mapping=None):
     """
     Plot the mean and std of n experiment with m steps.
     :param values: dict maping an agent name to An n x m numpy array describing the cumulative
@@ -93,8 +93,9 @@ def plot_experiment_mean_and_std(values, ax):
     """
     m = next(iter(values.values())).shape[1]
     xs = range(m)
-    rainbow = cm.rainbow(np.linspace(0, 1, len(values)))
-    color_mapping = dict(zip(values.keys(), rainbow))
+    if color_mapping is None:
+        rainbow = cm.rainbow(np.linspace(0, 1, len(values)))
+        color_mapping = dict(zip(values.keys(), rainbow))
 
 
     for agent_name in values:
