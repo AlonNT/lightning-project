@@ -107,10 +107,12 @@ def sort_nodes_by_routeness(graph, minimize: bool):
             if dest == src or dest in graph.neighbors(src):
                 continue  # Early termination for cases where a two edges fastest route cannot exist
 
+            # TODO [Daniel] maybe take the average?
             amount = randint(ROUTENESS_MIN_TRANSFER_AMOUNT, ROUTENESS_MAX_TRANSFER_AMOUNT)
 
             # Get the path from node1 to node2 according the lnd_routing algorithm
             route = get_route(graph, src, dest, amount)
+
             if route is None:
                 continue  # No route was found transferring 'amount; from 'source' to 'target',
             assert len(route) > 1  # This should not happen: we verified no short route can exist
@@ -134,7 +136,9 @@ def sort_nodes_by_routeness(graph, minimize: bool):
                                                reverse=(not minimize))
     # For avoiding nodes repetition
     nodes_set = set()
+
     routeness_per_node = defaultdict(lambda: 0)
+
     # Combined the nodes in the edges (every couple of edges contain 3 nodes)
     for edges_data, edges_counter in sorted_participated_edges_counter:
 

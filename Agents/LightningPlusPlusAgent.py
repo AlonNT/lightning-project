@@ -54,7 +54,7 @@ def get_distances_probability_vector(possible_nodes_mask: np.ndarray,
 def get_capacities_probability_vector(graph: nx.MultiGraph,
                                       nodes: list,
                                       possible_nodes_mask: np.ndarray,
-                                      alpha: float = 3) -> np.ndarray:
+                                      alpha: float = 3, minimize: bool=False) -> np.ndarray:
     """
     Get the capacities probability vector for the nodes in the graph.
     Sampling a node according to this probability vector will (probably)
@@ -72,6 +72,9 @@ def get_capacities_probability_vector(graph: nx.MultiGraph,
     :return: A NumPy array that is a probability vector for the nodes in the graph.
     """
     capacities_per_node = nx.get_node_attributes(graph, 'total_capacity')
+    if minimize:
+        capacities_per_node = {key: (1.0/value) for key, value in capacities_per_node.items()}
+
     capacities = np.array([capacities_per_node[node] for node in nodes])
     capacities[~possible_nodes_mask] = 0
     q = capacities / capacities.sum()
@@ -104,9 +107,12 @@ def get_degree_probability_vector(graph: nx.MultiGraph,
     """
     _, nodes_degree = sort_nodes_by_degree(graph, minimize=minimize)
     degree_per_node = {key: value for key, value in nodes_degree}
+    if minimize:
+        degree_per_node = {key: (1.0/value) for key, value in nodes_degree}
 
     degrees = np.array([degree_per_node[node] for node in nodes])
     degrees[~possible_nodes_mask] = 0
+
     q = degrees / degrees.sum()
     q_to_the_power_of_alpha = q ** alpha
     p = q_to_the_power_of_alpha / q_to_the_power_of_alpha.sum()
@@ -118,9 +124,30 @@ def get_routeness_probability_vector(graph: nx.MultiGraph,
                                      nodes: list,
                                      possible_nodes_mask: np.ndarray,
                                      alpha: float = 3,  minimize: bool=False) -> np.ndarray:
+    """
+       Get the routeness probability vector for the nodes in the graph.
+       Sampling a node according to this probability vector will (probably)
+       result in a node with high routeness.
+
+       :param minimize: Boolean indicator To choose which strategy to choose (i.e maximal or minimal routeness)
+       :param graph: The graph.
+       :param nodes: A list of the nodes in the graph.
+                     This is important because we want the order of the nodes to be the same,
+                     and calling graph.nodes does not necessarily maintain the order.
+       :param possible_nodes_mask: A boolean NumPy array indicating whether the relevant node is possible for selection
+                                   or was it selected already.
+       :param alpha: The power to raise the capacities before dividing by the sum.
+                     Higher values enlarge the differences between the resulting probabilities
+                     for node with different routeness.
+       :return: A NumPy array that is a probability vector for the nodes in the graph.
+       """
 
     _, routeness_per_node = sort_nodes_by_routeness(graph, minimize)
+    if minimize:
+        routeness_per_node = {key: (1.0/value) for key, value in routeness_per_node.items()}
+
     routeness = np.array([routeness_per_node[node] for node in nodes])
+
     routeness[~possible_nodes_mask] = 0
     q = routeness / routeness.sum()
     q_to_the_power_of_alpha = q ** alpha
@@ -179,7 +206,7 @@ def visualize_current_step(graph, nodes, positions, agent_node, selected_node, s
 
 
 def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_node_degree=False,
-                      use_node_routeness=False, minimize=False):
+                      use_node_routeness=False, use_node_distance=True, minimize=False):
     """
     Find the best k nodes in the given graph,
     where 'best' means that they have high total capacities
@@ -209,11 +236,15 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_
         elif use_node_routeness:
             p_feature = get_routeness_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha, minimize)
         else:
-            p_feature = get_capacities_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha)
+            p_feature = get_capacities_probability_vector(sub_graph, nodes, possible_nodes_mask, alpha, minimize)
 
-        distances_p = get_distances_probability_vector(possible_nodes_mask, distance_matrix)
-        combined_p = p_feature * distances_p
-        p = combined_p / combined_p.sum()
+        # Use distance factor between nodes and the the probability accordingly
+        if use_node_distance:
+            distances_p = get_distances_probability_vector(possible_nodes_mask, distance_matrix)
+            combined_p = p_feature * distances_p
+            p = combined_p / combined_p.sum()
+        else:
+            p = p_feature
 
         selected_node = np.random.choice(nodes, p=p)
         selected_nodes.append(selected_node)
@@ -227,7 +258,7 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_
 class LightningPlusPlusAgent(AbstractAgent):
     def __init__(self, public_key, initial_funds, channel_cost,
                  alpha=3, n_channels_per_node=2, desired_num_edges=10,  minimize=False, use_node_degree=False,
-                 use_node_routeness=False):
+                 use_node_routeness=False, use_nodes_distance=True):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
         self.alpha = alpha
@@ -237,6 +268,7 @@ class LightningPlusPlusAgent(AbstractAgent):
         self.minimize = minimize
         self.use_node_degree = use_node_degree
         self.use_node_routeness = use_node_routeness
+        self.use_nodes_distance = use_nodes_distance
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
         """
@@ -257,7 +289,8 @@ class LightningPlusPlusAgent(AbstractAgent):
         nodes_to_surround = find_best_k_nodes(graph, k=number_of_nodes_to_surround,
                                               agent_public_key=self.pub_key, alpha=self.alpha, visualize=False,
                                               use_node_degree=self.use_node_degree,
-                                              use_node_routeness=self.use_node_routeness, minimize=self.minimize)
+                                              use_node_routeness=self.use_node_routeness,
+                                              use_node_distance=self.use_nodes_distance, minimize=self.minimize)
 
         nodes_in_already_chosen_edges = []
 
@@ -265,7 +298,6 @@ class LightningPlusPlusAgent(AbstractAgent):
             min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
             nodes_to_connect_with = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
             if len(nodes_to_connect_with) > self.n_channels_per_node:
-                # TODO maybe beter to sortt by capacity/betweeness/etc..
                 nodes_to_connect_with = random.sample(nodes_to_connect_with, k=self.n_channels_per_node)
             for node_to_connect in nodes_to_connect_with:
                 if funds < self.channel_cost:
@@ -304,6 +336,11 @@ class LightningPlusPlusAgent(AbstractAgent):
             class_name += "-routeness"
         else:
             class_name += "-capacity"
+
+        if self.use_nodes_distance:
+            class_name += "-distance factor"
+        else:
+            class_name += "-no distance factor"
 
         return f'{class_name}(a={self.alpha}, ' \
                f'n={self.n_channels_per_node}, ' \
