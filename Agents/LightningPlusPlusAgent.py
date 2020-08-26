@@ -6,8 +6,9 @@ import networkx as nx
 import numpy as np
 
 from Agents.AbstractAgent import AbstractAgent
-from utils.common import calculate_agent_policy
 from Agents.GreedyAgent import sort_nodes_by_routeness, sort_nodes_by_degree
+from utils.common import LND_DEFAULT_POLICY, BASE_FEE_THRESHOLD
+from utils.common import calculate_agent_policy
 
 
 def get_distances_probability_vector(possible_nodes_mask: np.ndarray,
@@ -297,6 +298,14 @@ class LightningPlusPlusAgent(AbstractAgent):
 
         for node in nodes_to_surround:
             min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
+            # If the base fee is too low we keep the policy as the default one
+            if min_base_fee < BASE_FEE_THRESHOLD:
+                agent_policy = LND_DEFAULT_POLICY
+            else:
+                agent_policy = {"time_lock_delta": min_time_lock_delta,
+                                "fee_base_msat": min_base_fee,
+                                "proportional_fee": min_proportional_fee}
+
             nodes_to_connect_with = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
             if len(nodes_to_connect_with) > self.n_channels_per_node:
                 nodes_to_connect_with = random.sample(nodes_to_connect_with, k=self.n_channels_per_node)
@@ -309,9 +318,7 @@ class LightningPlusPlusAgent(AbstractAgent):
 
                 channel_details = {'node1_pub': self.pub_key,
                                    'node2_pub': node_to_connect,
-                                   'node1_policy': {"time_lock_delta": min_time_lock_delta,
-                                                    "fee_base_msat": min_base_fee,
-                                                    "proportional_fee": min_proportional_fee},
+                                   'node1_policy': agent_policy,
                                    'node1_balance': channel_balance}
 
                 channels.append(channel_details)
