@@ -3,8 +3,9 @@ from random import randint
 
 from Agents.AbstractAgent import AbstractAgent
 from routing.LND_routing import get_route
-from utils.common import LND_DEFAULT_POLICY
+from utils.common import LND_DEFAULT_POLICY, BASE_FEE_THRESHOLD
 from utils.common import calculate_agent_policy
+import networkx as nx
 
 # Those numbers are used in the LND routing algorithm that is used to sort edges by their attractiveness for
 # transactions. It is better to keep this number as close as possible to the amount that the simulator actually
@@ -14,12 +15,29 @@ ROUTENESS_MAX_TRANSFER_AMOUNT = 10 ** 6
 ROUTENESS_MIN_TRANSFER_AMOUNT = 10 ** 5
 
 
+def sort_nodes_by_total_capacity(graph, minimize: bool):
+    """
+    Finds nodes with minimal/maximal total capacity.
+    :param graph: The graph.
+    :param minimize: boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
+    :return:list of nodes that the agent want to connect to according to the minimal/maximal total capacity of their channels
+    """
+    capacities_per_node = nx.get_node_attributes(graph, 'total_capacity')
+    if minimize:
+        nodes_total_capacity = sorted(capacities_per_node, key=lambda item: item[1], reverse=(not minimize))
+    else:
+        nodes_total_capacity = sorted(capacities_per_node, key=lambda item: item[1], reverse=minimize)
+
+    # Nodes according to their total capacity from high to low according to minimize indicator
+    return nodes_total_capacity
+
+
 def sort_nodes_by_channel_capacity(graph, minimize: bool):
     """
-    Finds nodes with minimal/maximal capacity of the channles between them
+    Finds nodes with minimal/maximal capacity of the channels between them
     :param graph: lightning graph
     :param minimize: boolean indicator To choose which strategy to choose (i.e maximal or minimal capacity)
-    :return: list of nodes that the agent want to connect to according to the minimal/maxima; capacity of their channels
+    :return: list of nodes that the agent want to connect to according to the minimal/maximal capacity of their channels
     """
     nodes_to_connect = list()
     # Use the nodes set for supervise which node we already chose.
@@ -93,6 +111,7 @@ def sort_nodes_by_routeness(graph, minimize: bool):
     :return:
             (1) list of nodes that have the maximal betweenness
                 (i.e nodes that participated in the maximum number of shortest path).
+            (2) dictionary of nodes in (1) with their rank according to the routeness score for their edges
     """
 
     # Create a dictionary that the key are group of two edges in the graph with a counter that
@@ -161,7 +180,8 @@ def sort_nodes_by_routeness(graph, minimize: bool):
 
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int,
-                 minimize=False, use_node_degree=False, use_node_routeness=False, desired_num_edges=10):
+                 minimize=False, use_node_degree=False, use_node_routeness=False, desired_num_edges=10,
+                 use_default_policy=True):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
 
         self.minimize = minimize
@@ -169,6 +189,7 @@ class GreedyNodeInvestor(AbstractAgent):
         self.use_node_routeness = use_node_routeness
         self.desired_num_edges = desired_num_edges
         self.default_balance_amount = initial_funds / self.desired_num_edges
+        self.use_default_policy = use_default_policy
 
     def get_channels(self, graph):
         """
@@ -188,7 +209,7 @@ class GreedyNodeInvestor(AbstractAgent):
         elif self.use_node_routeness:
             ordered_nodes, _ = sort_nodes_by_routeness(graph, self.minimize)
         else:
-            ordered_nodes = sort_nodes_by_channel_capacity(graph, self.minimize)
+            ordered_nodes = sort_nodes_by_total_capacity(graph, self.minimize)
 
         # Choose the connected nodes to channel with minimal capacity until the initial_funds is over
         for node_to_connect in ordered_nodes:
@@ -199,15 +220,24 @@ class GreedyNodeInvestor(AbstractAgent):
 
             channel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
             funds_to_spend -= self.channel_cost + channel_balance
+            if not self.use_default_policy:
+                # Create the channel details for the simulator
+                # The other node's policy is determined by the simulator.
+                min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
+                                                                                                 node=node_to_connect)
+                # If the base fee is too low we keep the policy as the default one
+                if min_base_fee < BASE_FEE_THRESHOLD:
+                    agent_policy = LND_DEFAULT_POLICY
+                else:
+                    agent_policy = {"time_lock_delta": min_time_lock_delta,
+                                    "fee_base_msat": min_base_fee,
+                                    "proportional_fee": min_proportional_fee}
 
-            # Create the channel details for the simulator
-            # The other node's policy is determined by the simulator.
-            min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
-                                                                                             node=node_to_connect)
+            else:
+                agent_policy = LND_DEFAULT_POLICY
+
             channel_details = {'node1_pub': self.pub_key, 'node2_pub': node_to_connect,
-                               'node1_policy': {"time_lock_delta": min_time_lock_delta,
-                                                "fee_base_msat": min_base_fee,
-                                                "proportional_fee": min_proportional_fee},
+                               'node1_policy': agent_policy,
                                'node1_balance': channel_balance}
 
             channels.append(channel_details)
@@ -229,6 +259,9 @@ class GreedyNodeInvestor(AbstractAgent):
             name += "-routeness"
         else:
             name += "-capacity"
+
+        if self.use_default_policy:
+            name += "default_policy"
 
         name += f'(d={self.desired_num_edges})'
 
