@@ -5,6 +5,9 @@ import numpy as np
 
 LND_DEFAULT_POLICY = {"time_lock_delta": 144, "fee_base_msat": 1000, "proportional_fee": 0.001}
 
+# 25% of the bases fee is lower than this (calculate from lightning network dump)
+BASE_FEE_THRESHOLD = 3.0
+
 
 def human_format(num):
     """
