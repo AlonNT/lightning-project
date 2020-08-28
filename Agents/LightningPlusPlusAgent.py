@@ -299,6 +299,7 @@ class LightningPlusPlusAgent(AbstractAgent):
         for node in nodes_to_surround:
             min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
             # If the base fee is too low we keep the policy as the default one
+            # TODO delete this we use default policy
             if min_base_fee < BASE_FEE_THRESHOLD:
                 agent_policy = LND_DEFAULT_POLICY
             else:
@@ -318,7 +319,7 @@ class LightningPlusPlusAgent(AbstractAgent):
 
                 channel_details = {'node1_pub': self.pub_key,
                                    'node2_pub': node_to_connect,
-                                   'node1_policy': agent_policy,
+                                   'node1_policy': LND_DEFAULT_POLICY,
                                    'node1_balance': channel_balance}
 
                 channels.append(channel_details)

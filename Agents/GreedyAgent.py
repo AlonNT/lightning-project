@@ -181,9 +181,10 @@ def sort_nodes_by_routeness(graph, minimize: bool):
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int,
                  minimize=False, use_node_degree=False, use_node_routeness=False, desired_num_edges=10,
-                 use_default_policy=True):
+                 use_default_policy=True, fee: int = None):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
 
+        self.fee = fee
         self.minimize = minimize
         self.use_node_degree = use_node_degree
         self.use_node_routeness = use_node_routeness
@@ -220,11 +221,15 @@ class GreedyNodeInvestor(AbstractAgent):
 
             channel_balance = min(self.default_balance_amount, funds_to_spend - self.channel_cost)
             funds_to_spend -= self.channel_cost + channel_balance
+
+            # Calculate the policy of the agent according to the node_to_connect data
+            min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
+                                                                                             node=node_to_connect)
+            # TODO delete because we always use default policy ??
+            # Create the channel details for the simulator
+            # The other node's policy is determined by the simulator.
             if not self.use_default_policy:
-                # Create the channel details for the simulator
-                # The other node's policy is determined by the simulator.
-                min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
-                                                                                                 node=node_to_connect)
+
                 # If the base fee is too low we keep the policy as the default one
                 if min_base_fee < BASE_FEE_THRESHOLD:
                     agent_policy = LND_DEFAULT_POLICY
@@ -232,6 +237,10 @@ class GreedyNodeInvestor(AbstractAgent):
                     agent_policy = {"time_lock_delta": min_time_lock_delta,
                                     "fee_base_msat": min_base_fee,
                                     "proportional_fee": min_proportional_fee}
+            elif self.fee is not None:
+                agent_policy = {"time_lock_delta": min_time_lock_delta,
+                                "fee_base_msat": self.fee,
+                                "proportional_fee": min_proportional_fee}
 
             else:
                 agent_policy = LND_DEFAULT_POLICY
@@ -260,8 +269,11 @@ class GreedyNodeInvestor(AbstractAgent):
         else:
             name += "-capacity"
 
-        if self.use_default_policy:
-            name += "default_policy"
+        if self.fee is not None:
+            name += f'(fee={self.fee})'
+
+        if not self.fee and self.use_default_policy:
+            name += "-default_policy"
 
         name += f'(d={self.desired_num_edges})'
 
