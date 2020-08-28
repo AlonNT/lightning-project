@@ -6,8 +6,8 @@ import networkx as nx
 import numpy as np
 
 from Agents.AbstractAgent import AbstractAgent
-from Agents.GreedyAgent import sort_nodes_by_routeness, sort_nodes_by_degree
-from utils.common import LND_DEFAULT_POLICY, BASE_FEE_THRESHOLD
+from Agents.GreedyAgent import sort_nodes_by_routeness, sort_nodes_by_degree, get_agent_policy
+from utils.common import LND_DEFAULT_POLICY
 from utils.common import calculate_agent_policy
 
 
@@ -55,7 +55,7 @@ def get_distances_probability_vector(possible_nodes_mask: np.ndarray,
 def get_capacities_probability_vector(graph: nx.MultiGraph,
                                       nodes: list,
                                       possible_nodes_mask: np.ndarray,
-                                      alpha: float = 3, minimize: bool=False) -> np.ndarray:
+                                      alpha: float = 3, minimize: bool = False) -> np.ndarray:
     """
     Get the capacities probability vector for the nodes in the graph.
     Sampling a node according to this probability vector will (probably)
@@ -74,7 +74,7 @@ def get_capacities_probability_vector(graph: nx.MultiGraph,
     """
     capacities_per_node = nx.get_node_attributes(graph, 'total_capacity')
     if minimize:
-        capacities_per_node = {key: (1.0/value) for key, value in capacities_per_node.items()}
+        capacities_per_node = {key: (1.0 / value) for key, value in capacities_per_node.items()}
 
     capacities = np.array([capacities_per_node[node] for node in nodes])
     capacities[~possible_nodes_mask] = 0
@@ -88,7 +88,7 @@ def get_capacities_probability_vector(graph: nx.MultiGraph,
 def get_degree_probability_vector(graph: nx.MultiGraph,
                                   nodes: list,
                                   possible_nodes_mask: np.ndarray,
-                                  alpha: float = 3, minimize: bool=False) -> np.ndarray:
+                                  alpha: float = 3, minimize: bool = False) -> np.ndarray:
     """
     Get the degrees probability vector for the nodes in the graph.
     Sampling a node according to this probability vector will (probably)
@@ -109,7 +109,7 @@ def get_degree_probability_vector(graph: nx.MultiGraph,
     _, nodes_degree = sort_nodes_by_degree(graph, minimize=minimize)
     degree_per_node = {key: value for key, value in nodes_degree}
     if minimize:
-        degree_per_node = {key: (1.0/value) for key, value in nodes_degree}
+        degree_per_node = {key: (1.0 / value) for key, value in nodes_degree}
 
     degrees = np.array([degree_per_node[node] for node in nodes])
     degrees[~possible_nodes_mask] = 0
@@ -124,7 +124,7 @@ def get_degree_probability_vector(graph: nx.MultiGraph,
 def get_routeness_probability_vector(graph: nx.MultiGraph,
                                      nodes: list,
                                      possible_nodes_mask: np.ndarray,
-                                     alpha: float = 3,  minimize: bool=False) -> np.ndarray:
+                                     alpha: float = 3, minimize: bool = False) -> np.ndarray:
     """
        Get the routeness probability vector for the nodes in the graph.
        Sampling a node according to this probability vector will (probably)
@@ -145,7 +145,7 @@ def get_routeness_probability_vector(graph: nx.MultiGraph,
 
     _, routeness_per_node = sort_nodes_by_routeness(graph, minimize)
     if minimize:
-        routeness_per_node = {key: (1.0/value) for key, value in routeness_per_node.items()}
+        routeness_per_node = {key: (1.0 / value) for key, value in routeness_per_node.items()}
 
     routeness = np.array([routeness_per_node[node] for node in nodes])
 
@@ -258,10 +258,11 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_
 
 class LightningPlusPlusAgent(AbstractAgent):
     def __init__(self, public_key, initial_funds, channel_cost,
-                 alpha=3, n_channels_per_node=2, desired_num_edges=10,  minimize=False, use_node_degree=False,
-                 use_node_routeness=False, use_nodes_distance=True):
+                 alpha=3, n_channels_per_node=2, desired_num_edges=10, minimize=False, use_node_degree=False,
+                 use_node_routeness=False, use_nodes_distance=True, neighbors=True, fee: int = None):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
+        self.fee = fee
         self.alpha = alpha
         self.n_channels_per_node = n_channels_per_node
         self.desired_num_edges = desired_num_edges
@@ -270,6 +271,7 @@ class LightningPlusPlusAgent(AbstractAgent):
         self.use_node_degree = use_node_degree
         self.use_node_routeness = use_node_routeness
         self.use_nodes_distance = use_nodes_distance
+        self.neighbors = neighbors
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
         """
@@ -294,22 +296,17 @@ class LightningPlusPlusAgent(AbstractAgent):
                                               use_node_routeness=self.use_node_routeness,
                                               use_node_distance=self.use_nodes_distance, minimize=self.minimize)
 
-        nodes_in_already_chosen_edges = []
+        nodes_in_already_chosen_edges = set()
 
         for node in nodes_to_surround:
-            min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph, node)
-            # If the base fee is too low we keep the policy as the default one
-            # TODO delete this we use default policy
-            if min_base_fee < BASE_FEE_THRESHOLD:
-                agent_policy = LND_DEFAULT_POLICY
-            else:
-                agent_policy = {"time_lock_delta": min_time_lock_delta,
-                                "fee_base_msat": min_base_fee,
-                                "proportional_fee": min_proportional_fee}
+            agent_policy = get_agent_policy(graph, node, True, self.fee)
 
-            nodes_to_connect_with = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
-            if len(nodes_to_connect_with) > self.n_channels_per_node:
-                nodes_to_connect_with = random.sample(nodes_to_connect_with, k=self.n_channels_per_node)
+            node_neighbors = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
+            if len(node_neighbors) > self.n_channels_per_node:
+                nodes_to_connect_with = random.sample(node_neighbors, k=self.n_channels_per_node)
+            else:
+                nodes_to_connect_with = node_neighbors
+
             for node_to_connect in nodes_to_connect_with:
                 if funds < self.channel_cost:
                     return channels
@@ -319,12 +316,12 @@ class LightningPlusPlusAgent(AbstractAgent):
 
                 channel_details = {'node1_pub': self.pub_key,
                                    'node2_pub': node_to_connect,
-                                   'node1_policy': LND_DEFAULT_POLICY,
+                                   'node1_policy': agent_policy,
                                    'node1_balance': channel_balance}
 
                 channels.append(channel_details)
 
-            nodes_in_already_chosen_edges += nodes_to_connect_with
+            nodes_in_already_chosen_edges = nodes_in_already_chosen_edges.union(nodes_to_connect_with)
 
         return channels
 
@@ -350,6 +347,11 @@ class LightningPlusPlusAgent(AbstractAgent):
             class_name += "-distance factor"
         else:
             class_name += "-no distance factor"
+
+        if self.neighbors:
+            class_name += "--neighbors"
+        else:
+            class_name += "--no_neighbors"
 
         return f'{class_name}(a={self.alpha}, ' \
                f'n={self.n_channels_per_node}, ' \
