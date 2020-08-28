@@ -10,6 +10,7 @@ from matplotlib.pyplot import cm
 
 from utils.common import human_format, get_sender_policy_and_id
 
+
 def visualize_graph_state(graph, positions, transfer_routes=None, verify_node_serial_number=False,
                           plot_title="graph state", out_path=None):
     """
@@ -97,7 +98,6 @@ def plot_experiment_mean_and_std(values, ax, color_mapping=None):
         rainbow = cm.rainbow(np.linspace(0, 1, len(values)))
         color_mapping = dict(zip(values.keys(), rainbow))
 
-
     for agent_name in values:
 
         mean = values[agent_name].mean(0)
@@ -105,7 +105,8 @@ def plot_experiment_mean_and_std(values, ax, color_mapping=None):
 
         # Plot error
         # option 1: plot all area between min and max plots; good when using few repeats
-        ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1, color=color_mapping[agent_name])
+        ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1,
+                        color=color_mapping[agent_name])
 
         # option 2:
         # plot std error bats
@@ -118,4 +119,3 @@ def plot_experiment_mean_and_std(values, ax, color_mapping=None):
         # # plot all experiments
         # for row in values[agent_name]:
         #     ax.plot(xs, row, color=color_mapping[agent_name], linewidth=1)
-

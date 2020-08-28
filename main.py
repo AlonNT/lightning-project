@@ -82,13 +82,14 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
         results[agent.name] = np.array(results[agent.name]) - INITIAL_FUNDS
         pickle.dump(results[agent.name], open(os.path.join(out_dir, f'{agent.name}-results_dict.pkl'), 'wb'))
 
-    fig = plt.figure(figsize=(12,8))
+    fig = plt.figure(figsize=(12, 8))
     ax = plt.subplot(111)
     plot_experiment_mean_and_std(results, ax)
     ax.legend(loc='upper center', ncol=2)
     fig.suptitle(get_experiment_description_string(prefix="plot-", delim=", "))
     fig.savefig(os.path.join(out_dir, "Simulator_log.png"))
-    plt.show()
+    # todo uncomment this
+    # plt.show()
 
 
 def verify_channels(new_edges):
@@ -113,89 +114,40 @@ def get_experiment_description_string(prefix="", delim="_"):
            f"{delim}NTransfer[{human_format(SIMULATOR_NUM_TRANSACTIONS)}]"
 
 
-def get_experiment_greedy_vs_lpp():
-    args_1 = [
-        # Capacity
-        (LightningPlusPlusAgent, {'desired_num_edges': 16,  'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': False, 'minimize': True}),
-
-        (GreedyNodeInvestor, {'desired_num_edges': 16}, ),
-        (GreedyNodeInvestor, {'desired_num_edges': 16, 'minimize': True},)]
-
-    args_2 = [
-        # Degree
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'minimize': True,
-                                  'use_nodes_distance': False}),
-
-        (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 16}),
-        (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True, 'desired_num_edges': 16}),
-    ]
-
-    args_3 = [
-        # Routeness
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'minimize': True,
-                                  'use_nodes_distance': False}),
-
-        (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges': 16}),
-        (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True, 'desired_num_edges': 16}),
-    ]
-    return (args_1, args_2, args_3)
-
-
-def get_experiment_distance_lpp():
-    args = [
-        # Capacity
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': True}),
-
-        # Degree
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': True}),
-
-        # Routeness
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'use_nodes_distance': True}),
-
-    ]
-    return args
-
-if __name__ == '__main__':
-    # args = [
-    #     (LightningPlusPlusAgent, {'desired_num_edges': 2}),
-    #     (LightningPlusPlusAgent, {'desired_num_edges':4}),
-    #     (LightningPlusPlusAgent, {'desired_num_edges':8}),
-    #     (LightningPlusPlusAgent, {'desired_num_edges':16}),
-    #     (LightningPlusPlusAgent, {'desired_num_edges':32}),
-    #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges': 2}),
-    #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':4}),
-    #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':8}),
-    #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':16}),
-    #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':32}),
-    #     (GreedyNodeInvestor, {'desired_num_edges': 2}),
-    #     (GreedyNodeInvestor, {'desired_num_edges': 4}),
-    #     (GreedyNodeInvestor, {'desired_num_edges': 8}),
-    #     (GreedyNodeInvestor, {'desired_num_edges': 16}),
-    #     (GreedyNodeInvestor, {'desired_num_edges': 32}),
-    #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':2}),
-    #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':4}),
-    #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':8}),
-    #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':16}),
-    #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':32}),
-    #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 2}),
-    #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 4}),
-    #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 8}),
-    #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 16}),
-    #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 32}),
-    #     (RandomInvestor, {'desired_num_edges':2}),
-    #     (RandomInvestor, {'desired_num_edges':4}),
-    #     (RandomInvestor, {'desired_num_edges':8}),
-    #     (RandomInvestor, {'desired_num_edges':16}),
-    #     (RandomInvestor, {'desired_num_edges':32}),
-    #     (RandomInvestor, {'desired_num_edges':50}),
-    # ]
-    args = get_experiment_greedy_vs_lpp()
-    out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())
-    os.makedirs(out_dir, exist_ok=True)
-    run_experiment(args[0], out_dir=out_dir, plot_graph_transactions=VISUALIZE_TRANSACTIONS)
+# if __name__ == '__main__':
+#     args = [
+#     #     (LightningPlusPlusAgent, {'desired_num_edges': 2}),
+#     #     (LightningPlusPlusAgent, {'desired_num_edges':4}),
+#     #     (LightningPlusPlusAgent, {'desired_num_edges':8}),
+#     #     (LightningPlusPlusAgent, {'desired_num_edges':16}),
+#     #     (LightningPlusPlusAgent, {'desired_num_edges':32}),
+#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges': 2}),
+#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':4}),
+#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':8}),
+#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':16}),
+#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':32}),
+#         (GreedyNodeInvestor, {'desired_num_edges': 2}),
+#     #     (GreedyNodeInvestor, {'desired_num_edges': 4}),
+#     #     (GreedyNodeInvestor, {'desired_num_edges': 8}),
+#     #     (GreedyNodeInvestor, {'desired_num_edges': 16}),
+#     #     (GreedyNodeInvestor, {'desired_num_edges': 32}),
+#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':2}),
+#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':4}),
+#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':8}),
+#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':16}),
+#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':32}),
+#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 2}),
+#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 4}),
+#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 8}),
+#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 16}),
+#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 32}),
+#     #     (RandomInvestor, {'desired_num_edges':2}),
+#     #     (RandomInvestor, {'desired_num_edges':4}),
+#     #     (RandomInvestor, {'desired_num_edges':8}),
+#     #     (RandomInvestor, {'desired_num_edges':16}),
+#     #     (RandomInvestor, {'desired_num_edges':32}),
+#     #     (RandomInvestor, {'desired_num_edges':50}),
+#     ]
+#     out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())
+#     os.makedirs(out_dir, exist_ok=True)
+#     run_experiment(args, out_dir=out_dir, plot_graph_transactions=VISUALIZE_TRANSACTIONS)

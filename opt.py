@@ -20,7 +20,8 @@ parser.add_argument('--SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION', type=int, def
 parser.add_argument('--SIMULATOR_NUM_TRANSACTIONS', type=int, default=1000000,
                     help='How many transaction the simulator will simulate.')
 parser.add_argument('--NUMBER_REPEATED_SIMULATIONS', type=int, default=5,
-                    help='How many times to repeat the experiment, in order to get the mean & std of the reward in each step..')
+                    help='How many times to repeat the experiment, in order to get the mean & std of the reward in '
+                         'each step..')
 parser.add_argument('--SIMULATOR_NUM_NODES', type=int, default=50,
                     help='The size of the sub-graph of the lightning network to simulate.')
 parser.add_argument('--GRAPH_DENSITY_OFFSET', type=int, default=50,
