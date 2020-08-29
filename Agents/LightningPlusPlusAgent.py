@@ -259,7 +259,7 @@ def find_best_k_nodes(graph, k, agent_public_key, alpha=3, visualize=False, use_
 class LightningPlusPlusAgent(AbstractAgent):
     def __init__(self, public_key, initial_funds, channel_cost,
                  alpha=3, n_channels_per_node=2, desired_num_edges=10, minimize=False, use_node_degree=False,
-                 use_node_routeness=False, use_nodes_distance=True, neighbors=True, fee: int = None):
+                 use_node_routeness=False, use_nodes_distance=True, fee: int = None):
         super(LightningPlusPlusAgent, self).__init__(public_key, initial_funds, channel_cost)
 
         self.fee = fee
@@ -271,7 +271,6 @@ class LightningPlusPlusAgent(AbstractAgent):
         self.use_node_degree = use_node_degree
         self.use_node_routeness = use_node_routeness
         self.use_nodes_distance = use_nodes_distance
-        self.neighbors = neighbors
 
     def get_channels(self, graph: nx.MultiGraph) -> List[Dict]:
         """
@@ -300,12 +299,14 @@ class LightningPlusPlusAgent(AbstractAgent):
 
         for node in nodes_to_surround:
             agent_policy = get_agent_policy(graph, node, True, self.fee)
-
-            node_neighbors = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
-            if len(node_neighbors) > self.n_channels_per_node:
-                nodes_to_connect_with = random.sample(node_neighbors, k=self.n_channels_per_node)
+            if self.use_node_routeness:
+                nodes_to_connect_with = nodes_to_surround
             else:
-                nodes_to_connect_with = node_neighbors
+                node_neighbors = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
+                if len(node_neighbors) > self.n_channels_per_node:
+                    nodes_to_connect_with = random.sample(node_neighbors, k=self.n_channels_per_node)
+                else:
+                    nodes_to_connect_with = node_neighbors
 
             for node_to_connect in nodes_to_connect_with:
                 if funds < self.channel_cost:
@@ -347,11 +348,6 @@ class LightningPlusPlusAgent(AbstractAgent):
             class_name += "-distance factor"
         else:
             class_name += "-no distance factor"
-
-        if self.neighbors:
-            class_name += "--neighbors"
-        else:
-            class_name += "--no_neighbors"
 
         return f'{class_name}(a={self.alpha}, ' \
                f'n={self.n_channels_per_node}, ' \

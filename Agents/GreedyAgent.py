@@ -6,7 +6,7 @@ from routing.LND_routing import get_route
 from utils.common import LND_DEFAULT_POLICY, BASE_FEE_THRESHOLD
 from utils.common import calculate_agent_policy
 import networkx as nx
-from random import random
+import random
 
 # Those numbers are used in the LND routing algorithm that is used to sort edges by their attractiveness for
 # transactions. It is better to keep this number as close as possible to the amount that the simulator actually
@@ -262,11 +262,14 @@ class GreedyNodeInvestor(AbstractAgent):
             agent_policy = get_agent_policy(graph, node, self.use_default_policy, self.fee)
 
             # Gets node neighbors to connect with
-            node_neighbors = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
-            if len(node_neighbors) > self.n_channels_per_node:
-                nodes_to_connect_with = random.sample(node_neighbors, k=self.n_channels_per_node)
+            if self.use_node_routeness:
+                nodes_to_connect_with = nodes_to_surround
             else:
-                nodes_to_connect_with = node_neighbors
+                node_neighbors = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
+                if len(node_neighbors) > self.n_channels_per_node:
+                    nodes_to_connect_with = random.sample(node_neighbors, k=self.n_channels_per_node)
+                else:
+                    nodes_to_connect_with = node_neighbors
 
             # Establish connection
             for node_to_connect in nodes_to_connect_with:
