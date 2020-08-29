@@ -30,7 +30,7 @@ def get_simulator():
     return simulator
 
 
-def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
+def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False, use_number_of_transactions=False):
     """
     Creates a Lightning simulator, common to all of the given agents.
     For each agent:
@@ -48,7 +48,11 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
 
     # For each agent store a list of lists:
     # Each inner list is the cumulative revenues for the corresponding simulation.
-    results = defaultdict(list)
+    results_revenue = defaultdict(list)
+
+    # For each agent store a list of lists:
+    # Each inner list is the the nuber of transaction that pass via the agent in the  corresponding simulation.
+    results_num_transaction = defaultdict(list)
 
     for (agent_constructor, kwargs) in agent_constructors:
         # Create agent: A get_edges callable, an instance of a class inheriting AbstractAgent
@@ -72,24 +76,31 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False):
 
             # Run the simulation
             start = time()
-            simulation_cumulative_balance = simulator_copy.run(graph_debug_dir)
+            simulation_cumulative_balance, numbers_of_transaction_via_agent = simulator_copy.run(graph_debug_dir)
             print(f"\t\ttnx/sec: {human_format(SIMULATOR_NUM_TRANSACTIONS / (time() - start))}")
             print(f"\t\tSuccessfull transactions rate: "
                   f"{100*simulator_copy.successfull_transactions / float(SIMULATOR_NUM_TRANSACTIONS)}%")
 
-            results[agent.name].append(simulation_cumulative_balance)
+            results_num_transaction[agent.name].append(numbers_of_transaction_via_agent)
+            results_revenue[agent.name].append(simulation_cumulative_balance)
 
-        results[agent.name] = np.array(results[agent.name]) - INITIAL_FUNDS
-        pickle.dump(results[agent.name], open(os.path.join(out_dir, f'{agent.name}-results_dict.pkl'), 'wb'))
+        results_num_transaction[agent.name] = np.array(results_num_transaction[agent.name])
+        results_revenue[agent.name] = np.array(results_revenue[agent.name]) - INITIAL_FUNDS
+        pickle.dump(results_revenue[agent.name], open(os.path.join(out_dir, f'{agent.name}-results_dict.pkl'), 'wb'))
 
+    plot_and_save_graph(results_num_transaction, "results_num_transaction_simulator_log", out_dir)
+    plot_and_save_graph(results_revenue, "results_revenue_simulator_log", out_dir)
+
+
+def plot_and_save_graph(experiment_results, file_name, out_dir):
     fig = plt.figure(figsize=(12, 8))
     ax = plt.subplot(111)
-    plot_experiment_mean_and_std(results, ax)
+    plot_experiment_mean_and_std(experiment_results, ax)
     ax.legend(loc='upper center', ncol=2)
+
     fig.suptitle(get_experiment_description_string(prefix="plot-", delim=", "))
-    fig.savefig(os.path.join(out_dir, "Simulator_log.png"))
-    # todo uncomment this
-    # plt.show()
+    fig.savefig(os.path.join(out_dir, file_name + ".png"))
+    fig.savefig(os.path.join(out_dir, file_name + ".svg"))
 
 
 def verify_channels(new_edges):
@@ -112,42 +123,3 @@ def get_experiment_description_string(prefix="", delim="_"):
            f"{delim}TAmount[{human_format(SIMULATOR_TRANSFERS_MAX_AMOUNT)}]" \
            f"{delim}CCost[{human_format(LN_DEFAULT_CHANNEL_COST)}]" \
            f"{delim}NTransfer[{human_format(SIMULATOR_NUM_TRANSACTIONS)}]"
-
-
-# if __name__ == '__main__':
-#     args = [
-#     #     (LightningPlusPlusAgent, {'desired_num_edges': 2}),
-#     #     (LightningPlusPlusAgent, {'desired_num_edges':4}),
-#     #     (LightningPlusPlusAgent, {'desired_num_edges':8}),
-#     #     (LightningPlusPlusAgent, {'desired_num_edges':16}),
-#     #     (LightningPlusPlusAgent, {'desired_num_edges':32}),
-#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges': 2}),
-#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':4}),
-#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':8}),
-#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':16}),
-#     #     (LightningPlusPlusAgent, {'use_node_degree': True, 'desired_num_edges':32}),
-#         (GreedyNodeInvestor, {'desired_num_edges': 2}),
-#     #     (GreedyNodeInvestor, {'desired_num_edges': 4}),
-#     #     (GreedyNodeInvestor, {'desired_num_edges': 8}),
-#     #     (GreedyNodeInvestor, {'desired_num_edges': 16}),
-#     #     (GreedyNodeInvestor, {'desired_num_edges': 32}),
-#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':2}),
-#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':4}),
-#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':8}),
-#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':16}),
-#     #     (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges':32}),
-#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 2}),
-#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 4}),
-#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 8}),
-#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 16}),
-#     #     (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 32}),
-#     #     (RandomInvestor, {'desired_num_edges':2}),
-#     #     (RandomInvestor, {'desired_num_edges':4}),
-#     #     (RandomInvestor, {'desired_num_edges':8}),
-#     #     (RandomInvestor, {'desired_num_edges':16}),
-#     #     (RandomInvestor, {'desired_num_edges':32}),
-#     #     (RandomInvestor, {'desired_num_edges':50}),
-#     ]
-#     out_dir = os.path.join(DEBUG_OUT_DIR, get_experiment_description_string())
-#     os.makedirs(out_dir, exist_ok=True)
-#     run_experiment(args, out_dir=out_dir, plot_graph_transactions=VISUALIZE_TRANSACTIONS)
