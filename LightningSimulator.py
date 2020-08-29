@@ -101,6 +101,7 @@ class LightningSimulator:
         :param plot_dir:
         """
         cumulative_balances = [self.get_node_balance(self.agent_pub_key)]
+        numbers_of_routes_via_agent_per_step: List[int] = list()
 
         for step in range(self.num_transactions):
             # Sample random nodes
@@ -108,8 +109,12 @@ class LightningSimulator:
             node1, node2 = random.sample(possible_nodes, 2)
 
             if (node1, node2) not in self.route_memory:
-                self.route_memory[(node1, node2)] = get_route(self.graph, node1, node2, self.transfer_amount)
+                route = get_route(self.graph, node1, node2, self.transfer_amount)
+                self.route_memory[(node1, node2)] = route
+
             route = self.route_memory[(node1, node2)]
+            if self.is_agent_in_route(route):
+                numbers_of_routes_via_agent_per_step.append(1)
 
             # If the routing was not successful, nothing to do.
             if route is not None:
@@ -127,7 +132,7 @@ class LightningSimulator:
                                           plot_title=f"step-{step}")
             cumulative_balances.append(self.get_node_balance(self.agent_pub_key))
 
-        return cumulative_balances
+        return cumulative_balances, numbers_of_routes_via_agent_per_step
 
     def create_agent_node(self):
         """
@@ -184,8 +189,7 @@ class LightningSimulator:
         :param node1_policy:
         :param node1_balance: node1 balance
         """
-        if self.graph.has_edge(node1_pub, node2_pub):
-            raise ValueError("Multiple edges to the same node is forbiden for agents")
+
         node2_balance = self.other_balance_proportion*node1_balance
         if self.verbose:
             print(f"\tManager | Adding edge between "
@@ -204,3 +208,13 @@ class LightningSimulator:
         for node_pub in [node1_pub, node2_pub]:
             self.graph.nodes[node_pub]['total_capacity'] += capacity
 
+    def is_agent_in_route(self, route):
+        """
+        Check if agent appear in the route
+        :param route: list of edges
+        :return: True iff agent is in the route
+        """
+        for node1, node2, channel_id in route:
+            if node1 == self.agent_pub_key:
+                return True
+        return False
