@@ -235,7 +235,6 @@ def get_args_experiment_best_of_each_agent():
     args = [
 
         # LPP
-        # TODO check neigbors!!
         (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
 
         # Greedy
@@ -249,20 +248,16 @@ def get_args_experiment_best_of_each_agent():
 
 
 if __name__ == '__main__':
-    # get_base_fee_percent()
 
     experiments = [
 
         # TODO LPP VS. Greedy
-        # get_args_experiment_greedy_vs_lpp_capacities,
-        # get_args_experiment_greedy_vs_lpp_degree,
-        # get_args_experiment_greedy_vs_lpp_routenesse,
+        get_args_experiment_greedy_vs_lpp_capacities,
+        get_args_experiment_greedy_vs_lpp_degree,
+        get_args_experiment_greedy_vs_lpp_routenesse,
 
         # get_args_experiment_distance_lpp,
         # get_args_experiment_policy_vs_default_policy_in_greedy_agent,
-
-        # TODO Delete
-        # get_args_experiment_lpp_neighbors_vs_nodes_themself,
 
         # TODO Fees Tradeoff for each agent
 
@@ -273,14 +268,14 @@ if __name__ == '__main__':
         get_args_experiment_fees_tradeoff_lpp_degree,
         get_args_experiment_fees_tradeoff_lpp_routeness,
 
-        # get_args_experiment_best_of_each_agent,
+        # TODO Best
+        get_args_experiment_best_of_each_agent,
 
         # TODO Number of Transaction as y-axis
 
-
-        # get_args_experiment_greedy_function_of_transactions_per_step,
-        # get_args_experiment_lpp_function_of_transactions_per_step,
-        # get_args_experiment_random_function_of_transactions_per_step,
+        get_args_experiment_greedy_function_of_transactions_per_step,
+        get_args_experiment_lpp_function_of_transactions_per_step,
+        get_args_experiment_random_function_of_transactions_per_step,
 
 
 
@@ -288,6 +283,7 @@ if __name__ == '__main__':
 
     for experiment in experiments:
         args, folder_name = experiment()
+        print(folder_name)
         out_dir = os.path.join(DEBUG_OUT_DIR, folder_name)
         os.makedirs(out_dir, exist_ok=True)
         run_experiment(args, out_dir=out_dir, plot_graph_transactions=VISUALIZE_TRANSACTIONS)
