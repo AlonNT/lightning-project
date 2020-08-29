@@ -7,13 +7,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 
-from Agents.GreedyAgent import GreedyNodeInvestor
-from Agents.RandomAgent import RandomInvestor
-from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
 from LightningSimulator import LightningSimulator
 from utils.common import human_format
 from utils.graph_helpers import create_sub_graph_by_node_capacity
-from utils.visualizers import plot_experiment_mean_and_std, visualize_graph_state
+from utils.visualizers import plot_experiment_mean_and_std
 from opt import *
 
 
@@ -88,8 +85,8 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False, u
         results_revenue[agent.name] = np.array(results_revenue[agent.name]) - INITIAL_FUNDS
         pickle.dump(results_revenue[agent.name], open(os.path.join(out_dir, f'{agent.name}-results_dict.pkl'), 'wb'))
 
-    plot_and_save_graph(results_num_transaction, "results_num_transaction_simulator_log", out_dir)
     plot_and_save_graph(results_revenue, "results_revenue_simulator_log", out_dir)
+    plot_and_save_graph(results_num_transaction, "results_num_transaction_simulator_log", out_dir)
 
 
 def plot_and_save_graph(experiment_results, file_name, out_dir):

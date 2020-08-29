@@ -17,12 +17,12 @@ parser.add_argument('--LN_DEFAULT_CHANNEL_COST', type=int, default=4 * 10 ** 2,
                             # Warning: Changing this to 0 leads to bugs as agent open lots of channells""")
 parser.add_argument('--SIMULATOR_PASSIVE_SIDE_BALANCE_PROPORTION', type=int, default=1.0,
                     help='defines the balance in the other side of new channels in proportion of the first side balance')
-parser.add_argument('--SIMULATOR_NUM_TRANSACTIONS', type=int, default=1000000,
+parser.add_argument('--SIMULATOR_NUM_TRANSACTIONS', type=int, default=10000,
                     help='How many transaction the simulator will simulate.')
-parser.add_argument('--NUMBER_REPEATED_SIMULATIONS', type=int, default=5,
+parser.add_argument('--NUMBER_REPEATED_SIMULATIONS', type=int, default=2,
                     help='How many times to repeat the experiment, in order to get the mean & std of the reward in '
                          'each step..')
-parser.add_argument('--SIMULATOR_NUM_NODES', type=int, default=50,
+parser.add_argument('--SIMULATOR_NUM_NODES', type=int, default=20,
                     help='The size of the sub-graph of the lightning network to simulate.')
 parser.add_argument('--GRAPH_DENSITY_OFFSET', type=int, default=50,
                     help='The higher this number the more sparse the sub-graph is.'
@@ -30,8 +30,10 @@ parser.add_argument('--GRAPH_DENSITY_OFFSET', type=int, default=50,
 parser.add_argument('--DEBUG_OUT_DIR', type=str, default="Experiments",
                     help='Where to save plots and images.')
 parser.add_argument('--VISUALIZE_TRANSACTIONS', action='store_true',
-                    help='Turn on to create debug images of the transactionsin the simulator; this is very slow so '
+                    help='Turn on to create debug images of the transactions in the simulator; this is very slow so'
                          'make sure you work with short simulations.')
+parser.add_argument('-l', '--list_of_experiments_names', nargs='+',
+                    help='Parameter for the experiment name that will run', required=True)
 
 args = parser.parse_args()
 

@@ -222,7 +222,7 @@ def sort_nodes_by_routeness(graph, minimize: bool):
 class GreedyNodeInvestor(AbstractAgent):
     def __init__(self, public_key: str, initial_funds: int, channel_cost: int,
                  minimize=False, use_node_degree=False, use_node_routeness=False, desired_num_edges=10,
-                 use_default_policy=True, fee: int = None, n_channels_per_node:int = 2):
+                 use_default_policy=True, fee: int = None, n_channels_per_node: int = 2):
         super(GreedyNodeInvestor, self).__init__(public_key, initial_funds, channel_cost)
 
         self.n_channels_per_node = n_channels_per_node
@@ -261,10 +261,10 @@ class GreedyNodeInvestor(AbstractAgent):
 
             agent_policy = get_agent_policy(graph, node, self.use_default_policy, self.fee)
 
-            # Gets node neighbors to connect with
             if self.use_node_routeness:
                 nodes_to_connect_with = nodes_to_surround
             else:
+                # Gets node neighbors to connect with
                 node_neighbors = [n for n in graph.neighbors(node) if n not in nodes_in_already_chosen_edges]
                 if len(node_neighbors) > self.n_channels_per_node:
                     nodes_to_connect_with = random.sample(node_neighbors, k=self.n_channels_per_node)

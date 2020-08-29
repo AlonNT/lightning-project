@@ -101,7 +101,7 @@ class LightningSimulator:
         :param plot_dir:
         """
         cumulative_balances = [self.get_node_balance(self.agent_pub_key)]
-        numbers_of_routes_via_agent_per_step: List[int] = list()
+        numbers_of_routes_via_agent_per_step = [0]
 
         for step in range(self.num_transactions):
             # Sample random nodes
@@ -113,11 +113,13 @@ class LightningSimulator:
                 self.route_memory[(node1, node2)] = route
 
             route = self.route_memory[(node1, node2)]
-            if self.is_agent_in_route(route):
-                numbers_of_routes_via_agent_per_step.append(1)
 
             # If the routing was not successful, nothing to do.
             if route is not None:
+                numbers_of_routes_via_agent_per_step.append(numbers_of_routes_via_agent_per_step[-1])
+                if self.is_agent_in_route(route):
+                    numbers_of_routes_via_agent_per_step[-1] += 1
+
                 # Gets the index of the last node that can get the money (if the money was
                 # transferred, this is node2).
                 debug_last_node_index_in_route = transfer_money_in_graph(self.graph, self.transfer_amount, route)
@@ -130,6 +132,7 @@ class LightningSimulator:
                                           out_path=os.path.join(plot_dir, f"step-{step}"),
                                           verify_node_serial_number=False,
                                           plot_title=f"step-{step}")
+
             cumulative_balances.append(self.get_node_balance(self.agent_pub_key))
 
         return cumulative_balances, numbers_of_routes_via_agent_per_step
