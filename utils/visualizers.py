@@ -105,8 +105,8 @@ def plot_experiment_mean_and_std(values, ax, color_mapping=None):
 
         # Plot error
         # option 1: plot all area between min and max plots; good when using few repeats
-        ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1,
-                        color=color_mapping[agent_name])
+        # ax.fill_between(xs, values[agent_name].min(0), values[agent_name].max(0), alpha=0.1,
+        #                 color=color_mapping[agent_name])
 
         # option 2:
         # plot std error bats

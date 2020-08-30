@@ -54,6 +54,7 @@ def get_base_fee_percent():
 
 ############# Number of Transaction as y-axis ##################
 
+
 def get_args_experiment_greedy_function_of_transactions_per_step():
     args = [
 
@@ -197,7 +198,8 @@ def get_args_experiment_fees_tradeoff_lpp_degree():
 def get_args_experiment_fees_tradeoff_lpp_routeness():
     args = list()
     for fee in BASE_FEE_VALUES:
-        args.append((LightningPlusPlusAgent, {'use_node_routeness': True, 'desired_num_edges': 16, "fee": int(fee)},))
+        args.append((LightningPlusPlusAgent, {'use_nodes_distance': False, 'use_node_routeness': True,
+                                              'desired_num_edges': 16, "fee": int(fee)},))
     return args, "fees_tradeoff_lpp_routeness"
 
 
@@ -221,11 +223,20 @@ def run_experiments(experiments):
     dispatcher = {
         'get_args_experiment_greedy_function_of_transactions_per_step':
             get_args_experiment_greedy_function_of_transactions_per_step,
-        'get_args_experiment_greedy_vs_lpp_capacities': get_args_experiment_greedy_vs_lpp_capacities
-        , 'get_args_experiment_greedy_vs_lpp_degree': get_args_experiment_greedy_vs_lpp_degree,
-        'get_args_experiment_greedy_vs_lpp_routeness': get_args_experiment_greedy_vs_lpp_routeness
-        , 'get_args_experiment_best_of_each_agent': get_args_experiment_best_of_each_agent,
-        'get_args_experiment_fees_tradeoff_lpp_routeness': get_args_experiment_fees_tradeoff_lpp_routeness}
+        'get_args_experiment_lpp_function_of_transactions_per_step':
+            get_args_experiment_lpp_function_of_transactions_per_step,
+        'get_args_experiment_random_function_of_transactions_per_step':
+            get_args_experiment_random_function_of_transactions_per_step,
+
+        'get_args_experiment_greedy_vs_lpp_capacities': get_args_experiment_greedy_vs_lpp_capacities,
+        'get_args_experiment_greedy_vs_lpp_degree': get_args_experiment_greedy_vs_lpp_degree,
+        'get_args_experiment_greedy_vs_lpp_routeness': get_args_experiment_greedy_vs_lpp_routeness,
+
+        'get_args_experiment_best_of_each_agent': get_args_experiment_best_of_each_agent,
+
+        'get_args_experiment_fees_tradeoff_lpp_routeness': get_args_experiment_fees_tradeoff_lpp_routeness,
+        'get_args_experiment_fees_tradeoff_greedy_capacity': get_args_experiment_fees_tradeoff_greedy_capacity,
+        'get_args_experiment_fees_tradeoff_greedy_degree': get_args_experiment_fees_tradeoff_greedy_degree}
 
     for experiment in experiments:
         try:

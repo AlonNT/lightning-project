@@ -349,6 +349,9 @@ class LightningPlusPlusAgent(AbstractAgent):
         else:
             class_name += "-no distance factor"
 
+        if self.fee is not None:
+            class_name += f'(fee={self.fee})'
+
         return f'{class_name}(a={self.alpha}, ' \
                f'n={self.n_channels_per_node}, ' \
                f'd={self.desired_num_edges})'

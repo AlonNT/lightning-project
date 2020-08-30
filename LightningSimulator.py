@@ -114,17 +114,17 @@ class LightningSimulator:
 
             route = self.route_memory[(node1, node2)]
 
+            numbers_of_routes_via_agent_per_step.append(numbers_of_routes_via_agent_per_step[-1])
             # If the routing was not successful, nothing to do.
             if route is not None:
-                numbers_of_routes_via_agent_per_step.append(numbers_of_routes_via_agent_per_step[-1])
-                if self.is_agent_in_route(route):
-                    numbers_of_routes_via_agent_per_step[-1] += 1
 
                 # Gets the index of the last node that can get the money (if the money was
                 # transferred, this is node2).
                 debug_last_node_index_in_route = transfer_money_in_graph(self.graph, self.transfer_amount, route)
                 if debug_last_node_index_in_route == len(route):
                     self.successfull_transactions += 1
+                    if self.is_agent_in_route(route):
+                        numbers_of_routes_via_agent_per_step[-1] += 1
                 if plot_dir is not None:
                     os.makedirs(plot_dir, exist_ok=True)
                     visualize_graph_state(self.graph, self.positions,
