@@ -236,7 +236,9 @@ def run_experiments(experiments):
 
         'get_args_experiment_fees_tradeoff_lpp_routeness': get_args_experiment_fees_tradeoff_lpp_routeness,
         'get_args_experiment_fees_tradeoff_greedy_capacity': get_args_experiment_fees_tradeoff_greedy_capacity,
-        'get_args_experiment_fees_tradeoff_greedy_degree': get_args_experiment_fees_tradeoff_greedy_degree}
+        'get_args_experiment_fees_tradeoff_greedy_degree': get_args_experiment_fees_tradeoff_greedy_degree,
+
+        'get_args_experiment_distance_lpp': get_args_experiment_distance_lpp}
 
     for experiment in experiments:
         try:
