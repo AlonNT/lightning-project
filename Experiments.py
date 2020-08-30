@@ -13,6 +13,10 @@ BASE_FEE_VALUES = [1, 3, 20, 99, 999]
 
 
 def get_base_fee_percent():
+    """
+    From the lightning graph dump gets the base fee of the nodes and that calculate the percentile of different percents
+    :return: percentile of different percents of the base fee
+    """
     simulator = get_simulator()
     base_fees = list()
 
@@ -86,37 +90,30 @@ def get_args_experiment_greedy_vs_lpp_capacities():
     args_1 = [
         # Capacity
         (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_nodes_distance': False, 'minimize': True}),
 
         (GreedyNodeInvestor, {'desired_num_edges': 16},),
-        (GreedyNodeInvestor, {'desired_num_edges': 16, 'minimize': True},)]
+    ]
     return args_1, "experiment_greedy_vs_lpp_capacities"
 
 
 def get_args_experiment_greedy_vs_lpp_degree():
-    args_2 = [
+    args = [
         # Degree
         (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'minimize': True,
-                                  'use_nodes_distance': False}),
 
         (GreedyNodeInvestor, {'use_node_degree': True, 'desired_num_edges': 16}),
-        (GreedyNodeInvestor, {'use_node_degree': True, 'minimize': True, 'desired_num_edges': 16}),
     ]
-    return args_2, "experiment_greedy_vs_lpp_degree"
+    return args, "experiment_greedy_vs_lpp_degree"
 
 
-def get_args_experiment_greedy_vs_lpp_routenesse():
-    args_3 = [
+def get_args_experiment_greedy_vs_lpp_routeness():
+    args = [
         # Routeness
         (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'use_nodes_distance': False}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, 'minimize': True,
-                                  'use_nodes_distance': False}),
 
         (GreedyNodeInvestor, {'use_node_routeness': True, 'desired_num_edges': 16}),
-        (GreedyNodeInvestor, {'use_node_routeness': True, 'minimize': True, 'desired_num_edges': 16}),
     ]
-    return args_3, "experiment_greedy_vs_lpp_routenesse"
+    return args, "experiment_greedy_vs_lpp_routenesse"
 
 
 ################################# L++ Distance - Done #################################
@@ -204,33 +201,6 @@ def get_args_experiment_fees_tradeoff_lpp_routeness():
     return args, "fees_tradeoff_lpp_routeness"
 
 
-# def get_args_experiment_fees_tradeoff_random():
-#     base_fees_values = get_base_fee_percent()
-#     args = list()
-#     for fee in base_fees_values:
-#         args.append((RandomInvestor, {'desired_num_edges': 16}),)
-#     return args, "fees_tradeoff_lpp"
-
-#################### lpp_neighbors_vs_nodes_themself ############################
-
-def get_args_experiment_lpp_neighbors_vs_nodes_themself():
-    args = [
-        # Capacity
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, "n_channels_per_node": 4}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, "neighbors": False}),
-
-        # Degree
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, "n_channels_per_node": 4}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, "neighbors": False}),
-
-        # Routeness
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, "n_channels_per_node": 4}),
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_routeness': True, "neighbors": False}),
-
-    ]
-    return args, "experiment_lpp_neihbors_vs_nodes_themself"
-
-
 def get_args_experiment_best_of_each_agent():
     args = [
 
@@ -247,43 +217,33 @@ def get_args_experiment_best_of_each_agent():
     return args, "experiment_best_of_each_agent"
 
 
-if __name__ == '__main__':
-
-    experiments = [
-
-        # TODO LPP VS. Greedy
-        get_args_experiment_greedy_vs_lpp_capacities,
-        get_args_experiment_greedy_vs_lpp_degree,
-        get_args_experiment_greedy_vs_lpp_routenesse,
-
-        # get_args_experiment_distance_lpp,
-        # get_args_experiment_policy_vs_default_policy_in_greedy_agent,
-
-        # TODO Fees Tradeoff for each agent
-
-        get_args_experiment_fees_tradeoff_greedy_capacity,
-        get_args_experiment_fees_tradeoff_greedy_degree,
-        get_args_experiment_fees_tradeoff_greedy_routeness,
-        get_args_experiment_fees_tradeoff_lpp_capacity,
-        get_args_experiment_fees_tradeoff_lpp_degree,
-        get_args_experiment_fees_tradeoff_lpp_routeness,
-
-        # TODO Best
-        get_args_experiment_best_of_each_agent,
-
-        # TODO Number of Transaction as y-axis
-
-        get_args_experiment_greedy_function_of_transactions_per_step,
-        get_args_experiment_lpp_function_of_transactions_per_step,
-        get_args_experiment_random_function_of_transactions_per_step,
-
-
-
-    ]
+def run_experiments(experiments):
+    dispatcher = {
+        'get_args_experiment_greedy_function_of_transactions_per_step':
+            get_args_experiment_greedy_function_of_transactions_per_step,
+        'get_args_experiment_greedy_vs_lpp_capacities': get_args_experiment_greedy_vs_lpp_capacities
+        , 'get_args_experiment_greedy_vs_lpp_degree': get_args_experiment_greedy_vs_lpp_degree,
+        'get_args_experiment_greedy_vs_lpp_routeness': get_args_experiment_greedy_vs_lpp_routeness
+        , 'get_args_experiment_best_of_each_agent': get_args_experiment_best_of_each_agent,
+        'get_args_experiment_fees_tradeoff_lpp_routeness': get_args_experiment_fees_tradeoff_lpp_routeness}
 
     for experiment in experiments:
-        args, folder_name = experiment()
+        try:
+            experiment_function = dispatcher[experiment]
+        except KeyError:
+            raise ValueError('invalid input')
+
+        args, folder_name = experiment_function()
         print(folder_name)
         out_dir = os.path.join(DEBUG_OUT_DIR, folder_name)
         os.makedirs(out_dir, exist_ok=True)
         run_experiment(args, out_dir=out_dir, plot_graph_transactions=VISUALIZE_TRANSACTIONS)
+
+
+def main():
+    experiments = args.list_of_experiments_names
+    run_experiments(experiments)
+
+
+if __name__ == '__main__':
+    main()
