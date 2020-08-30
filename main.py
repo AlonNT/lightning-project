@@ -61,7 +61,7 @@ def run_experiment(agent_constructors, out_dir, plot_graph_transactions=False, u
         print("Agent:", agent.name)
         for repeat in range(NUMBER_REPEATED_SIMULATIONS):
             print(f"\trepeat {repeat}:")
-            simulator_copy = deepcopy(simulator)  # Todo isn't it better to avoid copy paradigm
+            simulator_copy = deepcopy(simulator)
 
             # Ask agent for edges to add.
             new_edges = agent.get_channels(simulator_copy.graph)

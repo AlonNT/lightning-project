@@ -1,12 +1,12 @@
+import random
 from collections import defaultdict
 from random import randint
 
+import networkx as nx
+
 from Agents.AbstractAgent import AbstractAgent
 from routing.LND_routing import get_route
-from utils.common import LND_DEFAULT_POLICY, BASE_FEE_THRESHOLD
-from utils.common import calculate_agent_policy
-import networkx as nx
-import random
+from utils.common import get_agent_policy
 
 # Those numbers are used in the LND routing algorithm that is used to sort edges by their attractiveness for
 # transactions. It is better to keep this number as close as possible to the amount that the simulator actually
@@ -14,38 +14,6 @@ import random
 
 ROUTENESS_MAX_TRANSFER_AMOUNT = 10 ** 6
 ROUTENESS_MIN_TRANSFER_AMOUNT = 10 ** 5
-
-
-def get_agent_policy(graph, node_to_connect, use_default_policy, fee):
-    """
-
-    :param graph:
-    :param node_to_connect:
-    :return:
-    """
-
-    # Calculate the policy of the agent according to the node_to_connect data
-    min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
-                                                                                     node=node_to_connect)
-
-    if not use_default_policy:
-
-        # If the base fee is too low we keep the policy as the default one
-        if min_base_fee < BASE_FEE_THRESHOLD:
-            agent_policy = LND_DEFAULT_POLICY
-        else:
-            agent_policy = {"time_lock_delta": min_time_lock_delta,
-                            "fee_base_msat": min_base_fee,
-                            "proportional_fee": min_proportional_fee}
-    elif fee is not None:
-        agent_policy = {"time_lock_delta": min_time_lock_delta,
-                        "fee_base_msat": fee,
-                        "proportional_fee": min_proportional_fee}
-
-    else:
-        agent_policy = LND_DEFAULT_POLICY
-
-    return agent_policy
 
 
 def sort_nodes_by_total_capacity(graph, minimize: bool):
@@ -167,7 +135,6 @@ def sort_nodes_by_routeness(graph, minimize: bool):
             if dest == src or dest in graph.neighbors(src):
                 continue  # Early termination for cases where a two edges fastest route cannot exist
 
-            # TODO [Daniel] maybe take the average?
             amount = randint(ROUTENESS_MIN_TRANSFER_AMOUNT, ROUTENESS_MAX_TRANSFER_AMOUNT)
 
             # Get the path from node1 to node2 according the lnd_routing algorithm

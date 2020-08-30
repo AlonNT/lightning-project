@@ -103,7 +103,6 @@ def calculate_agent_policy(graph, node):
     :return: min_time_lock_delta, min_base_fee, min_proportional_fee for the agent policy
     """
 
-    # TODO Alon maybe not take the minimal our of these?
     min_base_fee = float('inf')
     min_proportional_fee = float('inf')
     min_time_lock_delta = float('inf')
@@ -112,7 +111,6 @@ def calculate_agent_policy(graph, node):
         node_i = 1 if node == channel_data['node1_pub'] else 2
         node_policy = channel_data[f'node{node_i}_policy']
 
-        # TODO Alon are there more values to take into account?
         base_fee = node_policy['fee_base_msat']
         proportional_fee = node_policy['proportional_fee']
         time_lock_delta = node_policy['time_lock_delta']
@@ -122,3 +120,35 @@ def calculate_agent_policy(graph, node):
         min_time_lock_delta = min(min_time_lock_delta, time_lock_delta)
 
     return min_time_lock_delta, min_base_fee, min_proportional_fee
+
+
+def get_agent_policy(graph, node_to_connect, use_default_policy, fee):
+    """
+
+    :param graph: graph
+    :param node_to_connect: nodes to establish a channel with them
+    :return: agent_policy for the channel
+    """
+
+    # Calculate the policy of the agent according to the node_to_connect data
+    min_time_lock_delta, min_base_fee, min_proportional_fee = calculate_agent_policy(graph,
+                                                                                     node=node_to_connect)
+
+    if not use_default_policy:
+
+        # If the base fee is too low we keep the policy as the default one
+        if min_base_fee < BASE_FEE_THRESHOLD:
+            agent_policy = LND_DEFAULT_POLICY
+        else:
+            agent_policy = {"time_lock_delta": min_time_lock_delta,
+                            "fee_base_msat": min_base_fee,
+                            "proportional_fee": min_proportional_fee}
+    elif fee is not None:
+        agent_policy = {"time_lock_delta": min_time_lock_delta,
+                        "fee_base_msat": fee,
+                        "proportional_fee": min_proportional_fee}
+
+    else:
+        agent_policy = LND_DEFAULT_POLICY
+
+    return agent_policy

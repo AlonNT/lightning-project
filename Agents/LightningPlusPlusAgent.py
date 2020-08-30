@@ -6,9 +6,8 @@ import networkx as nx
 import numpy as np
 
 from Agents.AbstractAgent import AbstractAgent
-from Agents.GreedyAgent import sort_nodes_by_routeness, sort_nodes_by_degree, get_agent_policy
-from utils.common import LND_DEFAULT_POLICY
-from utils.common import calculate_agent_policy
+from Agents.GreedyAgent import sort_nodes_by_routeness, sort_nodes_by_degree
+from utils.common import get_agent_policy
 
 
 def get_distances_probability_vector(possible_nodes_mask: np.ndarray,
