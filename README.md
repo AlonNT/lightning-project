@@ -15,7 +15,6 @@ We analyze different policies (a.k.a. agents) which all aim to maximize the prof
 
 <img align="center" width="300" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/miners_fee.jpeg">
 <br />
-<br />
 
 ## Methods
 
@@ -34,7 +33,6 @@ Each node's score is its total capacity - the sum of the capacities in all of th
 Each node's score is its degree in the multi-graph.
 - Routeness:
 Each node's score is the number of routes it might participate in, when some two nodes in the graph will make a transaction. <img align="center" width="100" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/routeness.png">
-<br />
 <br />
 
 ### Lightning++
