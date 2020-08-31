@@ -14,11 +14,9 @@ In this work we analyze the potential revenue in creating channels in the Lightn
 We analyze different policies (a.k.a. agents) which all aim to maximize the profit gained from the fees. The main challenge is deciding which channels to create and how much money to lock in them, in order to be attractive for other parties to route transactions through them.
 
 <img align="right" width="300" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/miners_fee.jpeg">
-
-
-
-
-
+<br />
+<br />
+<br />
 ## Methods
 
 ### Random Agent
@@ -36,10 +34,9 @@ Each node's score is its total capacity - the sum of the capacities in all of th
 Each node's score is its degree in the multi-graph.
 - Routeness:
 Each node's score is the number of routes it might participate in, when some two nodes in the graph will make a transaction. <img align="right" width="100" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/routeness.png">
-
-
-
-
+<br />
+<br />
+<br />
 ### Lightning++
 
 The motivation for this algorithm is taken from kmeans++ clustering algorithm, and this is where it got its name. In the traditional kmeans clustering algorithm the initial centroids are chosen uniformly at random. In kmeans++ the initial centroids are sampled according to a distribution which gives high probability to nodes that are distant from the previously selected centroids. This enables choosing the initial centroids in a random way which results in nodes that are far from each other (which helps the algorithm to cluster better), ignoring outliers which are a few data-points that are extremely far from the rest.
