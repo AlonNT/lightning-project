@@ -2,7 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-# import seaborn as sns
+import seaborn as sns
 
 from Agents.GreedyAgent import GreedyNodeInvestor
 from Agents.LightningPlusPlusAgent import LightningPlusPlusAgent
@@ -10,6 +10,8 @@ from Agents.RandomAgent import RandomInvestor
 from main import get_simulator
 from main import run_experiment
 from opt import *
+import time
+
 
 BASE_FEE_VALUES = [1, 3, 20, 99, 999]
 
@@ -209,13 +211,13 @@ def get_args_experiment_best_of_each_agent():
     args = [
 
         # LPP
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 32, 'use_node_degree': True, 'use_nodes_distance': False}),
 
         # Greedy
-        (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
+        (GreedyNodeInvestor, {'desired_num_edges': 32, 'use_node_degree': True, }),
 
         # Random
-        (RandomInvestor, {'desired_num_edges': 16}),
+        (RandomInvestor, {'desired_num_edges': 32}),
 
     ]
     return args, "experiment_best_of_each_agent"
@@ -249,6 +251,9 @@ def run_experiments(experiments):
             raise ValueError('invalid input')
 
         args, folder_name = experiment_function()
+        named_tuple = time.localtime()  # get struct_time
+        time_string = time.strftime("%m/%d/%Y_%H:%M:%S", named_tuple)
+        folder_name = folder_name + "_" + time_string
         print(folder_name)
         out_dir = os.path.join(DEBUG_OUT_DIR, folder_name)
         os.makedirs(out_dir, exist_ok=True)
