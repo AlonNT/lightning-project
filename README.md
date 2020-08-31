@@ -35,8 +35,10 @@ Each node's score is its total capacity - the sum of the capacities in all of th
 - Graph-Degree: 
 Each node's score is its degree in the multi-graph.
 - Routeness:
-Each node's score is the number of routes it might participate in, when some two nodes in the graph will make a transaction.
-<img align="right" width="100" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/routeness.png">
+Each node's score is the number of routes it might participate in, when some two nodes in the graph will make a transaction. <img align="right" width="100" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/routeness.png">
+
+
+
 
 ### Lightning++
 
