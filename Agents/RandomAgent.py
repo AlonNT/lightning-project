@@ -22,7 +22,7 @@ class RandomInvestor(AbstractAgent):
         funds_to_spend = self.initial_funds
         possible_nodes = [node for node in graph.nodes if graph.nodes[node]['pub_key'] != self.pub_key]
         channels = list()
-        while possible_nodes != [] and funds_to_spend >= self.channel_cost :
+        while possible_nodes != [] and funds_to_spend >= self.channel_cost:
             # Choose random public_key for connection
             random_node_pub_key = random.choice(possible_nodes)
             possible_nodes.remove(random_node_pub_key)
@@ -42,4 +42,4 @@ class RandomInvestor(AbstractAgent):
     @property
     def name(self) -> str:
         class_name = "Random"
-        return f'{class_name}(d={self.desired_num_edges})'
+        return f'{class_name}(d={16})'

@@ -210,18 +210,45 @@ def get_args_experiment_fees_tradeoff_lpp_routeness():
 def get_args_experiment_best_of_each_agent():
     args = [
 
+        # Random
+        (RandomInvestor, {'desired_num_edges': 5}),
+
         # LPP
-        (LightningPlusPlusAgent, {'desired_num_edges': 32, 'use_node_degree': True, 'use_nodes_distance': False}),
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
 
         # Greedy
-        (GreedyNodeInvestor, {'desired_num_edges': 32, 'use_node_degree': True, }),
-
-        # Random
-        (RandomInvestor, {'desired_num_edges': 32}),
-
+        (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
     ]
     return args, "experiment_best_of_each_agent"
 
+
+def get_args_experiment_best_of_each_agent_10():
+    args = [
+
+        # Random
+        (RandomInvestor, {'desired_num_edges': 10}),
+
+        # LPP
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
+
+        # Greedy
+        (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
+    ]
+    return args, "experiment_best_of_each_agent"
+
+def get_args_experiment_best_of_each_agent_3():
+    args = [
+
+        # Random
+        (RandomInvestor, {'desired_num_edges': 10}),
+
+        # LPP
+        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
+
+        # Greedy
+        (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
+    ]
+    return args, "experiment_best_of_each_agent"
 
 def run_experiments(experiments):
     dispatcher = {
