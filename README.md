@@ -14,13 +14,13 @@ We analyze different policies (a.k.a. agents) which all aim to maximize the prof
 
 ## Methods
 
-# Random Agent
+### Random Agent
 
 This one is the simplest algorithm, used mainly as a baseline for other more sophisticated ones. Given the input parameter $d$, the random agent opens $d$ channels with $d$ nodes selected uniformly at random from the graph, where its initial funds are evenly divided between the channels. The fee policy of each channel it created is the default policy.
 
-# Greedy
+### Greedy
 
-We defined three methods for scoring the nodes, each score define a corresponding greedy algorithm. The greedy algorithm orders the nodes in a descending/ascending order according to their score, and then choose the first $d$ nodes (where $d$ is an input parameter) and establish channels with them dividing its funds equally between the channels. The fee policy of each channel it creates is the default policy. \\
+We defined three methods for scoring the nodes, each score define a corresponding greedy algorithm. The greedy algorithm orders the nodes in a descending/ascending order according to their score, and then choose the first d nodes (where d is an input parameter) and establish channels with them dividing its funds equally between the channels. The fee policy of each channel it creates is the default policy. \\
 The scoring methods are the following:
 
 - Channel capacity: 
@@ -30,7 +30,7 @@ Each node's score is its degree in the multi-graph.
 - Routeness:
 Each node's score is the number of routes it might participate in, when some two nodes in the graph will make a transaction.
 
-# Lightning++
+### Lightning++
 
 The motivation for this algorithm is taken from kmeans++ clustering algorithm, and this is where it got its name. In the traditional kmeans clustering algorithm the initial centroids are chosen uniformly at random. In kmeans++ the initial centroids are sampled according to a distribution which gives high probability to nodes that are distant from the previously selected centroids. This enables choosing the initial centroids in a random way which results in nodes that are far from each other (which helps the algorithm to cluster better), ignoring outliers which are a few data-points that are extremely far from the rest.
 
