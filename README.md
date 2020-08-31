@@ -16,6 +16,9 @@ We analyze different policies (a.k.a. agents) which all aim to maximize the prof
 <img align="right" width="300" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/miners_fee.jpeg">
 
 
+
+
+
 ## Methods
 
 ### Random Agent
