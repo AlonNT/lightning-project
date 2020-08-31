@@ -1,6 +1,7 @@
 # Maximizing Revenue in The Lightning-Network
 ### Alon Netser, Ariel Elnekave & Daniel Afrimi
 
+<img align="right" width="200" height="200" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/lightning.jpg">
 ## Introduction
 
 The Lightning Network has been suggested as a solution to Bitcoin’s long-known scalability issues. The Lightning Network promises to improve both the number of transactions that can be processed, and the latency per transaction. The Lightning Network, along with other payment channel networks, aims to move the majority of transactions off-chain, with the guarantee that the state of channels can be committed back to the blockchain at any time, in a trustless fashion. It thus solves the problem of a limited transaction rate by limiting the communication on payments to a much smaller set of participants, and lowers the number of interactions with the blockchain.
@@ -37,3 +38,6 @@ The motivation for this algorithm is taken from kmeans++ clustering algorithm, a
 We wanted to add randomness to our agents policies, so instead of selecting greedily the best node (according to some ordering), we define a distribution over the nodes where each node probability is according to its score - higher score implies higher probability to select this node. Eventually the Lightning++ agent works similar to the greedy agent, meaning that it selects nodes with high rank according to some score function, but it does so in a random way so not always the "best" node will be selected.
 
 
+
+Read More - [Maximizing Revenue in The Lightning-Network](https://github.cs.huji.ac.il/daniel023/GLANN-For-Video/blob/master/Non-Adversarial%20Video%20Synthesis%20with%20Generative%20Latent%20Nearest%20Neighbors.pdf)
+# TODO Change the link in the readme to our paper
