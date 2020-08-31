@@ -17,6 +17,7 @@ We analyze different policies (a.k.a. agents) which all aim to maximize the prof
 <br />
 <br />
 <br />
+
 ## Methods
 
 ### Random Agent
@@ -37,6 +38,7 @@ Each node's score is the number of routes it might participate in, when some two
 <br />
 <br />
 <br />
+
 ### Lightning++
 
 The motivation for this algorithm is taken from kmeans++ clustering algorithm, and this is where it got its name. In the traditional kmeans clustering algorithm the initial centroids are chosen uniformly at random. In kmeans++ the initial centroids are sampled according to a distribution which gives high probability to nodes that are distant from the previously selected centroids. This enables choosing the initial centroids in a random way which results in nodes that are far from each other (which helps the algorithm to cluster better), ignoring outliers which are a few data-points that are extremely far from the rest.
@@ -45,5 +47,4 @@ We wanted to add randomness to our agents policies, so instead of selecting gree
 
 
 
-Read More - [Maximizing Revenue in The Lightning-Network](https://github.cs.huji.ac.il/daniel023/GLANN-For-Video/blob/master/Non-Adversarial%20Video%20Synthesis%20with%20Generative%20Latent%20Nearest%20Neighbors.pdf)
-# TODO Change the link in the readme to our paper
+Read More - [Maximizing Revenue in The Lightning-Network](https://github.com/AlonNT/lightning-project/blob/master/Paper/paper.pdf)
