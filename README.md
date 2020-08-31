@@ -1,42 +1,39 @@
-# Cryptocurrencies Project: Possible Investment channel in Lightning-Network
+# Maximizing Revenue in The Lightning-Network
 ### Alon Netser, Ariel Elnekave & Daniel Afrimi
 
 ## Introduction
 
-The lightning network is composed of many bidirectional payment channels which require a certain amount of money to be 
-"locked" in it, i.e establishing a bidirectional payment channel requires putting aside some amount of bitcoin which 
-will be unusable for the time being of the channel. That said, more money in a Lightning channel mans more liquidity 
-for the parties. Larger amounts of bitcoin can be transferred without fear of ever unbalancing the channel 
-(leaving one of the the parties in the channel with zero balance making it unable to either send money or route other 
-transaction through the channel)
+The Lightning Network has been suggested as a solution to Bitcoin’s long-known scalability issues. The Lightning Network promises to improve both the number of transactions that can be processed, and the latency per transaction. The Lightning Network, along with other payment channel networks, aims to move the majority of transactions off-chain, with the guarantee that the state of channels can be committed back to the blockchain at any time, in a trustless fashion. It thus solves the problem of a limited transaction rate by limiting the communication on payments to a much smaller set of participants, and lowers the number of interactions with the blockchain.
 
-## General Idea
-The lightning network is composed of bidirectional payment channels that require "locked money" to be present. 
-The fact that more locked money means more flexibility in the channel creates a tradeoff between the amount of locked 
-bitcoin. The routing fees in lightning network opens up an opportunity to invest in the network:
-nodes can join the network with the sole purpose of investing funds in it. They can form new channels in strategic 
-edges and lock large amounts of bitcoin in them making them very attractive to route through. 
-Such investors will enjoy routing fees as a return to their investment.
+An important feature of payment channel networks is that they also support transactions between participants without a direct channel between them, using multi-hop routing. In order to incentivize participating in other parties transactions, intermediate nodes may require fees for transferring the money forwards to the next node in the route. 
 
-## The Tradeoff
-In economics, locking money is considered undesirable, the money just sits and loses its time-value. 
-It also means less liquidity for the owner, less in-hand money, which is also considered to have an additional value. 
-Additionally, locking-up adequate amounts of liquids demands having it in advance which may not be the case for all 
-users but probably is for some rich investors. Together with the benefits presented above, this portrays a tradeoff 
-on the amount (if-any) of bitcoin to be locked in Lightning channels
+## Our Work
+In this work we analyze the potential revenue in creating channels in the Lightning Network. The amount of money we lock in channels is treated as an investment. Our cost of investing in the Lightning Network includes both the locked money in the channels, as well as the fees to pay the miners to include the channel's creation transaction in the blockchain. Indeed, traditional investments (e.g. stocks, real-estate) are made by locking money in order to maximize the yield and minimize the risk, and there are also side payments such as fees to mediators, so our methodology falls into this framework.
 
-## Why is it interesting?
-If we show that such an investment prospect is profitable, it can not only allow the rich to get richer but will 
-also incentivize them to enforce a healthier lightning network creating faster and safer routes which are less 
-susceptible to un-balancing attacks (intentional suffocation of one side of the channel).
+We analyze different policies (a.k.a. agents) which all aim to maximize the profit gained from the fees. The main challenge is deciding which channels to create and how much money to lock in them, in order to be attractive for other parties to route transactions through them.
 
-## How will you analyze it?
-We will simulate the lightning network, analyze various investment strategies in it, 
-try to learn new ones and compare their potential yield. See implementation details for further reading.
+## Methods
 
-## Did anyone try to solve this problem before?
-In class, Aviv showed what he called Liquidity un-balancing attack.
-This is also called Balance availability attack here: https://eprint.iacr.org/2019/1149.pdf.
-These are highly related to our topic but they both zoom in on the attack the lightning network is susceptible to. 
-We, on the other hand, are focusing on how to honestly benefit from the LN while creating a platform to counter 
-such attacks using the market's powers. 
+# Random Agent
+
+This one is the simplest algorithm, used mainly as a baseline for other more sophisticated ones. Given the input parameter $d$, the random agent opens $d$ channels with $d$ nodes selected uniformly at random from the graph, where its initial funds are evenly divided between the channels. The fee policy of each channel it created is the default policy.
+
+# Greedy
+
+We defined three methods for scoring the nodes, each score define a corresponding greedy algorithm. The greedy algorithm orders the nodes in a descending/ascending order according to their score, and then choose the first $d$ nodes (where $d$ is an input parameter) and establish channels with them dividing its funds equally between the channels. The fee policy of each channel it creates is the default policy. \\
+The scoring methods are the following:
+
+- Channel capacity: 
+Each node's score is its total capacity - the sum of the capacities in all of the channels it's participating in.
+- Graph-Degree: 
+Each node's score is its degree in the multi-graph.
+- Routeness:
+Each node's score is the number of routes it might participate in, when some two nodes in the graph will make a transaction.
+
+# Lightning++
+
+The motivation for this algorithm is taken from kmeans++ clustering algorithm, and this is where it got its name. In the traditional kmeans clustering algorithm the initial centroids are chosen uniformly at random. In kmeans++ the initial centroids are sampled according to a distribution which gives high probability to nodes that are distant from the previously selected centroids. This enables choosing the initial centroids in a random way which results in nodes that are far from each other (which helps the algorithm to cluster better), ignoring outliers which are a few data-points that are extremely far from the rest.
+
+We wanted to add randomness to our agents policies, so instead of selecting greedily the best node (according to some ordering), we define a distribution over the nodes where each node probability is according to its score - higher score implies higher probability to select this node. Eventually the Lightning++ agent works similar to the greedy agent, meaning that it selects nodes with high rank according to some score function, but it does so in a random way so not always the "best" node will be selected.
+
+
