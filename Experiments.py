@@ -12,7 +12,6 @@ from main import run_experiment
 from opt import *
 import time
 
-
 BASE_FEE_VALUES = [1, 3, 20, 99, 999]
 
 
@@ -236,6 +235,7 @@ def get_args_experiment_best_of_each_agent_10():
     ]
     return args, "experiment_best_of_each_agent"
 
+
 def get_args_experiment_best_of_each_agent_3():
     args = [
 
@@ -249,6 +249,7 @@ def get_args_experiment_best_of_each_agent_3():
         (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
     ]
     return args, "experiment_best_of_each_agent"
+
 
 def run_experiments(experiments):
     dispatcher = {
@@ -264,6 +265,8 @@ def run_experiments(experiments):
         'get_args_experiment_greedy_vs_lpp_routeness': get_args_experiment_greedy_vs_lpp_routeness,
 
         'get_args_experiment_best_of_each_agent': get_args_experiment_best_of_each_agent,
+        'get_args_experiment_best_of_each_agent_10': get_args_experiment_best_of_each_agent_10,
+        'get_args_experiment_best_of_each_agent_3': get_args_experiment_best_of_each_agent_3,
 
         'get_args_experiment_fees_tradeoff_lpp_routeness': get_args_experiment_fees_tradeoff_lpp_routeness,
         'get_args_experiment_fees_tradeoff_greedy_capacity': get_args_experiment_fees_tradeoff_greedy_capacity,
@@ -279,7 +282,7 @@ def run_experiments(experiments):
 
         args, folder_name = experiment_function()
         named_tuple = time.localtime()  # get struct_time
-        time_string = time.strftime("%m/%d/%Y_%H:%M:%S", named_tuple)
+        time_string = time.strftime("%m_%d_%Y___%H_%M_%S", named_tuple)
         folder_name = folder_name + "_" + time_string
         print(folder_name)
         out_dir = os.path.join(DEBUG_OUT_DIR, folder_name)
