@@ -218,7 +218,7 @@ def get_args_experiment_best_of_each_agent():
         # Greedy
         (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
     ]
-    return args, "experiment_best_of_each_agent"
+    return args, "experiment_best_of_each_agent_5"
 
 
 def get_args_experiment_best_of_each_agent_10():
@@ -233,14 +233,14 @@ def get_args_experiment_best_of_each_agent_10():
         # Greedy
         (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
     ]
-    return args, "experiment_best_of_each_agent"
+    return args, "experiment_best_of_each_agent_10d"
 
 
 def get_args_experiment_best_of_each_agent_3():
     args = [
 
         # Random
-        (RandomInvestor, {'desired_num_edges': 10}),
+        (RandomInvestor, {'desired_num_edges': 3}),
 
         # LPP
         (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
@@ -248,7 +248,7 @@ def get_args_experiment_best_of_each_agent_3():
         # Greedy
         (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
     ]
-    return args, "experiment_best_of_each_agent"
+    return args, "experiment_best_of_each_agent_3"
 
 
 def run_experiments(experiments):
