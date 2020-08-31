@@ -16,13 +16,12 @@ We analyze different policies (a.k.a. agents) which all aim to maximize the prof
 <img align="center" width="300" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/miners_fee.jpeg">
 <br />
 <br />
-<br />
 
 ## Methods
 
 ### Random Agent
 
-This one is the simplest algorithm, used mainly as a baseline for other more sophisticated ones. Given the input parameter $d$, the random agent opens $d$ channels with $d$ nodes selected uniformly at random from the graph, where its initial funds are evenly divided between the channels. The fee policy of each channel it created is the default policy.
+This one is the simplest algorithm, used mainly as a baseline for other more sophisticated ones. Given the input parameter d, the random agent opens d channels with d nodes selected uniformly at random from the graph, where its initial funds are evenly divided between the channels. The fee policy of each channel it created is the default policy.
 
 ### Greedy
 
@@ -35,7 +34,6 @@ Each node's score is its total capacity - the sum of the capacities in all of th
 Each node's score is its degree in the multi-graph.
 - Routeness:
 Each node's score is the number of routes it might participate in, when some two nodes in the graph will make a transaction. <img align="center" width="100" height="100" src="https://github.com/AlonNT/lightning-project/blob/master/Paper/images/routeness.png">
-<br />
 <br />
 <br />
 
