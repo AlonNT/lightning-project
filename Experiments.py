@@ -221,36 +221,6 @@ def get_args_experiment_best_of_each_agent():
     return args, "experiment_best_of_each_agent_5"
 
 
-def get_args_experiment_best_of_each_agent_10():
-    args = [
-
-        # Random
-        (RandomInvestor, {'desired_num_edges': 10}),
-
-        # LPP
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
-
-        # Greedy
-        (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
-    ]
-    return args, "experiment_best_of_each_agent_10d"
-
-
-def get_args_experiment_best_of_each_agent_3():
-    args = [
-
-        # Random
-        (RandomInvestor, {'desired_num_edges': 3}),
-
-        # LPP
-        (LightningPlusPlusAgent, {'desired_num_edges': 16, 'use_node_degree': True, 'use_nodes_distance': False}),
-
-        # Greedy
-        (GreedyNodeInvestor, {'desired_num_edges': 16, 'use_node_degree': True, }),
-    ]
-    return args, "experiment_best_of_each_agent_3"
-
-
 def run_experiments(experiments):
     dispatcher = {
         'get_args_experiment_greedy_function_of_transactions_per_step':
@@ -265,8 +235,6 @@ def run_experiments(experiments):
         'get_args_experiment_greedy_vs_lpp_routeness': get_args_experiment_greedy_vs_lpp_routeness,
 
         'get_args_experiment_best_of_each_agent': get_args_experiment_best_of_each_agent,
-        'get_args_experiment_best_of_each_agent_10': get_args_experiment_best_of_each_agent_10,
-        'get_args_experiment_best_of_each_agent_3': get_args_experiment_best_of_each_agent_3,
 
         'get_args_experiment_fees_tradeoff_lpp_routeness': get_args_experiment_fees_tradeoff_lpp_routeness,
         'get_args_experiment_fees_tradeoff_greedy_capacity': get_args_experiment_fees_tradeoff_greedy_capacity,
